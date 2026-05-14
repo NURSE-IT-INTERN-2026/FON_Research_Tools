@@ -2,6 +2,12 @@ import { forbidden, unauthorized } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import db from "@/lib/db";
 
+export type AuthContext = {
+  userId: string;
+  email: string;
+  role: "ADMIN" | "BORROWER";
+};
+
 export async function getSession() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getSession();
@@ -11,7 +17,10 @@ export async function getSession() {
 export async function requireAuth() {
   const session = await getSession();
   if (!session) unauthorized();
-  return session!;
+  return {
+    userId: session!.user.id,
+    email: session!.user.email ?? "",
+  };
 }
 
 export async function getUserRole(userId: string) {
@@ -19,9 +28,9 @@ export async function getUserRole(userId: string) {
   return userRole?.role ?? null;
 }
 
-export async function requireRole(role: "ADMIN" | "BORROWER") {
-  const session = await requireAuth();
-  const userRole = await getUserRole(session.user.id);
+export async function requireRole(role: "ADMIN" | "BORROWER"): Promise<AuthContext> {
+  const { userId, email } = await requireAuth();
+  const userRole = await getUserRole(userId);
   if (userRole !== role) forbidden();
-  return session;
+  return { userId, email, role: userRole as "ADMIN" | "BORROWER" };
 }

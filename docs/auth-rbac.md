@@ -111,7 +111,7 @@ All data queries in Server Components and Server Actions check the user's role f
 import { requireRole } from "@/lib/auth";
 
 export default async function AdminPage() {
-  const { userId } = await requireRole("ADMIN");
+  const { userId, role } = await requireRole("ADMIN");
   const tools = await db.tool.findMany();
   // ...
 }
@@ -123,7 +123,7 @@ export default async function AdminPage() {
 import { requireRole } from "@/lib/auth";
 
 export async function approveBooking(bookingId: string) {
-  const { userId } = await requireRole("ADMIN");
+  const { userId, role } = await requireRole("ADMIN");
   // ... proceed with Prisma mutation
 }
 ```
@@ -136,12 +136,22 @@ No client-side role gating for data access — UI hides/shows elements for UX on
 
 Create these in `src/lib/auth.ts`:
 
-| Function | Purpose |
-|---|---|
-| `getSession()` | Read session from cookies via `@supabase/ssr`, return user or null |
-| `getUserRole(userId)` | Query `UserRole` via Prisma, return role string or null |
-| `requireAuth()` | Get session or call `unauthorized()` (renders `unauthorized.tsx`) |
-| `requireRole(role)` | Get session + verify role, or call `forbidden()` (renders `forbidden.tsx`) |
+```ts
+export type AuthContext = {
+  userId: string;
+  email: string;
+  role: "ADMIN" | "BORROWER";
+};
+```
+
+| Function | Returns | Purpose |
+|---|---|---|
+| `getSession()` | Supabase `Session \| null` | Read session from cookies via `@supabase/ssr` (low-level) |
+| `getUserRole(userId)` | `AppRole \| null` | Query `UserRole` via Prisma (low-level) |
+| `requireAuth()` | `{ userId: string, email: string }` | Get authenticated user or call `unauthorized()` |
+| `requireRole(role)` | `AuthContext` | Verify role or call `forbidden()` — returns `{ userId, email, role }` |
+
+Supabase session details stay internal to the auth layer. Callers receive only the application-level context.
 
 ---
 

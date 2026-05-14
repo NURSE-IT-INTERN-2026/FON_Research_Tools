@@ -8,7 +8,7 @@ export async function createClient() {
   // GoTrueClient accepts `url` at runtime even though it's missing from
   // the published SupabaseClientOptions types. Override via Record.
   const authConfig: Record<string, unknown> = {
-    url: "http://localhost:9999",
+    url: process.env.SUPABASE_URL,
   };
 
   return createServerClient(
