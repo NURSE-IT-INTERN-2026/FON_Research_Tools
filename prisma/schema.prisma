@@ -1,0 +1,84 @@
+generator client {
+  provider   = "prisma-client"
+  output     = "../src/generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AppRole {
+  ADMIN
+  BORROWER
+}
+
+enum ToolStatus {
+  AVAILABLE
+  BORROWED
+  MAINTENANCE
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RETURNED
+  OVERDUE
+}
+
+model Profile {
+  id         String    @id
+  name       String
+  email      String    @unique
+  department String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  userRole UserRole?
+  bookings Booking[]
+}
+
+model UserRole {
+  id      String  @id @default(cuid())
+  userId  String  @unique
+  role    AppRole
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Tool {
+  id           String     @id @default(cuid())
+  name         String
+  description  String     @default("")
+  category     String     @default("General")
+  serialNumber String     @unique
+  imageUrl     String?
+  status       ToolStatus @default(AVAILABLE)
+  location     String     @default("")
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  bookings Booking[]
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  userId     String
+  toolId     String
+  startDate  DateTime
+  endDate    DateTime
+  purpose    String
+  status     BookingStatus @default(PENDING)
+  adminNotes String?
+  returnDate DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool    Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([toolId])
+  @@index([status])
+}

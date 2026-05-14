@@ -8,7 +8,7 @@ Status: `not started` | `in progress` | `done`
 
 | # | Feature | Status | Depends On | Acceptance Criteria |
 |---|---------|--------|------------|---------------------|
-| F1 | Database schema + Prisma models + Docker Compose + seed script | not started | — | `docker compose up` creates DB, `npx prisma migrate dev` applies schema, `npx prisma db seed` populates test data |
+| F1 | Database schema + Prisma models + Docker Compose + seed script | done | — | `docker compose up` creates DB, `npx prisma migrate dev` applies schema, `npx prisma db seed` populates test data |
 | F2 | Supabase Auth setup: Docker config + `@supabase/ssr` server client + auth helpers (`getSession`, `requireAuth`, `requireRole`) | not started | F1 | Server Components can call `getSession()` and read authenticated user ID from cookies |
 | F3 | Signup page: form + Server Action + PostgreSQL trigger (`handle_new_user`) + role selection | not started | F1, F2 | User can register, Profile + UserRole rows are created, redirect to correct dashboard |
 | F4 | Login page: form + Server Action + session + role-based redirect | not started | F2 | User can sign in, gets redirected by role, error shown on failure |
