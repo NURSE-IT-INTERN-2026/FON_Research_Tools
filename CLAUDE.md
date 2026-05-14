@@ -47,6 +47,12 @@ Before writing any code for a feature, read these docs:
 - Use real data. No mock data unless explicitly requested.
 - Server Components by default. Client Components only when hooks or event handlers are needed.
 
+## Language
+
+- All user-facing text must be in **Thai** (ภาษาไทย): page headings, labels, button text, placeholder text, error messages, toast messages, empty states, validation messages, navigation items.
+- Enum values in the database and code remain in English (e.g. `PENDING`, `AVAILABLE`, `ADMIN`). Only the display labels shown to users are in Thai.
+- Code comments, variable names, file names, and commit messages remain in English.
+
 ## Implementation Rules
 
 - Implement one vertical slice at a time (route + page + data + UI + RBAC). See `.agents/skills/implement-feature/SKILL.md` for the full workflow.

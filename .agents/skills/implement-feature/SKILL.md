@@ -28,6 +28,7 @@ Also consult `node_modules/next/dist/docs/` for framework-version specifics when
 
 ## Non-Negotiable Rules
 
+- All user-facing text must be in **Thai** (ภาษาไทย). Headings, labels, buttons, placeholders, error messages, toasts, empty states — everything the user sees must be Thai. Enum values in code/DB stay English; only display labels are Thai.
 - Implement one feature at a time (one vertical slice per commit or PR).
 - Do not rewrite the whole project.
 - Do not modify unrelated files.
@@ -119,11 +120,8 @@ Two roles: `ADMIN` and `BORROWER`.
 After completing a feature:
 
 1. Update only the relevant feature row in `docs/_features.md`.
-2. Use these status markers:
-   - `[ ]` = not started
-   - `[~]` = in progress or partially complete
-   - `[x]` = done
-3. Mark `[x]` only when all acceptance criteria pass.
-4. Do not mark `[x]` if validation, RBAC, real data access, or error handling is incomplete.
+2. Use checkbox syntax: `- [ ]` = not started, `- [x]` = done.
+3. Mark `- [x]` only when all acceptance criteria pass.
+4. Do not mark `- [x]` if validation, RBAC, real data access, or error handling is incomplete.
 5. Do not update unrelated feature rows.
 6. Add a short note if anything was intentionally deferred.
