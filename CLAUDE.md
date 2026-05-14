@@ -42,16 +42,39 @@ Before writing any code for a feature, read these docs:
 
 - Follow `.agents/skills/next-best-practices/SKILL.md` for all Next.js architecture and implementation decisions.
 - Follow `.agents/skills/implement-feature/SKILL.md` when implementing a feature end-to-end.
+- Follow `.agents/skills/review-feature/SKILL.md` after completing a feature or when reviewing/fixing a completed slice.
 - Use Next.js App Router (`src/app/` directory). No `pages/` directory.
 - Use `proxy.ts` for route protection and RBAC — not `middleware.ts`.
+- **Supabase Auth only for identity, sessions, and cookies. Prisma for all application data queries and mutations.** Never use the Supabase client for application data queries.
 - Use real data. No mock data unless explicitly requested.
 - Server Components by default. Client Components only when hooks or event handlers are needed.
+- **Never modify files under `docs/lovable-reference/`** — it is a read-only UI/design reference.
 
 ## Language
 
 - All user-facing text must be in **Thai** (ภาษาไทย): page headings, labels, button text, placeholder text, error messages, toast messages, empty states, validation messages, navigation items.
-- Enum values in the database and code remain in English (e.g. `PENDING`, `AVAILABLE`, `ADMIN`). Only the display labels shown to users are in Thai.
+- Enum values in the database and code remain in English. Only the display labels shown to users are in Thai.
 - Code comments, variable names, file names, and commit messages remain in English.
+
+### Thai Status Labels
+
+Use these mappings for all user-facing status display:
+
+| Enum Value | Thai Label |
+|---|---|
+| **BookingStatus** | |
+| `PENDING` | รอตรวจสอบ |
+| `APPROVED` | อนุมัติแล้ว |
+| `REJECTED` | ปฏิเสธแล้ว |
+| `RETURNED` | คืนแล้ว |
+| `OVERDUE` | เกินกำหนด |
+| **ToolStatus** | |
+| `AVAILABLE` | พร้อมใช้งาน |
+| `BORROWED` | กำลังยืม |
+| `MAINTENANCE` | ซ่อมบำรุง |
+| **AppRole** | |
+| `ADMIN` | ผู้ดูแลระบบ |
+| `BORROWER` | ผู้ยืม |
 
 ## Implementation Rules
 
@@ -67,3 +90,4 @@ Before writing any code for a feature, read these docs:
 2. Explain the plan and list files to be changed.
 3. Implement the vertical slice.
 4. Update `docs/_features.md` to reflect completion.
+5. Run `.agents/skills/review-feature/SKILL.md` to review the completed slice.
