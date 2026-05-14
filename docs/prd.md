@@ -12,7 +12,7 @@ Research institutions manage shared equipment (microscopes, oscilloscopes, 3D pr
 
 A web application where:
 - **Borrowers** browse a tool catalog, submit borrow requests, and track their bookings.
-- **Admins** manage the inventory, approve/reject requests, process returns, and track overdue items.
+- **Admins** manage the inventory, approve/reject requests, process returns, and flag overdue items.
 
 All online, no paper.
 
@@ -22,9 +22,14 @@ All online, no paper.
 |---|---|
 | Framework | Next.js 16 (App Router) |
 | UI | React 19, Tailwind CSS v4, shadcn/ui |
+| Auth | Supabase Auth (email/password) with `@supabase/ssr` |
 | Database | PostgreSQL |
 | ORM | Prisma 7 |
-| Deployment | Docker Compose (local dev) |
+| Local Dev | Docker Compose (Postgres + Supabase Auth) |
+
+### Architecture Split
+
+Supabase Auth handles user identity and sessions (signup, login, cookie management). Prisma handles all application data queries (profiles, tools, bookings). The Supabase client is never used for data queries — only Prisma.
 
 ## 4. User Roles
 
@@ -32,6 +37,8 @@ All online, no paper.
 |---|---|
 | **Borrower** | Students, researchers, staff who browse and request equipment |
 | **Admin** | Lab managers who manage inventory and approve requests |
+
+MVP supports one role per user. A user cannot hold both roles simultaneously.
 
 ## 5. Design System
 
@@ -48,15 +55,15 @@ Both themes share the same background, card, border, and status colors. Only the
 ### 6.1 Authentication
 - Email/password signup with role selection (Borrower or Admin)
 - Email/password login with role-based redirect
-- Session management with server-side protection
+- Session management with server-side protection via `proxy.ts`
 
 ### 6.2 Borrower Portal
 - **Tool Catalog** (`/dashboard`) — Browse, search, filter by category/status, request to borrow
-- **My Bookings** (`/dashboard/my-bookings`) — Track bookings by tab (Current / Pending / Past), cancel pending requests
+- **My Bookings** (`/my-bookings`) — Track bookings by tab (Current / Pending / Past), cancel pending requests
 
 ### 6.3 Admin Portal
 - **Dashboard** (`/admin/dashboard`) — Stat cards (total tools, borrowed, pending, overdue) + recent activity feed
-- **Inventory** (`/admin/inventory`) — CRUD table for tools (add, edit, delete, toggle status)
+- **Inventory** (`/admin/inventory`) — CRUD table for tools (add, edit, deactivate/archive, toggle status)
 - **Requests** (`/admin/requests`) — Approve/reject borrow requests, mark returns, flag overdue
 - **Users** (`/admin/users`) — Read-only list of registered accounts
 
@@ -65,15 +72,18 @@ Both themes share the same background, card, border, and status colors. Only the
 - Admin approves → status: `APPROVED`, tool status: `BORROWED`
 - Admin rejects → status: `REJECTED`, optional notes
 - Admin marks returned → status: `RETURNED`, tool status: `AVAILABLE`
-- System flags overdue → status: `OVERDUE`
+- Admin flags overdue → status: `OVERDUE` (manual action, not auto-detected in MVP)
 
 ## 7. Out of Scope (Post-MVP)
 
+- Automatic overdue detection (cron job or scheduled function)
+- Borrower "request return" action (deferred — admin marks returned directly)
 - File/image upload for tools (use URL field for now)
 - Email notifications
 - Pagination (load all for MVP)
-- Mobile responsive sidebar
+- Advanced mobile navigation experience
 - Optimistic UI updates
 - Real-time updates (WebSockets)
 - Calendar/scheduling view
 - Audit log
+- Dual-role users (ADMIN + BORROWER on one account)

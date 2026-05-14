@@ -13,7 +13,7 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 - Nav items: icon (Lucide) + label, active state highlight
 - User footer: email display + sign-out button
 - **Props:** `role: "ADMIN" | "BORROWER"`, `navItems`, `userEmail`
-- **Theme:** Orange sidebar for borrower, purple for admin (CSS variable swap via parent layout class)
+- **Theme:** Orange sidebar for borrower, purple for admin (CSS class on parent layout swaps CSS custom properties)
 
 ### Status Badge (`src/components/status-badge.tsx`)
 
@@ -45,6 +45,7 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 - Active: `bg-primary text-primary-foreground border-primary`
 - Inactive: `border-input bg-background hover:bg-accent`
 - **Props:** `options: string[]`, `selected: string`, `onSelect: (val) => void`
+- **Client Component** — uses `useRouter` to update URL `searchParams` on selection
 
 ---
 
@@ -85,9 +86,10 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 **Header:** "Tool Catalog" (text-2xl, semibold) + "Browse and request research equipment" (muted)
 
 **Search & Filter Bar** (card container):
-- Search input with Search icon
-- Category filter pills (ALL + dynamic categories)
-- Status filter pills (ALL, AVAILABLE, BORROWED, MAINTENANCE)
+- Search input with Search icon — updates URL `searchParam` `q` on submit
+- Category filter pills (ALL + dynamic categories) — updates URL `searchParam` `category`
+- Status filter pills (ALL, AVAILABLE, BORROWED, MAINTENANCE) — updates URL `searchParam` `status`
+- **Implementation:** Server Component reads `searchParams` from page props. Client-side filter pills update URL, triggering server re-render with filtered data.
 
 **Tool Grid** (responsive 1/2/3 col):
 - Card: image (aspect-video, fallback Wrench icon), status badge (top-right), title, category (primary), description (line-clamp-2), location + serial meta row
@@ -99,6 +101,7 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 - Form: Start Date (calendar), End Date (calendar), Purpose (textarea)
 - Validation: both dates required, end >= start, purpose non-empty
 - Submit → Server Action `createBooking`
+- Success → toast + close modal + `revalidatePath`
 
 ### My Bookings — `/my-bookings`
 
@@ -106,11 +109,13 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 
 **Tab Bar:** Current (APPROVED + OVERDUE) / Pending / Past (RETURNED + REJECTED)
 - Active tab: border-bottom underline, count badge
+- **Implementation:** URL `searchParam` `tab` controls active tab. Server Component pre-filters bookings by tab.
 
 **Booking Cards:**
 - Left: 96x96px thumbnail
 - Right: tool name, category, status badge, date range, purpose, admin notes (if any)
-- Actions: PENDING → "Cancel request" button; APPROVED/OVERDUE → "Request Return" button
+- Actions: PENDING → "Cancel request" button → Server Action `cancelBooking`
+- Dates displayed as formatted strings (serialized from Server Component)
 
 ---
 
@@ -139,7 +144,7 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 
 **Data Table:**
 - Columns: Image, Name (+ category), Serial #, Status (badge), Location, Actions
-- Actions: Edit (Pencil), Toggle status (MAINTENANCE ↔ AVAILABLE), Delete (Trash2, with confirm)
+- Actions: Edit (Pencil), Toggle status (MAINTENANCE ↔ AVAILABLE), Deactivate (Trash2, with confirm — soft delete; hard delete only if tool has zero bookings)
 
 **Tool Form Modal** (create/edit):
 - Fields: Name, Description (textarea), Category, Serial Number, Image URL, Location, Status (select)
@@ -151,6 +156,7 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 **Header:** "Borrowing Requests" + "Approve, reject and track returns"
 
 **Status Filter Pills:** ALL, PENDING, APPROVED, REJECTED, RETURNED, OVERDUE
+- **Implementation:** Same URL `searchParam` pattern as tool catalog filters.
 
 **Data Table:**
 - Columns: Borrower (name + dept), Tool, Dates, Purpose (line-clamp-2), Status (badge), Actions
@@ -164,7 +170,7 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 
 **Admin Notes Dialog:**
 - Modal with textarea for optional notes
-- NOT `window.prompt()` — use a proper Dialog component
+- NOT `window.prompt()` — use a shadcn/ui Dialog component
 - Submit → Server Action `approveBooking` or `rejectBooking`
 
 ### Users — `/admin/users`
@@ -180,9 +186,14 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 
 | File | Purpose |
 |---|---|
+| `src/app/global-error.tsx` | Root error boundary: catches layout errors, must include `<html>` + `<body>` |
+| `src/app/error.tsx` | App-level error boundary: "Something went wrong" + message + retry button |
+| `src/app/unauthorized.tsx` | 401: "Please sign in to continue" + link to `/login` |
+| `src/app/forbidden.tsx` | 403: "You don't have access to this page" + link to correct dashboard |
 | `src/app/not-found.tsx` | 404: centered "404" (text-7xl) + "Page not found" + "Go home" link |
-| `src/app/error.tsx` | Global error boundary: "Something went wrong" + message + retry button |
 | `loading.tsx` (per segment) | Skeleton placeholder matching the page layout |
+
+All error boundary files are Client Components (`"use client"`).
 
 ---
 

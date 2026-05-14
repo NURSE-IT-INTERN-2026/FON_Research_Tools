@@ -6,30 +6,32 @@ Status: `not started` | `in progress` | `done`
 
 ## Phase 1 — Foundation
 
-| # | Feature | Status | Depends On |
-|---|---------|--------|------------|
-| F1 | Database schema + Prisma models + Docker Compose | not started | — |
-| F2 | Auth: signup, login, session, role-based redirect | not started | F1 |
-| F3 | Middleware: route protection + RBAC | not started | F2 |
-| F4 | Layout shell: public layout, borrower layout, admin layout | not started | F3 |
-| F5 | Design tokens + theme system (orange borrower / purple admin) | not started | — |
+| # | Feature | Status | Depends On | Acceptance Criteria |
+|---|---------|--------|------------|---------------------|
+| F1 | Database schema + Prisma models + Docker Compose + seed script | not started | — | `docker compose up` creates DB, `npx prisma migrate dev` applies schema, `npx prisma db seed` populates test data |
+| F2 | Supabase Auth setup: Docker config + `@supabase/ssr` server client + auth helpers (`getSession`, `requireAuth`, `requireRole`) | not started | F1 | Server Components can call `getSession()` and read authenticated user ID from cookies |
+| F3 | Signup page: form + Server Action + PostgreSQL trigger (`handle_new_user`) + role selection | not started | F1, F2 | User can register, Profile + UserRole rows are created, redirect to correct dashboard |
+| F4 | Login page: form + Server Action + session + role-based redirect | not started | F2 | User can sign in, gets redirected by role, error shown on failure |
+| F5 | `proxy.ts`: route protection + RBAC redirect (unauthenticated → `/login`, wrong role → correct dashboard) | not started | F2 | Unauthenticated users redirected from protected routes; wrong-role users redirected |
+| F6 | Layout shell: root layout, public layout (centered card), borrower layout (orange sidebar), admin layout (purple sidebar) | not started | F5 | Each role group renders the correct sidebar; public pages have no sidebar |
+| F7 | Design tokens + theme system (CSS custom properties for orange borrower / purple admin) | not started | — | Two theme CSS classes swap primary, accent, sidebar, and ring tokens |
 
 ## Phase 2 — Borrower Portal
 
-| # | Feature | Status | Depends On |
-|---|---------|--------|------------|
-| F6 | Tool catalog: browse, search, filter, tool cards | not started | F4, F5 |
-| F7 | Borrow request: modal form with date pickers + validation | not started | F6 |
-| F8 | My Bookings: tab view (Current / Pending / Past), cancel action | not started | F4, F5 |
+| # | Feature | Status | Depends On | Acceptance Criteria |
+|---|---------|--------|------------|---------------------|
+| F8 | Tool catalog: browse, search (URL searchParams), category/status filter pills, responsive tool card grid | not started | F6, F7 | Borrower sees tool cards, can filter by category and status, search by name; filters update URL and re-render server-side |
+| F9 | Borrow request: modal form with date pickers + validation + Server Action `createBooking` | not started | F8 | Borrower can submit a borrow request with dates and purpose; PENDING booking created; tool remains AVAILABLE until approved |
+| F10 | My Bookings: tab view (Current / Pending / Past), cancel pending booking | not started | F6, F7 | Borrower sees bookings grouped by tab; can cancel PENDING bookings (→ REJECTED); status badges render correctly |
 
 ## Phase 3 — Admin Portal
 
-| # | Feature | Status | Depends On |
-|---|---------|--------|------------|
-| F9 | Admin dashboard: stat cards + recent activity | not started | F4, F5 |
-| F10 | Inventory CRUD: table, add/edit modal, status toggle, delete | not started | F4, F5 |
-| F11 | Request management: approve/reject/return/overdue with notes dialog | not started | F4, F5 |
-| F12 | Users list: read-only table | not started | F4, F5 |
+| # | Feature | Status | Depends On | Acceptance Criteria |
+|---|---------|--------|------------|---------------------|
+| F11 | Admin dashboard: 4 stat cards (linked) + recent activity feed | not started | F6, F7 | Admin sees live counts from DB; activity feed shows latest 10 bookings with borrower name + verb + tool name |
+| F12 | Inventory CRUD: data table, create/edit tool modal, status toggle, deactivate/archive with confirm | not started | F6, F7 | Admin can add, edit, deactivate tools (soft delete); toggle MAINTENANCE ↔ AVAILABLE; data persists in DB; deactivated tools hidden from borrower catalog |
+| F13 | Request management: approve/reject with notes dialog, mark returned, flag overdue | not started | F6, F7 | Admin can approve (→ tool BORROWED), reject with notes, mark returned (→ tool AVAILABLE), flag overdue; availability check runs on return |
+| F14 | Users list: read-only table (name, email, department, role) | not started | F6, F7 | Admin sees all registered users with roles |
 
 ---
 
@@ -37,14 +39,17 @@ Status: `not started` | `in progress` | `done`
 
 Each slice delivers a working end-to-end feature:
 
-1. **F1 + F5** — Schema + theme (parallel, no dependencies)
-2. **F2** — Auth
-3. **F3 + F4** — Middleware + layouts
-4. **F6 + F7** — Borrower catalog + request flow
-5. **F8** — Borrower bookings
-6. **F9** — Admin dashboard
-7. **F10** — Admin inventory
-8. **F11** — Admin requests
-9. **F12** — Admin users
+1. **F1 + F7** — Schema + theme (parallel, no dependencies)
+2. **F2** — Supabase Auth setup + helpers
+3. **F3** — Signup page + trigger
+4. **F4** — Login page + redirect
+5. **F5 + F6** — Proxy + layouts
+6. **F8** — Tool catalog
+7. **F9** — Borrow request flow
+8. **F10** — My Bookings
+9. **F11** — Admin dashboard
+10. **F12** — Admin inventory
+11. **F13** — Admin requests
+12. **F14** — Admin users
 
 Update this file after completing each feature. Change `not started` → `in progress` → `done`.

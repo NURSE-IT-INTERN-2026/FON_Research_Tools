@@ -14,24 +14,27 @@ src/app/
 │   └── page.tsx                  ← Sign in
 ├── signup/
 │   └── page.tsx                  ← Register with role selection
+├── unauthorized.tsx              ← 401 page (unauthenticated on protected route)
+├── forbidden.tsx                 ← 403 page (wrong role)
+├── not-found.tsx                 ← 404 page
+├── error.tsx                     ← Error boundary (client component)
+├── global-error.tsx              ← Root error boundary (catches layout errors)
 ├── (borrower)/                   ← Route group: borrower layout + auth guard
 │   ├── layout.tsx                ← Sidebar (orange theme) + main content
 │   ├── dashboard/
 │   │   └── page.tsx              ← Tool catalog (browse, search, filter, request)
 │   └── my-bookings/
 │       └── page.tsx              ← Booking tracker (Current / Pending / Past tabs)
-├── (admin)/                      ← Route group: admin layout + auth guard
-│   ├── layout.tsx                ← Sidebar (purple theme) + main content
-│   ├── dashboard/
-│   │   └── page.tsx              ← Stat cards + recent activity
-│   ├── inventory/
-│   │   └── page.tsx              ← Tool CRUD table
-│   ├── requests/
-│   │   └── page.tsx              ← Borrow request management
-│   └── users/
-│       └── page.tsx              ← Read-only user list
-├── not-found.tsx                 ← 404
-└── error.tsx                     ← Global error boundary
+└── (admin)/                      ← Route group: admin layout + auth guard
+    ├── layout.tsx                ← Sidebar (purple theme) + main content
+    ├── dashboard/
+    │   └── page.tsx              ← Stat cards + recent activity
+    ├── inventory/
+    │   └── page.tsx              ← Tool CRUD table
+    ├── requests/
+    │   └── page.tsx              ← Borrow request management
+    └── users/
+        └── page.tsx              ← Read-only user list
 ```
 
 ---
@@ -50,7 +53,7 @@ src/app/
 
 | Route | Page | Data Source |
 |---|---|---|
-| `/dashboard` | Tool catalog | `tools` table, filtered/searched server-side |
+| `/dashboard` | Tool catalog | `tools` table, filtered/searched via URL `searchParams` (server-side) |
 | `/my-bookings` | Booking tracker | `bookings` + `tools` join, filtered by `user_id` |
 
 ### Admin Routes (requires `ADMIN` role)
@@ -66,9 +69,10 @@ src/app/
 
 ## Auth & Guard Strategy
 
-- **Middleware** (`middleware.ts`): runs on every request, checks session cookie, redirects unauthenticated users to `/login`, redirects wrong-role users to their correct dashboard.
-- **Layout guards**: `(borrower)/layout.tsx` and `(admin)/layout.tsx` verify the role server-side and render the appropriate sidebar.
+- **Proxy** (`proxy.ts`): runs on every request, refreshes Supabase session cookie, redirects unauthenticated users to `/login`, redirects wrong-role users to their correct dashboard. Uses Next.js 16 `proxy()` export (not `middleware()`).
+- **Layout guards**: `(borrower)/layout.tsx` and `(admin)/layout.tsx` call `requireRole()` server-side and render the appropriate sidebar. Proxy handles coarse redirect; layouts render role-specific UI.
 - **Server Components**: fetch data server-side using the session — no client-side auth flashing.
+- **Auth errors**: use `unauthorized()` (renders `unauthorized.tsx`) and `forbidden()` (renders `forbidden.tsx`) from `next/navigation` where applicable.
 
 ---
 
@@ -78,16 +82,18 @@ All mutations use Next.js Server Actions, not API routes.
 
 | Action | Trigger | Mutations |
 |---|---|---|
+| `signup` | Signup form submit | Supabase `signUp` → trigger creates Profile + UserRole → redirect by role |
+| `login` | Login form submit | Supabase `signInWithPassword` → query role → redirect by role |
+| `signOut` | Sidebar sign-out button | Supabase `signOut` → redirect to `/` |
 | `createBooking` | Borrower submits request form | Insert `bookings` row (status: PENDING) |
 | `cancelBooking` | Borrower cancels pending request | Update `bookings` status → REJECTED |
-| `requestReturn` | Borrower requests return | Update `bookings` admin_notes |
 | `createTool` | Admin adds new tool | Insert `tools` row |
 | `updateTool` | Admin edits tool | Update `tools` row |
-| `deleteTool` | Admin deletes tool | Delete `tools` row |
+| `deactivateTool` | Admin deactivates tool | Set `tools.isActive` → false (soft delete; hard delete only if tool has zero bookings) |
 | `toggleToolStatus` | Admin toggles maintenance | Update `tools` status |
 | `approveBooking` | Admin approves request | Update `bookings` → APPROVED; Update `tools` → BORROWED |
-| `rejectBooking` | Admin rejects request | Update `bookings` → REJECTED + notes |
-| `markReturned` | Admin marks returned | Update `bookings` → RETURNED; Update `tools` → AVAILABLE (if no other active bookings) |
+| `rejectBooking` | Admin rejects request | Update `bookings` → REJECTED + adminNotes |
+| `markReturned` | Admin marks returned | Update `bookings` → RETURNED, set `returnDate`; Update `tools` → AVAILABLE (if no other APPROVED bookings) |
 | `markOverdue` | Admin flags overdue | Update `bookings` → OVERDUE |
 
 ---
@@ -99,3 +105,4 @@ All mutations use Next.js Server Actions, not API routes.
 - Layout files are always `layout.tsx`
 - Error boundaries are `error.tsx` (add per-segment as needed)
 - Loading states are `loading.tsx` (add per-segment as needed)
+- Route protection uses `proxy.ts` with `export function proxy()` (Next.js 16+)

@@ -29,13 +29,14 @@ Convert Lovable pages into Next.js App Router pages manually. No auto-ports.
 Before writing any code for a feature, read these docs:
 
 1. `docs/implementation_rules.md` — coding standards, architecture, and constraints
-2. `docs/PRD.md` — product requirements and MVP scope
-3. `docs/_features.md` — feature tracking and current status
-4. `docs/route-map.md` — App Router route definitions and Server Actions
-5. `docs/data-model.md` — Prisma schema, enums, and relations
-6. `docs/auth-rbac.md` — authentication and role-based access control
-7. `docs/ui-pages.md` — page layouts and component specifications
-8. `docs/status-flow.md` — booking and tool state machines
+2. `docs/tech-stack.md` — technologies, versions, and scope boundaries
+3. `docs/PRD.md` — product requirements and MVP scope
+4. `docs/_features.md` — feature tracking and current status
+5. `docs/route-map.md` — App Router route definitions and Server Actions
+6. `docs/data-model.md` — Prisma schema, enums, and relations
+7. `docs/auth-rbac.md` — authentication and role-based access control
+8. `docs/ui-pages.md` — page layouts and component specifications
+9. `docs/status-flow.md` — booking and tool state machines
 
 ## Architecture Decisions
 
