@@ -41,6 +41,7 @@ Before writing any code for a feature, read these docs:
 ## Architecture Decisions
 
 - Follow `.agents/skills/next-best-practices/SKILL.md` for all Next.js architecture and implementation decisions.
+- Follow `.agents/skills/implement-feature/SKILL.md` when implementing a feature end-to-end.
 - Use Next.js App Router (`src/app/` directory). No `pages/` directory.
 - Use `proxy.ts` for route protection and RBAC — not `middleware.ts`.
 - Use real data. No mock data unless explicitly requested.
@@ -48,7 +49,7 @@ Before writing any code for a feature, read these docs:
 
 ## Implementation Rules
 
-- Implement one vertical slice at a time (route + page + data + UI + RBAC).
+- Implement one vertical slice at a time (route + page + data + UI + RBAC). See `.agents/skills/implement-feature/SKILL.md` for the full workflow.
 - Keep changes minimal and focused. No speculative features.
 - Do not add dependencies unless necessary and justified.
 - Enforce RBAC on both server-side and UI where applicable.
