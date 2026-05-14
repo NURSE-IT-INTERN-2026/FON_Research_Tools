@@ -113,3 +113,17 @@ Two roles: `ADMIN` and `BORROWER`.
 - **Form**: `Use .agents/skills/implement-feature/SKILL.md and implement the form feature for [entity or workflow] at [route] by following the current project's roadmap, UI spec, PRD, CLAUDE.md, and relevant .agents/skills/*.`
 - **Admin List**: `Use .agents/skills/implement-feature/SKILL.md and implement the admin management page for [entity] at [route] by following the current project's roadmap, UI spec, PRD, CLAUDE.md, and relevant .agents/skills/*.`
 - **Dashboard**: `Use .agents/skills/implement-feature/SKILL.md and implement the dashboard feature at [route] by following the current project's roadmap, UI spec, PRD, CLAUDE.md, and relevant .agents/skills/*.`
+
+## Feature Tracker Update Rules
+
+After completing a feature:
+
+1. Update only the relevant feature row in `docs/_features.md`.
+2. Use these status markers:
+   - `[ ]` = not started
+   - `[~]` = in progress or partially complete
+   - `[x]` = done
+3. Mark `[x]` only when all acceptance criteria pass.
+4. Do not mark `[x]` if validation, RBAC, real data access, or error handling is incomplete.
+5. Do not update unrelated feature rows.
+6. Add a short note if anything was intentionally deferred.
