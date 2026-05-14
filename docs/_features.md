@@ -5,7 +5,7 @@
 ## Phase 1 — Foundation
 
 - [x] **F1** Database schema + Prisma models + Docker Compose + seed script *(— | `docker compose up` creates DB, `npx prisma migrate dev` applies schema, `npx prisma db seed` populates test data`)*
-- [ ] **F2** Supabase Auth setup: Docker config + `@supabase/ssr` server client + auth helpers (`getSession`, `requireAuth`, `requireRole`) *(F1 | Server Components can call `getSession()` and read authenticated user ID from cookies)*
+- [x] **F2** Supabase Auth setup: Docker config + `@supabase/ssr` server client + auth helpers (`getSession`, `requireAuth`, `requireRole`) *(F1 | Server Components can call `getSession()` and read authenticated user ID from cookies)*
 - [ ] **F3** Signup page: form + Server Action + PostgreSQL trigger (`handle_new_user`) + role selection *(F1, F2 | User can register, Profile + UserRole rows are created, redirect to correct dashboard)*
 - [ ] **F4** Login page: form + Server Action + session + role-based redirect *(F2 | User can sign in, gets redirected by role, error shown on failure)*
 - [ ] **F5** `proxy.ts`: route protection + RBAC redirect (unauthenticated → `/login`, wrong role → correct dashboard) *(F2 | Unauthenticated users redirected from protected routes; wrong-role users redirected)*
