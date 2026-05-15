@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FilterPills } from "@/components/filter-pills";
 import { ToolCard, type ToolCardData } from "@/components/tool-card";
+import { BorrowRequestModal } from "@/components/borrower/borrow-request-modal";
 
 const STATUS_OPTIONS = [
   { label: "ทั้งหมด", value: "ALL" },
@@ -59,6 +60,8 @@ export function ToolCatalogClient({
   categories,
   filters,
 }: ToolCatalogClientProps) {
+  const [selectedTool, setSelectedTool] = useState<ToolCardData | null>(null);
+
   const categoryOptions = [
     { label: "ทั้งหมด", value: "ALL" },
     ...categories.map((c) => ({ label: c, value: c })),
@@ -97,10 +100,20 @@ export function ToolCatalogClient({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tools.map((tool) => (
-            <ToolCard key={tool.id} tool={tool} />
+            <ToolCard
+              key={tool.id}
+              tool={tool}
+              onRequest={setSelectedTool}
+            />
           ))}
         </div>
       )}
+
+      <BorrowRequestModal
+        tool={selectedTool}
+        open={selectedTool !== null}
+        onClose={() => setSelectedTool(null)}
+      />
     </div>
   );
 }

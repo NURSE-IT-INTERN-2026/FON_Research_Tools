@@ -15,9 +15,10 @@ export type ToolCardData = {
 
 type ToolCardProps = {
   tool: ToolCardData;
+  onRequest?: (tool: ToolCardData) => void;
 };
 
-export function ToolCard({ tool }: ToolCardProps) {
+export function ToolCard({ tool, onRequest }: ToolCardProps) {
   const isAvailable = tool.status === "AVAILABLE";
 
   return (
@@ -65,13 +66,9 @@ export function ToolCard({ tool }: ToolCardProps) {
           className="w-full"
           variant={isAvailable ? "default" : "outline"}
           disabled={!isAvailable}
-          asChild={isAvailable}
+          onClick={isAvailable && onRequest ? () => onRequest(tool) : undefined}
         >
-          {isAvailable ? (
-            <span>ยืมอุปกรณ์</span>
-          ) : (
-            <span>ไม่พร้อมให้ยืม</span>
-          )}
+          {isAvailable ? "ยืมอุปกรณ์" : "ไม่พร้อมให้ยืม"}
         </Button>
       </div>
     </div>
