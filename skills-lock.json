@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "api-pagination": {
+      "source": "aj-geddes/useful-ai-prompts",
+      "sourceType": "github",
+      "skillPath": "skills/api-pagination/SKILL.md",
+      "computedHash": "acea4f9aca3b15201407c3f938b5421a2601e518921baa0f9d264209b8bbf527"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
