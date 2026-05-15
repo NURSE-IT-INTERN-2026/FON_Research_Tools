@@ -4,18 +4,37 @@ import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <div className="flex flex-col items-center gap-6 text-center max-w-md">
-        <Image src="/nurse_logo.svg" alt="Research Tools" width={48} height={48} />
-        <h1 className="text-4xl font-bold tracking-tight">Research Tools</h1>
-        <p className="text-muted-foreground">
-          ระบบจัดการยืมคืนอุปกรณ์วิจัย สำหรับนักวิจัยและผู้ดูแลห้องปฏิบัติการ
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 relative">
+      {/* Geometric background accents */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute top-1/4 -left-32 w-64 h-64 border border-primary/5 rotate-45" />
+        <div className="absolute bottom-1/4 -right-32 w-64 h-64 border border-primary/5 rotate-12" />
+      </div>
+
+      <div className="flex flex-col items-center gap-8 text-center max-w-lg relative z-10">
+        <div className="animate-fade-in">
+          <Image src="/nurse_logo.svg" alt="Research Tools" width={56} height={56} />
+        </div>
+
+        <div className="animate-slide-up space-y-3">
+          <h1 className="font-heading text-5xl font-bold tracking-tight leading-none">
+            RESEARCH<br />TOOLS
+          </h1>
+          <div className="mx-auto w-12 h-[3px] bg-primary" />
+        </div>
+
+        <p className="text-muted-foreground max-w-sm animate-slide-up text-base leading-relaxed" style={{ animationDelay: "100ms" }}>
+          ระบบจัดการยืมคืนอุปกรณ์วิจัย<br />
+          สำหรับนักวิจัยและผู้ดูแลห้องปฏิบัติการ
         </p>
-        <div className="flex gap-3">
-          <Button asChild>
+
+        <div className="flex gap-3 animate-slide-up" style={{ animationDelay: "200ms" }}>
+          <Button asChild size="lg" className="font-heading font-semibold tracking-wide px-8">
             <Link href="/login">เข้าสู่ระบบ</Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button asChild variant="outline" size="lg" className="font-heading tracking-wide px-8">
             <Link href="/signup">สมัครใช้งาน</Link>
           </Button>
         </div>

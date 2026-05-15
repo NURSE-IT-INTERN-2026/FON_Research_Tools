@@ -15,17 +15,17 @@ const BOOKING_STATUS_LABELS: Record<string, string> = {
 };
 
 const TOOL_STATUS_STYLES: Record<string, string> = {
-  AVAILABLE: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  BORROWED: "bg-amber-50 text-amber-700 border-amber-200",
-  MAINTENANCE: "bg-slate-100 text-slate-600 border-slate-200",
+  AVAILABLE: "bg-emerald-50 text-emerald-800 border-emerald-300",
+  BORROWED: "bg-amber-50 text-amber-800 border-amber-300",
+  MAINTENANCE: "bg-slate-100 text-slate-600 border-slate-300",
 };
 
 const BOOKING_STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
-  APPROVED: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  REJECTED: "bg-red-50 text-red-700 border-red-200",
-  RETURNED: "bg-slate-100 text-slate-600 border-slate-200",
-  OVERDUE: "bg-red-50 text-red-700 border-red-200",
+  PENDING: "bg-amber-50 text-amber-800 border-amber-300",
+  APPROVED: "bg-emerald-50 text-emerald-800 border-emerald-300",
+  REJECTED: "bg-red-50 text-red-800 border-red-300",
+  RETURNED: "bg-slate-100 text-slate-600 border-slate-300",
+  OVERDUE: "bg-red-50 text-red-800 border-red-300",
 };
 
 type StatusBadgeProps = {
@@ -40,7 +40,7 @@ export function StatusBadge({ status, type = "tool" }: StatusBadgeProps) {
   return (
     <Badge
       variant="outline"
-      className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${styles[status] ?? ""}`}
+      className={`rounded px-2 py-0.5 text-xs font-semibold border tracking-wide ${styles[status] ?? ""}`}
     >
       {labels[status] ?? status}
     </Badge>

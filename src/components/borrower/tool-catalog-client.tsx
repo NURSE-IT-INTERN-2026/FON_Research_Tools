@@ -69,7 +69,7 @@ export function ToolCatalogClient({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border bg-card p-4 space-y-4">
+      <div className="rounded border bg-card p-4 space-y-4">
         <Suspense>
           <SearchBar initialQuery={filters.q} />
         </Suspense>
@@ -94,7 +94,7 @@ export function ToolCatalogClient({
       </div>
 
       {tools.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+        <div className="rounded border border-dashed p-10 text-center text-muted-foreground">
           ไม่พบอุปกรณ์ที่ตรงกับเงื่อนไข
         </div>
       ) : (

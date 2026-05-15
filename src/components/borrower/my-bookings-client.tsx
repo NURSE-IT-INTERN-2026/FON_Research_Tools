@@ -40,7 +40,7 @@ function CancelButton({ bookingId }: { bookingId: string }) {
   return (
     <form action={formAction}>
       <input type="hidden" name="bookingId" value={bookingId} />
-      <Button type="submit" variant="outline" size="sm" disabled={pending}>
+      <Button type="submit" variant="outline" size="sm" disabled={pending} className="rounded">
         {pending ? "กำลังยกเลิก..." : "ยกเลิกคำขอ"}
       </Button>
     </form>
@@ -49,25 +49,25 @@ function CancelButton({ bookingId }: { bookingId: string }) {
 
 function BookingCard({ booking }: BookingCardProps) {
   return (
-    <div className="flex gap-4 rounded-xl border bg-card p-4">
-      <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-muted">
+    <div className="flex gap-4 rounded border bg-card p-4 transition-all hover:border-foreground/10">
+      <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded bg-muted">
         {booking.toolImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={booking.toolImageUrl}
             alt={booking.toolName}
-            className="h-full w-full rounded-lg object-cover"
+            className="h-full w-full rounded object-cover"
           />
         ) : (
-          <Wrench className="h-8 w-8 text-muted-foreground/40" />
+          <Wrench className="h-8 w-8 text-muted-foreground/30" />
         )}
       </div>
 
       <div className="flex-1 space-y-1.5">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="font-semibold">{booking.toolName}</h3>
-            <p className="text-xs font-medium text-primary">{booking.toolCategory}</p>
+            <h3 className="font-heading font-semibold">{booking.toolName}</h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">{booking.toolCategory}</p>
           </div>
           <StatusBadge status={booking.status} type="booking" />
         </div>
@@ -116,34 +116,34 @@ const TABS = [
 export function MyBookingsClient({ bookings, tab, counts }: MyBookingsClientProps) {
   return (
     <div className="space-y-6">
-      <div className="flex gap-1 border-b">
+      <div className="flex gap-0 border-b">
         {TABS.map((t) => (
           <a
             key={t.key}
             href={`/my-bookings?tab=${t.key}`}
-            className={`relative px-4 pb-3 text-sm font-medium transition-colors ${
+            className={`relative px-4 pb-3 text-sm transition-colors ${
               tab === t.key
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-foreground font-semibold"
+                : "text-muted-foreground hover:text-foreground font-medium"
             }`}
           >
             <span>{t.label}</span>
-            <span className="ml-1.5 rounded-full bg-muted px-2 py-0.5 text-xs">
+            <span className="ml-1.5 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">
               {counts[t.key]}
             </span>
             {tab === t.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.75 bg-primary" />
             )}
           </a>
         ))}
       </div>
 
       {bookings.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+        <div className="rounded border border-dashed p-10 text-center text-muted-foreground">
           ไม่มีรายการจองในหมวดหมู่นี้
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 stagger">
           {bookings.map((booking) => (
             <BookingCard key={booking.id} booking={booking} />
           ))}

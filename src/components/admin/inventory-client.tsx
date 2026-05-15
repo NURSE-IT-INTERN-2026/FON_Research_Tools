@@ -73,9 +73,9 @@ function ToolFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg rounded">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="font-heading font-bold tracking-tight">
             {isEdit ? "แก้ไขอุปกรณ์" : "เพิ่มอุปกรณ์ใหม่"}
           </DialogTitle>
           <DialogDescription>
@@ -92,43 +92,47 @@ function ToolFormModal({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">ชื่ออุปกรณ์ *</Label>
+              <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ชื่ออุปกรณ์ *</Label>
               <Input
                 id="name"
                 name="name"
                 defaultValue={tool?.name ?? ""}
                 required
+                className="rounded"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="serialNumber">หมายเลขซีเรียล *</Label>
+              <Label htmlFor="serialNumber" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">หมายเลขซีเรียล *</Label>
               <Input
                 id="serialNumber"
                 name="serialNumber"
                 defaultValue={tool?.serialNumber ?? ""}
                 required
+                className="rounded"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">รายละเอียด</Label>
+            <Label htmlFor="description" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">รายละเอียด</Label>
             <Textarea
               id="description"
               name="description"
               defaultValue={tool?.description ?? ""}
               rows={2}
+              className="rounded"
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="category">หมวดหมู่</Label>
+              <Label htmlFor="category" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">หมวดหมู่</Label>
               <Input
                 id="category"
                 name="category"
                 defaultValue={tool?.category ?? ""}
                 list="categories"
+                className="rounded"
               />
               <datalist id="categories">
                 {categories.map((c) => (
@@ -137,34 +141,36 @@ function ToolFormModal({
               </datalist>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="location">สถานที่ตั้ง</Label>
+              <Label htmlFor="location" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">สถานที่ตั้ง</Label>
               <Input
                 id="location"
                 name="location"
                 defaultValue={tool?.location ?? ""}
+                className="rounded"
               />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">URL รูปภาพ</Label>
+              <Label htmlFor="imageUrl" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">URL รูปภาพ</Label>
               <Input
                 id="imageUrl"
                 name="imageUrl"
                 type="url"
                 defaultValue={tool?.imageUrl ?? ""}
                 placeholder="https://..."
+                className="rounded"
               />
             </div>
             {!isEdit && (
               <div className="space-y-2">
-                <Label htmlFor="status">สถานะ</Label>
+                <Label htmlFor="status" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">สถานะ</Label>
                 <select
                   id="status"
                   name="status"
                   defaultValue="AVAILABLE"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="flex h-9 w-full rounded border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="AVAILABLE">พร้อมใช้งาน</option>
                   <option value="MAINTENANCE">ซ่อมบำรุง</option>
@@ -178,10 +184,11 @@ function ToolFormModal({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="rounded"
             >
               ยกเลิก
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending} className="rounded font-semibold">
               {pending
                 ? "กำลังบันทึก..."
                 : isEdit
@@ -216,6 +223,7 @@ function ToggleButton({ toolId, currentStatus }: { toolId: string; currentStatus
         variant="outline"
         size="sm"
         disabled={pending || currentStatus === "BORROWED"}
+        className="rounded"
         title={
           currentStatus === "BORROWED"
             ? "ไม่สามารถเปลี่ยนสถานะอุปกรณ์ที่กำลังยืมอยู่"
@@ -252,6 +260,7 @@ function DeactivateButton({ tool }: { tool: ToolRow }) {
         size="sm"
         onClick={() => setConfirmOpen(true)}
         disabled={tool.status === "BORROWED"}
+        className="rounded"
         title={
           tool.status === "BORROWED"
             ? "ไม่สามารถปิดใช้งานอุปกรณ์ที่กำลังยืมอยู่"
@@ -263,21 +272,21 @@ function DeactivateButton({ tool }: { tool: ToolRow }) {
       </Button>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm rounded">
           <DialogHeader>
-            <DialogTitle>ยืนยันการปิดใช้งาน</DialogTitle>
+            <DialogTitle className="font-heading font-bold tracking-tight">ยืนยันการปิดใช้งาน</DialogTitle>
             <DialogDescription>
               คุณต้องการปิดใช้งาน &quot;{tool.name}&quot; หรือไม่?
               อุปกรณ์ที่ปิดใช้งานจะไม่แสดงในรายการผู้ยืม
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} className="rounded">
               ยกเลิก
             </Button>
             <form action={formAction}>
               <input type="hidden" name="toolId" value={tool.id} />
-              <Button type="submit" variant="destructive" disabled={pending}>
+              <Button type="submit" variant="destructive" disabled={pending} className="rounded font-semibold">
                 {pending ? "กำลังดำเนินการ..." : "ยืนยันปิดใช้งาน"}
               </Button>
             </form>
@@ -308,7 +317,7 @@ export function InventoryClient({ tools, categories }: InventoryClientProps) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="rounded font-semibold">
           <Plus className="mr-1.5 h-4 w-4" />
           เพิ่มอุปกรณ์
         </Button>
@@ -323,7 +332,7 @@ export function InventoryClient({ tools, categories }: InventoryClientProps) {
       />
 
       {activeTools.length === 0 && inactiveTools.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+        <div className="rounded border border-dashed p-10 text-center text-muted-foreground">
           ยังไม่มีอุปกรณ์ในระบบ
         </div>
       ) : (
@@ -331,7 +340,7 @@ export function InventoryClient({ tools, categories }: InventoryClientProps) {
           <ToolTable tools={activeTools} onEdit={openEdit} />
           {inactiveTools.length > 0 && (
             <div className="space-y-2">
-              <h2 className="text-sm font-medium text-muted-foreground">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 ปิดใช้งาน ({inactiveTools.length})
               </h2>
               <ToolTable tools={inactiveTools} onEdit={openEdit} inactive />
@@ -353,15 +362,15 @@ function ToolTable({
   inactive?: boolean;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card">
-      <table className="w-full min-w-[640px] text-sm">
+    <div className="overflow-x-auto rounded border bg-card">
+      <table className="w-full min-w-160 text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="px-4 py-3 text-left font-medium">อุปกรณ์</th>
-            <th className="px-4 py-3 text-left font-medium">หมายเลขซีเรียล</th>
-            <th className="px-4 py-3 text-left font-medium">สถานะ</th>
-            <th className="px-4 py-3 text-left font-medium">สถานที่ตั้ง</th>
-            <th className="px-4 py-3 text-right font-medium">การดำเนินการ</th>
+            <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">อุปกรณ์</th>
+            <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">หมายเลขซีเรียล</th>
+            <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">สถานะ</th>
+            <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">สถานที่ตั้ง</th>
+            <th className="px-4 py-3 text-right font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">การดำเนินการ</th>
           </tr>
         </thead>
         <tbody>
@@ -372,21 +381,21 @@ function ToolTable({
             >
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted">
                     {tool.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={tool.imageUrl}
                         alt={tool.name}
-                        className="h-full w-full rounded-lg object-cover"
+                        className="h-full w-full rounded object-cover"
                       />
                     ) : (
-                      <Wrench className="h-4 w-4 text-muted-foreground/40" />
+                      <Wrench className="h-4 w-4 text-muted-foreground/30" />
                     )}
                   </div>
                   <div>
-                    <p className="font-medium">{tool.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-semibold">{tool.name}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-primary">
                       {tool.category}
                     </p>
                   </div>
@@ -402,11 +411,12 @@ function ToolTable({
                 {tool.location || "—"}
               </td>
               <td className="px-4 py-3">
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-end gap-1.5">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => onEdit(tool)}
+                    className="rounded"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>

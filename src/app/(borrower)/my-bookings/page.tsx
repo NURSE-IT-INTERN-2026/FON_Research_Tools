@@ -67,8 +67,8 @@ export default async function MyBookingsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">การจองของฉัน</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">การจองของฉัน</h1>
+        <p className="text-muted-foreground mt-3">
           ติดตามคำขอยืมและการยืมของคุณ
         </p>
       </div>

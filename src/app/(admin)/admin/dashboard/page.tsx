@@ -48,11 +48,11 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">แดชบอร์ด</h1>
-        <p className="text-muted-foreground mt-1">ภาพรวมการจัดการอุปกรณ์</p>
+        <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">แดชบอร์ด</h1>
+        <p className="text-muted-foreground mt-3">ภาพรวมการจัดการอุปกรณ์</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 stagger">
         <StatCard
           icon={Wrench}
           value={totalTools}
@@ -79,9 +79,9 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      <Card>
+      <Card className="rounded border">
         <CardHeader>
-          <CardTitle>กิจกรรมล่าสุด</CardTitle>
+          <CardTitle className="font-heading font-bold tracking-tight">กิจกรรมล่าสุด</CardTitle>
         </CardHeader>
         <CardContent>
           {recentBookings.length === 0 ? (
@@ -96,15 +96,15 @@ export default async function AdminDashboardPage() {
                   className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                 >
                   <p className="text-sm">
-                    <span className="font-medium">
+                    <span className="font-semibold">
                       {booking.profile.name}
                     </span>{" "}
                     <span className="text-muted-foreground">
                       {VERB_MAP[booking.status]}
                     </span>{" "}
-                    <span className="font-medium">{booking.tool.name}</span>
+                    <span className="font-semibold">{booking.tool.name}</span>
                   </p>
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                  <span className="shrink-0 text-xs text-muted-foreground font-mono">
                     {timeAgo(booking.updatedAt)}
                   </span>
                 </div>

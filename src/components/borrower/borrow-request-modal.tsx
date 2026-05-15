@@ -41,19 +41,19 @@ export function BorrowRequestModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl rounded">
         <DialogHeader>
-          <DialogTitle>ยืมอุปกรณ์</DialogTitle>
+          <DialogTitle className="font-heading font-bold tracking-tight">ยืมอุปกรณ์</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-3">
-            <div className="rounded-xl border bg-muted/50 p-4 space-y-2">
+            <div className="rounded border bg-muted/50 p-4 space-y-2">
               <div className="flex items-start justify-between">
-                <h3 className="font-semibold">{tool.name}</h3>
+                <h3 className="font-heading font-semibold">{tool.name}</h3>
                 <StatusBadge status={tool.status} />
               </div>
-              <p className="text-xs font-medium text-primary">{tool.category}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">{tool.category}</p>
               {tool.description && (
                 <p className="text-sm text-muted-foreground">{tool.description}</p>
               )}
@@ -70,44 +70,47 @@ export function BorrowRequestModal({
             <input type="hidden" name="toolId" value={tool.id} />
 
             {state.error && (
-              <div className="rounded-md bg-destructive/15 px-4 py-3 text-sm text-destructive">
+              <div className="rounded border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive">
                 {state.error}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="startDate">วันที่เริ่มต้น</Label>
+              <Label htmlFor="startDate" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">วันที่เริ่มต้น</Label>
               <Input
                 id="startDate"
                 name="startDate"
                 type="date"
                 required
                 min={new Date().toISOString().split("T")[0]}
+                className="rounded"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endDate">วันที่สิ้นสุด</Label>
+              <Label htmlFor="endDate" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">วันที่สิ้นสุด</Label>
               <Input
                 id="endDate"
                 name="endDate"
                 type="date"
                 required
+                className="rounded"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="purpose">วัตถุประสงค์</Label>
+              <Label htmlFor="purpose" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">วัตถุประสงค์</Label>
               <Textarea
                 id="purpose"
                 name="purpose"
                 placeholder="ระบุวัตถุประสงค์ในการยืม"
                 rows={3}
                 required
+                className="rounded"
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={pending}>
+            <Button type="submit" className="w-full font-semibold rounded" disabled={pending}>
               {pending ? "กำลังส่ง..." : "ส่งคำขอยืม"}
             </Button>
           </form>

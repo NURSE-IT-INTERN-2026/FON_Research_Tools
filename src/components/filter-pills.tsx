@@ -24,17 +24,17 @@ export function FilterPills({ paramName, options, selected, basePath = "/dashboa
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1.5">
       {options.map((opt) => {
         const isActive = selected === opt.value;
         return (
           <button
             key={opt.value}
             onClick={() => select(opt.value)}
-            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+            className={`rounded px-3 py-1.5 text-xs font-medium border transition-all duration-150 ${
               isActive
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                ? "bg-primary text-primary-foreground border-primary font-semibold"
+                : "border-border bg-background hover:border-foreground/20 hover:bg-muted text-muted-foreground"
             }`}
           >
             {opt.label}

@@ -84,27 +84,28 @@ function NotesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm rounded">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="font-heading font-bold tracking-tight">{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <form action={formAction} className="grid gap-4 py-2">
           <input type="hidden" name="bookingId" value={bookingId} />
           <div className="space-y-2">
-            <Label htmlFor="adminNotes">หมายเหตุ (ไม่บังคับ)</Label>
+            <Label htmlFor="adminNotes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">หมายเหตุ (ไม่บังคับ)</Label>
             <Textarea
               id="adminNotes"
               name="adminNotes"
               rows={3}
               placeholder="เพิ่มหมายเหตุ..."
+              className="rounded"
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded">
               ยกเลิก
             </Button>
-            <Button type="submit" variant={variant} disabled={pending}>
+            <Button type="submit" variant={variant} disabled={pending} className="rounded font-semibold">
               {pending ? "กำลังดำเนินการ..." : confirmLabel}
             </Button>
           </DialogFooter>
@@ -141,11 +142,11 @@ function ActionButtons({ booking }: { booking: BookingRow }) {
     <>
       {booking.status === "PENDING" && (
         <>
-          <Button size="sm" onClick={() => setDialogType("approve")}>
+          <Button size="sm" onClick={() => setDialogType("approve")} className="rounded font-semibold">
             <CheckCircle className="mr-1 h-3.5 w-3.5" />
             อนุมัติ
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setDialogType("reject")}>
+          <Button size="sm" variant="outline" onClick={() => setDialogType("reject")} className="rounded">
             <XCircle className="mr-1 h-3.5 w-3.5" />
             ปฏิเสธ
           </Button>
@@ -156,14 +157,14 @@ function ActionButtons({ booking }: { booking: BookingRow }) {
         <>
           <form action={returnAction}>
             <input type="hidden" name="bookingId" value={booking.id} />
-            <Button type="submit" size="sm" disabled={returnPending}>
+            <Button type="submit" size="sm" disabled={returnPending} className="rounded font-semibold">
               <RotateCcw className="mr-1 h-3.5 w-3.5" />
               {returnPending ? "กำลังบันทึก..." : "คืนแล้ว"}
             </Button>
           </form>
           <form action={overdueAction}>
             <input type="hidden" name="bookingId" value={booking.id} />
-            <Button type="submit" size="sm" variant="outline" disabled={overduePending}>
+            <Button type="submit" size="sm" variant="outline" disabled={overduePending} className="rounded">
               <AlertTriangle className="mr-1 h-3.5 w-3.5" />
               เกินกำหนด
             </Button>
@@ -174,7 +175,7 @@ function ActionButtons({ booking }: { booking: BookingRow }) {
       {booking.status === "OVERDUE" && (
         <form action={returnAction}>
           <input type="hidden" name="bookingId" value={booking.id} />
-          <Button type="submit" size="sm" disabled={returnPending}>
+          <Button type="submit" size="sm" disabled={returnPending} className="rounded font-semibold">
             <RotateCcw className="mr-1 h-3.5 w-3.5" />
             {returnPending ? "กำลังบันทึก..." : "คืนแล้ว"}
           </Button>
@@ -221,20 +222,20 @@ export function RequestsClient({ bookings, currentStatus }: RequestsClientProps)
       />
 
       {bookings.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+        <div className="rounded border border-dashed p-10 text-center text-muted-foreground">
           ไม่พบคำขอยืม
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
+        <div className="overflow-x-auto rounded border bg-card">
           <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium">ผู้ยืม</th>
-                <th className="px-4 py-3 text-left font-medium">อุปกรณ์</th>
-                <th className="px-4 py-3 text-left font-medium">วันที่</th>
-                <th className="px-4 py-3 text-left font-medium">วัตถุประสงค์</th>
-                <th className="px-4 py-3 text-left font-medium">สถานะ</th>
-                <th className="px-4 py-3 text-right font-medium">การดำเนินการ</th>
+                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">ผู้ยืม</th>
+                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">อุปกรณ์</th>
+                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">วันที่</th>
+                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">วัตถุประสงค์</th>
+                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">สถานะ</th>
+                <th className="px-4 py-3 text-right font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">การดำเนินการ</th>
               </tr>
             </thead>
             <tbody>
@@ -251,7 +252,7 @@ export function RequestsClient({ bookings, currentStatus }: RequestsClientProps)
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-3">{booking.toolName}</td>
+                  <td className="px-4 py-3 font-medium">{booking.toolName}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                     {booking.startDate} — {booking.endDate}
                   </td>
@@ -264,7 +265,7 @@ export function RequestsClient({ bookings, currentStatus }: RequestsClientProps)
                     <StatusBadge status={booking.status} type="booking" />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-1.5">
                       <ActionButtons booking={booking} />
                     </div>
                   </td>
