@@ -20,7 +20,7 @@
 
 ## Phase 3 — Admin Portal
 
-- [ ] **F11** Admin dashboard: 4 stat cards (linked) + recent activity feed *(F6, F7 | Admin sees live counts from DB; activity feed shows latest 10 bookings with borrower name + verb + tool name)*
+- [x] **F11** Admin dashboard: 4 stat cards (linked) + recent activity feed *(F6, F7 | Admin sees live counts from DB; activity feed shows latest 10 bookings with borrower name + verb + tool name)*
 - [ ] **F12** Inventory CRUD: data table, create/edit tool modal, status toggle, deactivate/archive with confirm *(F6, F7 | Admin can add, edit, deactivate tools (soft delete); toggle MAINTENANCE ↔ AVAILABLE; data persists in DB; deactivated tools hidden from borrower catalog)*
 - [ ] **F13** Request management: approve/reject with notes dialog, mark returned, flag overdue *(F6, F7 | Admin can approve (→ tool BORROWED), reject with notes, mark returned (→ tool AVAILABLE), flag overdue; availability check runs on return)*
 - [ ] **F14** Users list: read-only table (name, email, department, role) *(F6, F7 | Admin sees all registered users with roles)*
