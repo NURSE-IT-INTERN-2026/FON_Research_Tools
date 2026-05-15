@@ -24,6 +24,7 @@
 - [x] **F12** Inventory CRUD: data table, create/edit tool modal, status toggle, deactivate/archive with confirm *(F6, F7 | Admin can add, edit, deactivate tools (soft delete); toggle MAINTENANCE ↔ AVAILABLE; data persists in DB; deactivated tools hidden from borrower catalog)*
 - [x] **F13** Request management: approve/reject with notes dialog, mark returned, flag overdue *(F6, F7 | Admin can approve (→ tool BORROWED), reject with notes, mark returned (→ tool AVAILABLE), flag overdue; availability check runs on return)*
 - [x] **F14** Users list: read-only table (name, email, department, role) *(F6, F7 | Admin sees all registered users with roles)*
+- [x] **F15** Activity log: comprehensive audit trail tracking all app mutations (bookings, tools, auth) with admin-only slide-out panel (25 recent) + dedicated full page with search, filter by action/targetType/user, and pagination *(F6, F7, F11 | Admin sees recent activities in panel via bell icon; full page at /admin/activity-log with URL-driven filters; dashboard reads from ActivityLog table)*
 
 ---
 
@@ -43,3 +44,4 @@ Each slice delivers a working end-to-end feature:
 10. **F12** — Admin inventory
 11. **F13** — Admin requests
 12. **F14** — Admin users
+13. **F15** — Activity log (panel + page)

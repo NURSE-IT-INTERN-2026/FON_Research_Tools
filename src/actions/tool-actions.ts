@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
+import { logActivity } from "@/lib/activity-log";
 import db from "@/lib/db";
 
 export type ActionState = { success?: boolean; error?: string };
@@ -10,7 +11,7 @@ export async function saveTool(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("ADMIN");
+  const ctx = await requireRole("ADMIN");
 
   const id = formData.get("id") as string;
   const name = (formData.get("name") as string)?.trim();
@@ -37,11 +38,19 @@ export async function saveTool(
       where: { id },
       data: { name, description, category, serialNumber, imageUrl, location },
     });
+
+    await logActivity({
+      action: "TOOL_UPDATE",
+      userId: ctx.userId,
+      targetType: "Tool",
+      targetId: id,
+      targetLabel: name,
+    });
   } else {
     const dup = await db.tool.findUnique({ where: { serialNumber } });
     if (dup) return { error: "หมายเลขซีเรียลนี้มีอยู่ในระบบแล้ว" };
 
-    await db.tool.create({
+    const tool = await db.tool.create({
       data: {
         name,
         description,
@@ -51,6 +60,14 @@ export async function saveTool(
         location,
         status: status === "MAINTENANCE" ? "MAINTENANCE" : "AVAILABLE",
       },
+    });
+
+    await logActivity({
+      action: "TOOL_CREATE",
+      userId: ctx.userId,
+      targetType: "Tool",
+      targetId: tool.id,
+      targetLabel: name,
     });
   }
 
@@ -63,7 +80,7 @@ export async function toggleToolStatus(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("ADMIN");
+  const ctx = await requireRole("ADMIN");
 
   const toolId = formData.get("toolId") as string;
   const tool = await db.tool.findUnique({ where: { id: toolId } });
@@ -72,8 +89,18 @@ export async function toggleToolStatus(
     return { error: "ไม่สามารถเปลี่ยนสถานะอุปกรณ์ที่กำลังยืมอยู่" };
   }
 
+  const oldStatus = tool.status;
   const newStatus = tool.status === "AVAILABLE" ? "MAINTENANCE" : "AVAILABLE";
   await db.tool.update({ where: { id: toolId }, data: { status: newStatus } });
+
+  await logActivity({
+    action: "TOOL_TOGGLE_STATUS",
+    userId: ctx.userId,
+    targetType: "Tool",
+    targetId: toolId,
+    targetLabel: tool.name,
+    metadata: { from: oldStatus, to: newStatus },
+  });
 
   revalidatePath("/admin/inventory");
   revalidatePath("/dashboard");
@@ -84,7 +111,7 @@ export async function deactivateTool(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("ADMIN");
+  const ctx = await requireRole("ADMIN");
 
   const toolId = formData.get("toolId") as string;
   const tool = await db.tool.findUnique({
@@ -104,6 +131,14 @@ export async function deactivateTool(
       data: { isActive: false },
     });
   }
+
+  await logActivity({
+    action: "TOOL_DEACTIVATE",
+    userId: ctx.userId,
+    targetType: "Tool",
+    targetId: toolId,
+    targetLabel: tool.name,
+  });
 
   revalidatePath("/admin/inventory");
   revalidatePath("/dashboard");

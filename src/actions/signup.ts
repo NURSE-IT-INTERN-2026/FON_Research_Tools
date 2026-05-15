@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
+import { logActivity } from "@/lib/activity-log";
 import db from "@/lib/db";
 
 export type SignupState = {
@@ -56,5 +57,14 @@ export async function signup(
 
   await createSession({ userId, email, role: role as "ADMIN" | "BORROWER", name });
 
+  await logActivity({
+    action: "USER_SIGNUP",
+    userId,
+    targetType: "Profile",
+    targetId: userId,
+    targetLabel: name,
+  });
+
+  // logActivity must remain above redirect() — redirect() throws, so code below it never runs
   redirect(role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
 }

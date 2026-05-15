@@ -33,8 +33,10 @@ src/app/
     │   └── page.tsx              ← Tool CRUD table
     ├── requests/
     │   └── page.tsx              ← Borrow request management
-    └── users/
-        └── page.tsx              ← Read-only user list
+    ├── users/
+    │   └── page.tsx              ← Read-only user list
+    └── activity-log/
+        └── page.tsx              ← Full activity log with search + filters
 ```
 
 ---
@@ -64,6 +66,7 @@ src/app/
 | `/admin/inventory` | Tool CRUD | `tools` table, ordered by name |
 | `/admin/requests` | Request management | `bookings` + `tools` + `profiles` join |
 | `/admin/users` | User list | `profiles` + `user_roles` join |
+| `/admin/activity-log` | Activity log | `activity_logs` + `profiles` join, filtered/searched via URL `searchParams` (server-side), paginated with `take` param |
 
 ---
 
@@ -95,6 +98,8 @@ All mutations use Next.js Server Actions, not API routes.
 | `rejectBooking` | Admin rejects request | Update `bookings` → REJECTED + adminNotes |
 | `markReturned` | Admin marks returned | Update `bookings` → RETURNED, set `returnDate`; Update `tools` → AVAILABLE (if no other APPROVED bookings) |
 | `markOverdue` | Admin flags overdue | Update `bookings` → OVERDUE |
+| `getRecentActivity` | Activity panel open | Query `activity_logs` last 25, admin-only |
+| `logActivity` | Internal (after every mutation) | Insert `activity_logs` row (fire-and-forget, wrapped in try/catch) |
 
 ---
 

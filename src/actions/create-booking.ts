@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth";
+import { logActivity } from "@/lib/activity-log";
 import db from "@/lib/db";
 
 export type CreateBookingState = {
@@ -41,7 +42,7 @@ export async function createBooking(
     return { error: "อุปกรณ์นี้ไม่พร้อมให้ยืมในขณะนี้" };
   }
 
-  await db.booking.create({
+  const booking = await db.booking.create({
     data: {
       userId: user.userId,
       toolId,
@@ -50,6 +51,15 @@ export async function createBooking(
       purpose,
       status: "PENDING",
     },
+  });
+
+  await logActivity({
+    action: "BOOKING_CREATE",
+    userId: user.userId,
+    targetType: "Booking",
+    targetId: booking.id,
+    targetLabel: `${tool.name}`,
+    metadata: { purpose },
   });
 
   revalidatePath("/dashboard");

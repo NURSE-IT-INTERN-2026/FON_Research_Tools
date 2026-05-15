@@ -1,4 +1,6 @@
 import db from "@/lib/db";
+import { timeAgo } from "@/lib/utils";
+import { ACTION_LABELS } from "@/lib/activity-meta";
 import { StatCard } from "@/components/stat-card";
 import {
   Card,
@@ -8,39 +10,18 @@ import {
 } from "@/components/ui/card";
 import { Wrench, PackageCheck, Clock, AlertTriangle } from "lucide-react";
 
-const VERB_MAP: Record<string, string> = {
-  PENDING: "ยื่นคำขอยืม",
-  APPROVED: "ได้รับการอนุมัติยืม",
-  REJECTED: "ถูกปฏิเสธยืม",
-  RETURNED: "คืน",
-  OVERDUE: "เกินกำหนดคืน",
-};
-
-function timeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return "เมื่อสักครู่";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} นาทีที่แล้ว`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} ชั่วโมงที่แล้ว`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} วันที่แล้ว`;
-  return date.toLocaleDateString("th-TH");
-}
-
 export default async function AdminDashboardPage() {
-  const [totalTools, borrowedTools, pendingRequests, overdueReturns, recentBookings] =
+  const [totalTools, borrowedTools, pendingRequests, overdueReturns, recentActivity] =
     await Promise.all([
       db.tool.count({ where: { isActive: true } }),
       db.tool.count({ where: { status: "BORROWED" } }),
       db.booking.count({ where: { status: "PENDING" } }),
       db.booking.count({ where: { status: "OVERDUE" } }),
-      db.booking.findMany({
+      db.activityLog.findMany({
         take: 10,
-        orderBy: { updatedAt: "desc" },
+        orderBy: { createdAt: "desc" },
         include: {
           profile: { select: { name: true } },
-          tool: { select: { name: true } },
         },
       }),
     ]);
@@ -84,28 +65,33 @@ export default async function AdminDashboardPage() {
           <CardTitle className="font-heading font-bold tracking-tight">กิจกรรมล่าสุด</CardTitle>
         </CardHeader>
         <CardContent>
-          {recentBookings.length === 0 ? (
+          {recentActivity.length === 0 ? (
             <p className="py-4 text-center text-muted-foreground">
               ยังไม่มีกิจกรรม
             </p>
           ) : (
             <div className="divide-y">
-              {recentBookings.map((booking) => (
+              {recentActivity.map((log) => (
                 <div
-                  key={booking.id}
+                  key={log.id}
                   className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                 >
                   <p className="text-sm">
                     <span className="font-semibold">
-                      {booking.profile.name}
+                      {log.profile.name}
                     </span>{" "}
                     <span className="text-muted-foreground">
-                      {VERB_MAP[booking.status]}
-                    </span>{" "}
-                    <span className="font-semibold">{booking.tool.name}</span>
+                      {ACTION_LABELS[log.action] ?? log.action}
+                    </span>
+                    {log.targetLabel && (
+                      <>
+                        {" "}
+                        <span className="font-semibold">{log.targetLabel}</span>
+                      </>
+                    )}
                   </p>
                   <span className="shrink-0 text-xs text-muted-foreground font-mono">
-                    {timeAgo(booking.updatedAt)}
+                    {timeAgo(log.createdAt)}
                   </span>
                 </div>
               ))}

@@ -7,6 +7,7 @@ import { createSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { clearSession } from "@/lib/auth/session";
 import { consumeRateLimit, resetRateLimit } from "@/lib/security/rate-limit";
+import { logActivity } from "@/lib/activity-log";
 import db from "@/lib/db";
 
 const RATE_LIMIT_WINDOW_MS = 1000 * 60 * 10; // 10 minutes
@@ -89,6 +90,13 @@ export async function login(
     name: profile.name,
   });
 
+  await logActivity({
+    action: "USER_LOGIN",
+    userId: profile.id,
+    targetLabel: profile.name,
+  });
+
+  // logActivity must remain above redirect() — redirect() throws, so code below it never runs
   redirect(getRoleRedirectPath(role as "ADMIN" | "BORROWER"));
 }
 

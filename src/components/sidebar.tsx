@@ -10,6 +10,7 @@ import {
   Wrench,
   ClipboardList,
   Users,
+  Activity,
   Menu,
   X,
 } from "lucide-react";
@@ -22,6 +23,7 @@ const ICON_MAP = {
   Wrench,
   ClipboardList,
   Users,
+  Activity,
 } as const;
 
 export type IconName = keyof typeof ICON_MAP;
@@ -36,9 +38,10 @@ type SidebarProps = {
   role: "ADMIN" | "BORROWER";
   navItems: NavItem[];
   userEmail: string;
+  headerActions?: React.ReactNode;
 };
 
-export function Sidebar({ navItems, userEmail }: SidebarProps) {
+export function Sidebar({ navItems, userEmail, headerActions }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -63,6 +66,7 @@ export function Sidebar({ navItems, userEmail }: SidebarProps) {
           <Image src="/nurse_logo.svg" alt="Research Tools" width={20} height={20} />
           <span className="font-heading font-semibold text-sm tracking-wide">RESEARCH TOOLS</span>
         </div>
+        {headerActions && <div className="ml-auto">{headerActions}</div>}
       </header>
 
       {/* Mobile overlay */}

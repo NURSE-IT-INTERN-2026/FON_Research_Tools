@@ -25,6 +25,21 @@ enum BookingStatus {
   RETURNED
   OVERDUE
 }
+
+enum ActivityAction {
+  BOOKING_CREATE
+  BOOKING_APPROVE
+  BOOKING_REJECT
+  BOOKING_RETURN
+  BOOKING_OVERDUE
+  BOOKING_CANCEL
+  TOOL_CREATE
+  TOOL_UPDATE
+  TOOL_DEACTIVATE
+  TOOL_TOGGLE_STATUS
+  USER_SIGNUP
+  USER_LOGIN
+}
 ```
 
 ---
@@ -46,8 +61,9 @@ model Profile {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  userRole  UserRole?
-  bookings  Booking[]
+  userRole      UserRole?
+  bookings      Booking[]
+  activityLogs  ActivityLog[]
 }
 ```
 
@@ -107,13 +123,33 @@ model Booking {
 }
 ```
 
----
+### ActivityLog
 
-## Relations Summary
+```prisma
+model ActivityLog {
+  id          String         @id @default(cuid())
+  action      ActivityAction
+  userId      String
+  targetType  String?        // "Booking" | "Tool" | "Profile"
+  targetId    String?
+  targetLabel String?        // snapshot label (tool name, borrower→tool, etc.)
+  metadata    String?        // JSON string for extra context
+  createdAt   DateTime       @default(now())
+  profile     Profile        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([action])
+  @@index([targetType])
+  @@index([userId])
+  @@index([createdAt])
+}
+```
+
+Fire-and-forget audit trail. `logActivity()` wraps writes in try/catch so a failed log never breaks user actions. `targetLabel` captures a human-readable snapshot (e.g. `"Somchai → Microscope"`) so the log remains readable even if the referenced entity is later modified or deleted.
 
 ```
-Profile 1──1 UserRole  (userId @unique)
+Profile 1──1 UserRole     (userId @unique)
 Profile 1──N Booking
+Profile 1──N ActivityLog
 Tool    1──N Booking
 ```
 

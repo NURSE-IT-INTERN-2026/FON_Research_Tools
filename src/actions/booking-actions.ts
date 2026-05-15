@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
+import { logActivity } from "@/lib/activity-log";
 import db from "@/lib/db";
 
 export type ActionState = { success?: boolean; error?: string };
@@ -10,13 +11,14 @@ export async function approveBooking(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("ADMIN");
+  const ctx = await requireRole("ADMIN");
 
   const bookingId = formData.get("bookingId") as string;
   const adminNotes = (formData.get("adminNotes") as string)?.trim() || null;
 
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
+    include: { profile: { select: { name: true } }, tool: { select: { name: true } } },
   });
   if (!booking) return { error: "ไม่พบคำขอยืม" };
   if (booking.status !== "PENDING") {
@@ -34,6 +36,15 @@ export async function approveBooking(
     }),
   ]);
 
+  await logActivity({
+    action: "BOOKING_APPROVE",
+    userId: ctx.userId,
+    targetType: "Booking",
+    targetId: bookingId,
+    targetLabel: `${booking.profile.name} → ${booking.tool.name}`,
+    metadata: adminNotes ? { adminNotes } : null,
+  });
+
   revalidatePath("/admin/requests");
   revalidatePath("/admin/dashboard");
   revalidatePath("/my-bookings");
@@ -45,13 +56,14 @@ export async function rejectBooking(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("ADMIN");
+  const ctx = await requireRole("ADMIN");
 
   const bookingId = formData.get("bookingId") as string;
   const adminNotes = (formData.get("adminNotes") as string)?.trim() || null;
 
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
+    include: { profile: { select: { name: true } }, tool: { select: { name: true } } },
   });
   if (!booking) return { error: "ไม่พบคำขอยืม" };
   if (booking.status !== "PENDING") {
@@ -61,6 +73,15 @@ export async function rejectBooking(
   await db.booking.update({
     where: { id: bookingId },
     data: { status: "REJECTED", adminNotes },
+  });
+
+  await logActivity({
+    action: "BOOKING_REJECT",
+    userId: ctx.userId,
+    targetType: "Booking",
+    targetId: bookingId,
+    targetLabel: `${booking.profile.name} → ${booking.tool.name}`,
+    metadata: adminNotes ? { adminNotes } : null,
   });
 
   revalidatePath("/admin/requests");
@@ -73,12 +94,13 @@ export async function markReturned(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("ADMIN");
+  const ctx = await requireRole("ADMIN");
 
   const bookingId = formData.get("bookingId") as string;
 
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
+    include: { profile: { select: { name: true } }, tool: { select: { name: true } } },
   });
   if (!booking) return { error: "ไม่พบคำขอยืม" };
   if (booking.status !== "APPROVED" && booking.status !== "OVERDUE") {
@@ -103,6 +125,14 @@ export async function markReturned(
       : []),
   ]);
 
+  await logActivity({
+    action: "BOOKING_RETURN",
+    userId: ctx.userId,
+    targetType: "Booking",
+    targetId: bookingId,
+    targetLabel: `${booking.profile.name} → ${booking.tool.name}`,
+  });
+
   revalidatePath("/admin/requests");
   revalidatePath("/admin/dashboard");
   revalidatePath("/admin/inventory");
@@ -115,12 +145,13 @@ export async function markOverdue(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("ADMIN");
+  const ctx = await requireRole("ADMIN");
 
   const bookingId = formData.get("bookingId") as string;
 
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
+    include: { profile: { select: { name: true } }, tool: { select: { name: true } } },
   });
   if (!booking) return { error: "ไม่พบคำขอยืม" };
   if (booking.status !== "APPROVED") {
@@ -130,6 +161,14 @@ export async function markOverdue(
   await db.booking.update({
     where: { id: bookingId },
     data: { status: "OVERDUE" },
+  });
+
+  await logActivity({
+    action: "BOOKING_OVERDUE",
+    userId: ctx.userId,
+    targetType: "Booking",
+    targetId: bookingId,
+    targetLabel: `${booking.profile.name} → ${booking.tool.name}`,
   });
 
   revalidatePath("/admin/requests");

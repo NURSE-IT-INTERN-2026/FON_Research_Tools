@@ -27,6 +27,21 @@ enum BookingStatus {
   OVERDUE
 }
 
+enum ActivityAction {
+  BOOKING_CREATE
+  BOOKING_APPROVE
+  BOOKING_REJECT
+  BOOKING_RETURN
+  BOOKING_OVERDUE
+  BOOKING_CANCEL
+  TOOL_CREATE
+  TOOL_UPDATE
+  TOOL_DEACTIVATE
+  TOOL_TOGGLE_STATUS
+  USER_SIGNUP
+  USER_LOGIN
+}
+
 model Profile {
   id           String    @id
   name         String
@@ -36,8 +51,9 @@ model Profile {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  userRole UserRole?
-  bookings Booking[]
+  userRole     UserRole?
+  bookings     Booking[]
+  activityLogs ActivityLog[]
 }
 
 model UserRole {
@@ -82,4 +98,22 @@ model Booking {
   @@index([userId])
   @@index([toolId])
   @@index([status])
+}
+
+model ActivityLog {
+  id          String         @id @default(cuid())
+  action      ActivityAction
+  userId      String
+  targetType  String?
+  targetId    String?
+  targetLabel String?
+  metadata    String?
+  createdAt   DateTime       @default(now())
+
+  profile     Profile        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([action])
+  @@index([targetType])
+  @@index([userId])
+  @@index([createdAt])
 }
