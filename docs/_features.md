@@ -10,11 +10,11 @@
 - [x] **F4** Login page: form + Server Action + session + role-based redirect + rate limiting *(F2 | User can sign in, gets redirected by role, error shown on failure)*
 - [x] **F5** `proxy.ts`: route protection + RBAC redirect (unauthenticated → `/login`, wrong role → correct dashboard) *(F2 | Unauthenticated users redirected from protected routes; wrong-role users redirected)*
 - [x] **F6** Layout shell: root layout, public layout (centered card), borrower layout (orange sidebar), admin layout (purple sidebar) *(F5 | Each role group renders the correct sidebar; public pages have no sidebar)*
-- [ ] **F7** Design tokens + theme system (CSS custom properties for orange borrower / purple admin) *(— | Two theme CSS classes swap primary, accent, sidebar, and ring tokens)*
+- [x] **F7** Design tokens + theme system (CSS custom properties for orange borrower / purple admin) *(— | Two theme CSS classes swap primary, accent, sidebar, and ring tokens)*
 
 ## Phase 2 — Borrower Portal
 
-- [ ] **F8** Tool catalog: browse, search (URL searchParams), category/status filter pills, responsive tool card grid *(F6, F7 | Borrower sees tool cards, can filter by category and status, search by name; filters update URL and re-render server-side)*
+- [x] **F8** Tool catalog: browse, search (URL searchParams), category/status filter pills, responsive tool card grid *(F6, F7 | Borrower sees tool cards, can filter by category and status, search by name; filters update URL and re-render server-side)*
 - [ ] **F9** Borrow request: modal form with date pickers + validation + Server Action `createBooking` *(F8 | Borrower can submit a borrow request with dates and purpose; PENDING booking created; tool remains AVAILABLE until approved)*
 - [ ] **F10** My Bookings: tab view (Current / Pending / Past), cancel pending booking *(F6, F7 | Borrower sees bookings grouped by tab; can cancel PENDING bookings (→ REJECTED); status badges render correctly)*
 
