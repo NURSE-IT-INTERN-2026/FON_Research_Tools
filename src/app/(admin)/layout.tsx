@@ -23,7 +23,7 @@ export default async function AdminLayout({
         navItems={ADMIN_NAV}
         userEmail={email}
       />
-      <main className="ml-64 flex-1 p-6">{children}</main>
+      <main className="flex-1 p-4 pt-18 lg:ml-64 lg:p-6 lg:pt-6">{children}</main>
     </div>
   );
 }
