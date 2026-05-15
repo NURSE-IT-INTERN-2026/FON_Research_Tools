@@ -69,7 +69,7 @@ src/app/
 
 ## Auth & Guard Strategy
 
-- **Proxy** (`proxy.ts`): runs on every request, refreshes Supabase session cookie, redirects unauthenticated users to `/login`, redirects wrong-role users to their correct dashboard. Uses Next.js 16 `proxy()` export (not `middleware()`).
+- **Proxy** (`proxy.ts`): runs on every request, reads session cookie via `verifySessionToken()`, redirects unauthenticated users to `/login`, redirects wrong-role users to their correct dashboard. Uses Next.js 16 `proxy()` export (not `middleware()`).
 - **Layout guards**: `(borrower)/layout.tsx` and `(admin)/layout.tsx` call `requireRole()` server-side and render the appropriate sidebar. Proxy handles coarse redirect; layouts render role-specific UI.
 - **Server Components**: fetch data server-side using the session — no client-side auth flashing.
 - **Auth errors**: use `unauthorized()` (renders `unauthorized.tsx`) and `forbidden()` (renders `forbidden.tsx`) from `next/navigation` where applicable.
@@ -82,9 +82,9 @@ All mutations use Next.js Server Actions, not API routes.
 
 | Action | Trigger | Mutations |
 |---|---|---|
-| `signup` | Signup form submit | Supabase `signUp` → trigger creates Profile + UserRole → redirect by role |
-| `login` | Login form submit | Supabase `signInWithPassword` → query role → redirect by role |
-| `signOut` | Sidebar sign-out button | Supabase `signOut` → redirect to `/` |
+| `signup` | Signup form submit | `hashPassword` + Prisma transaction (Profile + UserRole) → `createSession` → redirect by role |
+| `login` | Login form submit | Query Profile by email → `verifyPassword` → query role → `createSession` → redirect by role |
+| `logout` | Sidebar sign-out button | `clearSession` → redirect to `/login` |
 | `createBooking` | Borrower submits request form | Insert `bookings` row (status: PENDING) |
 | `cancelBooking` | Borrower cancels pending request | Update `bookings` status → REJECTED |
 | `createTool` | Admin adds new tool | Insert `tools` row |

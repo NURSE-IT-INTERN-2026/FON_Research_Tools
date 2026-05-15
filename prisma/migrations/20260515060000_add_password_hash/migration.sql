@@ -1,0 +1,1 @@
+ALTER TABLE "Profile" ADD COLUMN "passwordHash" TEXT NOT NULL DEFAULT '';

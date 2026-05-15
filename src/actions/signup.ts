@@ -1,7 +1,9 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { hashPassword } from "@/lib/auth/password";
+import { createSession } from "@/lib/auth/session";
+import db from "@/lib/db";
 
 export type SignupState = {
   error?: string;
@@ -29,23 +31,30 @@ export async function signup(
     return { error: "กรุณาเลือกบทบาท" };
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { name, department: department || null, role },
-    },
-  });
-
-  if (error) {
+  const existing = await db.profile.findUnique({ where: { email } });
+  if (existing) {
     return { error: "อีเมลนี้ถูกใช้งานแล้ว หรือข้อมูลไม่ถูกต้อง" };
   }
 
-  // GoTrue MAILER_AUTOCONFIRM=true → session returned in signUp response.
-  if (data.session) {
-    redirect(role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
-  }
+  const passwordHash = await hashPassword(password);
+  const userId = crypto.randomUUID();
 
-  redirect("/login");
+  await db.$transaction([
+    db.profile.create({
+      data: {
+        id: userId,
+        name,
+        email,
+        department: department || null,
+        passwordHash,
+      },
+    }),
+    db.userRole.create({
+      data: { userId, role: role as "ADMIN" | "BORROWER" },
+    }),
+  ]);
+
+  await createSession({ userId, email, role: role as "ADMIN" | "BORROWER", name });
+
+  redirect(role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
 }

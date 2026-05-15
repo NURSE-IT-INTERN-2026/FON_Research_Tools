@@ -1,17 +1,20 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { hashSync } from "bcryptjs";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+const SEED_PASSWORD = "password123";
+
 async function main() {
-  // Seed profiles (IDs match Supabase Auth pattern for reference)
   const admin1 = await prisma.profile.create({
     data: {
       id: "admin-001",
       name: "Sarah Chen",
       email: "sarah.chen@university.edu",
       department: "Research Operations",
+      passwordHash: hashSync(SEED_PASSWORD, 10),
     },
   });
   const admin2 = await prisma.profile.create({
@@ -20,6 +23,7 @@ async function main() {
       name: "Marcus Rivera",
       email: "marcus.rivera@university.edu",
       department: "Lab Management",
+      passwordHash: hashSync(SEED_PASSWORD, 10),
     },
   });
   const borrower1 = await prisma.profile.create({
@@ -28,6 +32,7 @@ async function main() {
       name: "Emily Park",
       email: "emily.park@university.edu",
       department: "Biology",
+      passwordHash: hashSync(SEED_PASSWORD, 10),
     },
   });
   const borrower2 = await prisma.profile.create({
@@ -36,6 +41,7 @@ async function main() {
       name: "James Okonkwo",
       email: "james.okonkwo@university.edu",
       department: "Chemistry",
+      passwordHash: hashSync(SEED_PASSWORD, 10),
     },
   });
   const borrower3 = await prisma.profile.create({
@@ -44,6 +50,7 @@ async function main() {
       name: "Aisha Patel",
       email: "aisha.patel@university.edu",
       department: "Physics",
+      passwordHash: hashSync(SEED_PASSWORD, 10),
     },
   });
   const borrower4 = await prisma.profile.create({
@@ -52,10 +59,10 @@ async function main() {
       name: "Lucas Fernandez",
       email: "lucas.fernandez@university.edu",
       department: "Environmental Science",
+      passwordHash: hashSync(SEED_PASSWORD, 10),
     },
   });
 
-  // Seed roles
   await prisma.userRole.createMany({
     data: [
       { userId: admin1.id, role: "ADMIN" },
@@ -67,7 +74,6 @@ async function main() {
     ],
   });
 
-  // Seed tools
   const tools = await Promise.all([
     prisma.tool.create({
       data: {
@@ -172,7 +178,6 @@ async function main() {
     }),
   ]);
 
-  // Seed bookings
   const now = new Date();
   const daysAgo = (d: number) => new Date(now.getTime() - d * 86400000);
   const daysFromNow = (d: number) => new Date(now.getTime() + d * 86400000);
@@ -181,7 +186,7 @@ async function main() {
     data: [
       {
         userId: borrower1.id,
-        toolId: tools[2].id, // HPLC - BORROWED
+        toolId: tools[2].id,
         startDate: daysAgo(5),
         endDate: daysFromNow(5),
         purpose:
@@ -190,7 +195,7 @@ async function main() {
       },
       {
         userId: borrower2.id,
-        toolId: tools[6].id, // Gel Electrophoresis - BORROWED
+        toolId: tools[6].id,
         startDate: daysAgo(3),
         endDate: daysFromNow(2),
         purpose: "Running protein gels for thesis experiment series",
@@ -198,7 +203,7 @@ async function main() {
       },
       {
         userId: borrower3.id,
-        toolId: tools[0].id, // Olympus Microscope
+        toolId: tools[0].id,
         startDate: daysFromNow(1),
         endDate: daysFromNow(7),
         purpose: "Examining cell morphology for biology research project",
@@ -206,7 +211,7 @@ async function main() {
       },
       {
         userId: borrower1.id,
-        toolId: tools[7].id, // Spectrophotometer
+        toolId: tools[7].id,
         startDate: daysFromNow(2),
         endDate: daysFromNow(6),
         purpose:
@@ -215,7 +220,7 @@ async function main() {
       },
       {
         userId: borrower4.id,
-        toolId: tools[3].id, // PCR Thermal Cycler
+        toolId: tools[3].id,
         startDate: daysAgo(14),
         endDate: daysAgo(7),
         purpose: "Amplifying environmental DNA samples",
@@ -224,7 +229,7 @@ async function main() {
       },
       {
         userId: borrower2.id,
-        toolId: tools[0].id, // Olympus Microscope
+        toolId: tools[0].id,
         startDate: daysAgo(21),
         endDate: daysAgo(14),
         purpose: "Observing bacterial cultures for chemistry lab",
@@ -234,7 +239,7 @@ async function main() {
       },
       {
         userId: borrower3.id,
-        toolId: tools[4].id, // X-Ray Diffractometer - MAINTENANCE
+        toolId: tools[4].id,
         startDate: daysAgo(10),
         endDate: daysAgo(5),
         purpose: "Crystal structure analysis for materials science project",
@@ -243,7 +248,7 @@ async function main() {
       },
       {
         userId: borrower4.id,
-        toolId: tools[7].id, // Spectrophotometer
+        toolId: tools[7].id,
         startDate: daysAgo(12),
         endDate: daysAgo(5),
         purpose: "UV analysis of soil extract samples",
@@ -252,7 +257,7 @@ async function main() {
       },
       {
         userId: borrower1.id,
-        toolId: tools[8].id, // Nikon Inverted Microscope
+        toolId: tools[8].id,
         startDate: daysAgo(8),
         endDate: daysAgo(2),
         purpose: "Live-cell imaging time-lapse experiment",
@@ -260,7 +265,7 @@ async function main() {
       },
       {
         userId: borrower3.id,
-        toolId: tools[1].id, // Centrifuge
+        toolId: tools[1].id,
         startDate: daysFromNow(3),
         endDate: daysFromNow(8),
         purpose:
@@ -269,7 +274,7 @@ async function main() {
       },
       {
         userId: borrower4.id,
-        toolId: tools[9].id, // Biosafety Cabinet
+        toolId: tools[9].id,
         startDate: daysFromNow(5),
         endDate: daysFromNow(12),
         purpose: "Sterile culture work for environmental microbiology",
@@ -277,7 +282,7 @@ async function main() {
       },
       {
         userId: borrower2.id,
-        toolId: tools[5].id, // Stereo Microscope
+        toolId: tools[5].id,
         startDate: daysAgo(6),
         endDate: daysAgo(1),
         purpose: "Dissection and imaging of insect specimens",

@@ -5,9 +5,9 @@
 ## Phase 1 — Foundation
 
 - [x] **F1** Database schema + Prisma models + Docker Compose + seed script *(— | `docker compose up` creates DB, `npx prisma migrate dev` applies schema, `npx prisma db seed` populates test data`)*
-- [x] **F2** Supabase Auth setup: Docker config + `@supabase/ssr` server client + auth helpers (`getSession`, `requireAuth`, `requireRole`) *(F1 | Server Components can call `getSession()` and read authenticated user ID from cookies)*
-- [x] **F3** Signup page: form + Server Action + PostgreSQL trigger (`handle_new_user`) + role selection *(F1, F2 | User can register, Profile + UserRole rows are created, redirect to correct dashboard)*
-- [ ] **F4** Login page: form + Server Action + session + role-based redirect *(F2 | User can sign in, gets redirected by role, error shown on failure)*
+- [x] **F2** Custom auth setup: HMAC-SHA256 session tokens + bcrypt password hashing + auth helpers (`getSession`, `requireAuth`, `requireRole`) *(F1 | Server Components can call `getSession()` and read authenticated user ID from cookies)*
+- [x] **F3** Signup page: form + Server Action + Prisma transaction (Profile + UserRole) + role selection *(F1, F2 | User can register, Profile + UserRole rows are created, redirect to correct dashboard)*
+- [x] **F4** Login page: form + Server Action + session + role-based redirect + rate limiting *(F2 | User can sign in, gets redirected by role, error shown on failure)*
 - [ ] **F5** `proxy.ts`: route protection + RBAC redirect (unauthenticated → `/login`, wrong role → correct dashboard) *(F2 | Unauthenticated users redirected from protected routes; wrong-role users redirected)*
 - [ ] **F6** Layout shell: root layout, public layout (centered card), borrower layout (orange sidebar), admin layout (purple sidebar) *(F5 | Each role group renders the correct sidebar; public pages have no sidebar)*
 - [ ] **F7** Design tokens + theme system (CSS custom properties for orange borrower / purple admin) *(— | Two theme CSS classes swap primary, accent, sidebar, and ring tokens)*
