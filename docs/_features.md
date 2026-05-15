@@ -16,7 +16,7 @@
 
 - [x] **F8** Tool catalog: browse, search (URL searchParams), category/status filter pills, responsive tool card grid *(F6, F7 | Borrower sees tool cards, can filter by category and status, search by name; filters update URL and re-render server-side)*
 - [x] **F9** Borrow request: modal form with date pickers + validation + Server Action `createBooking` *(F8 | Borrower can submit a borrow request with dates and purpose; PENDING booking created; tool remains AVAILABLE until approved)*
-- [ ] **F10** My Bookings: tab view (Current / Pending / Past), cancel pending booking *(F6, F7 | Borrower sees bookings grouped by tab; can cancel PENDING bookings (→ REJECTED); status badges render correctly)*
+- [x] **F10** My Bookings: tab view (Current / Pending / Past), cancel pending booking *(F6, F7 | Borrower sees bookings grouped by tab; can cancel PENDING bookings (→ REJECTED); status badges render correctly)*
 
 ## Phase 3 — Admin Portal
 
