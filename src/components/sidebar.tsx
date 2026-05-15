@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Microscope,
   LogOut,
   LayoutDashboard,
   BookOpen,
@@ -14,6 +13,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { logout } from "@/actions/login";
 
 const ICON_MAP = {
@@ -60,8 +60,8 @@ export function Sidebar({ navItems, userEmail }: SidebarProps) {
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-2">
-          <Microscope className="h-5 w-5 text-primary" />
-          <span className="font-semibold">ToolLend</span>
+          <Image src="/nurse_logo.svg" alt="Research Tools" width={20} height={20} />
+          <span className="font-semibold">Research Tools</span>
         </div>
       </header>
 
@@ -82,9 +82,9 @@ export function Sidebar({ navItems, userEmail }: SidebarProps) {
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
-            <Microscope className="h-6 w-6 text-sidebar-primary" />
+            <Image src="/nurse_logo.svg" alt="Research Tools" width={24} height={24} />
             <span className="text-lg font-semibold text-sidebar-foreground">
-              ToolLend
+              Research Tools
             </span>
           </div>
           <button

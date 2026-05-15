@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Microscope } from "lucide-react";
+import Image from "next/image";
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signup, {} as SignupState);
@@ -23,8 +23,8 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Microscope className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold">ToolLend</span>
+            <Image src="/nurse_logo.svg" alt="Research Tools" width={24} height={24} />
+            <span className="text-lg font-semibold">Research Tools</span>
           </div>
           <CardTitle className="text-2xl">สร้างบัญชีของคุณ</CardTitle>
           <CardDescription>

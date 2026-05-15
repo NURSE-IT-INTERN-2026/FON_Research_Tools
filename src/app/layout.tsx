@@ -10,7 +10,7 @@ const sarabun = Sarabun({
 });
 
 export const metadata: Metadata = {
-  title: "ToolLend — ระบบยืมคืนอุปกรณ์",
+  title: "Research Tools — ระบบยืมคืนอุปกรณ์",
   description: "ระบบจัดการยืมคืนอุปกรณ์วิจัย",
 };
 
