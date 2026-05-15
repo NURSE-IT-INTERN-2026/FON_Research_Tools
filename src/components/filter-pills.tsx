@@ -6,9 +6,10 @@ type FilterPillsProps = {
   paramName: string;
   options: { label: string; value: string }[];
   selected: string;
+  basePath?: string;
 };
 
-export function FilterPills({ paramName, options, selected }: FilterPillsProps) {
+export function FilterPills({ paramName, options, selected, basePath = "/dashboard" }: FilterPillsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -19,7 +20,7 @@ export function FilterPills({ paramName, options, selected }: FilterPillsProps) 
     } else {
       params.set(paramName, value);
     }
-    router.push(`/dashboard?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   }
 
   return (
