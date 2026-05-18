@@ -11,6 +11,7 @@ import {
   ToggleLeft,
   UserPlus,
   LogIn,
+  KeyRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +28,8 @@ export const ACTION_LABELS: Record<string, string> = {
   TOOL_TOGGLE_STATUS: "เปลี่ยนสถานะอุปกรณ์",
   USER_SIGNUP: "ลงทะเบียน",
   USER_LOGIN: "เข้าสู่ระบบ",
+  ADMIN_CREATED: "เพิ่มผู้ดูแลระบบ",
+  PASSWORD_CHANGED: "เปลี่ยนรหัสผ่าน",
 };
 
 export const ACTION_ICONS: Record<string, LucideIcon> = {
@@ -42,6 +45,8 @@ export const ACTION_ICONS: Record<string, LucideIcon> = {
   TOOL_TOGGLE_STATUS: ToggleLeft,
   USER_SIGNUP: UserPlus,
   USER_LOGIN: LogIn,
+  ADMIN_CREATED: UserPlus,
+  PASSWORD_CHANGED: KeyRound,
 };
 
 export const ACTION_OPTIONS = [
@@ -69,4 +74,6 @@ export const ACTION_COLORS: Record<string, string> = {
   TOOL_TOGGLE_STATUS: "text-amber-600 bg-amber-50",
   USER_SIGNUP: "text-purple-600 bg-purple-50",
   USER_LOGIN: "text-slate-600 bg-slate-50",
+  ADMIN_CREATED: "text-indigo-600 bg-indigo-50",
+  PASSWORD_CHANGED: "text-teal-600 bg-teal-50",
 };

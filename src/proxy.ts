@@ -7,7 +7,7 @@ import {
 
 const PUBLIC_ROUTES = ["/", "/login", "/signup"];
 const ADMIN_PREFIX = "/admin";
-const BORROWER_PREFIXES = ["/dashboard", "/my-bookings"];
+const BORROWER_PREFIXES = ["/dashboard", "/my-bookings", "/change-password"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

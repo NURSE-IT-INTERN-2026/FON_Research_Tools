@@ -86,45 +86,6 @@ export default function SignupPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">บทบาท</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <label
-                  className="flex cursor-pointer flex-col items-center gap-1.5 rounded border-2 border-muted p-3 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:shadow-none hover:border-foreground/20"
-                  htmlFor="role-borrower"
-                >
-                  <input
-                    type="radio"
-                    id="role-borrower"
-                    name="role"
-                    value="BORROWER"
-                    className="sr-only"
-                    defaultChecked
-                  />
-                  <span className="text-sm font-heading font-semibold">ผู้ยืม</span>
-                  <span className="text-xs text-muted-foreground">
-                    ยืมและติดตามอุปกรณ์
-                  </span>
-                </label>
-                <label
-                  className="flex cursor-pointer flex-col items-center gap-1.5 rounded border-2 border-muted p-3 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:shadow-none hover:border-foreground/20"
-                  htmlFor="role-admin"
-                >
-                  <input
-                    type="radio"
-                    id="role-admin"
-                    name="role"
-                    value="ADMIN"
-                    className="sr-only"
-                  />
-                  <span className="text-sm font-heading font-semibold">ผู้ดูแลระบบ</span>
-                  <span className="text-xs text-muted-foreground">
-                    จัดการอุปกรณ์และคำขอ
-                  </span>
-                </label>
-              </div>
-            </div>
-
             <Button type="submit" className="w-full font-heading font-semibold tracking-wide rounded" disabled={pending}>
               {pending ? "กำลังสมัคร..." : "สมัครใช้งาน"}
             </Button>

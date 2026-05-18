@@ -5,6 +5,7 @@ import type { NavItem } from "@/components/sidebar";
 const BORROWER_NAV: NavItem[] = [
   { label: "แดชบอร์ด", href: "/dashboard", icon: "LayoutDashboard" },
   { label: "การจองของฉัน", href: "/my-bookings", icon: "BookOpen" },
+  { label: "เปลี่ยนรหัสผ่าน", href: "/change-password", icon: "KeyRound" },
 ];
 
 export default async function BorrowerLayout({

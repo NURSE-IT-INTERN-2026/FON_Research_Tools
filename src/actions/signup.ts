@@ -18,18 +18,13 @@ export async function signup(
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const department = formData.get("department") as string;
-  const role = formData.get("role") as string;
 
-  if (!name || !email || !password || !role) {
+  if (!name || !email || !password) {
     return { error: "กรุณากรอกข้อมูลให้ครบถ้วน" };
   }
 
   if (password.length < 6) {
     return { error: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" };
-  }
-
-  if (role !== "ADMIN" && role !== "BORROWER") {
-    return { error: "กรุณาเลือกบทบาท" };
   }
 
   const existing = await db.profile.findUnique({ where: { email } });
@@ -51,11 +46,11 @@ export async function signup(
       },
     }),
     db.userRole.create({
-      data: { userId, role: role as "ADMIN" | "BORROWER" },
+      data: { userId, role: "BORROWER" },
     }),
   ]);
 
-  await createSession({ userId, email, role: role as "ADMIN" | "BORROWER", name });
+  await createSession({ userId, email, role: "BORROWER", name });
 
   await logActivity({
     action: "USER_SIGNUP",
@@ -66,5 +61,5 @@ export async function signup(
   });
 
   // logActivity must remain above redirect() — redirect() throws, so code below it never runs
-  redirect(role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
+  redirect("/dashboard");
 }

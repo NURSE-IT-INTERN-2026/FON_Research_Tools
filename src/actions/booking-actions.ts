@@ -25,6 +25,11 @@ export async function approveBooking(
     return { error: "สามารถอนุมัติได้เฉพาะคำขอที่รอตรวจสอบเท่านั้น" };
   }
 
+  const tool = await db.tool.findUnique({ where: { id: booking.toolId } });
+  if (!tool || !tool.isActive || tool.status !== "AVAILABLE") {
+    return { error: "อุปกรณ์นี้ไม่พร้อมให้ยืมในขณะนี้" };
+  }
+
   await db.$transaction([
     db.booking.update({
       where: { id: bookingId },

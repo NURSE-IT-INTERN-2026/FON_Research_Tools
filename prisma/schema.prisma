@@ -40,6 +40,8 @@ enum ActivityAction {
   TOOL_TOGGLE_STATUS
   USER_SIGNUP
   USER_LOGIN
+  ADMIN_CREATED
+  PASSWORD_CHANGED
 }
 
 model Profile {

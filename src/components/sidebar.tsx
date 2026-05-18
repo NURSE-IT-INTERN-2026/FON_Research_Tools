@@ -13,6 +13,8 @@ import {
   Activity,
   Menu,
   X,
+  Shield,
+  KeyRound,
 } from "lucide-react";
 import Image from "next/image";
 import { logout } from "@/actions/login";
@@ -24,6 +26,8 @@ const ICON_MAP = {
   ClipboardList,
   Users,
   Activity,
+  Shield,
+  KeyRound,
 } as const;
 
 export type IconName = keyof typeof ICON_MAP;

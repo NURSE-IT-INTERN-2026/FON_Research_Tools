@@ -17,15 +17,6 @@ async function main() {
       passwordHash: hashSync(SEED_PASSWORD, 10),
     },
   });
-  const admin2 = await prisma.profile.create({
-    data: {
-      id: "admin-002",
-      name: "Marcus Rivera",
-      email: "marcus.rivera@university.edu",
-      department: "Lab Management",
-      passwordHash: hashSync(SEED_PASSWORD, 10),
-    },
-  });
   const borrower1 = await prisma.profile.create({
     data: {
       id: "borrower-001",
@@ -66,7 +57,6 @@ async function main() {
   await prisma.userRole.createMany({
     data: [
       { userId: admin1.id, role: "ADMIN" },
-      { userId: admin2.id, role: "ADMIN" },
       { userId: borrower1.id, role: "BORROWER" },
       { userId: borrower2.id, role: "BORROWER" },
       { userId: borrower3.id, role: "BORROWER" },
@@ -293,8 +283,8 @@ async function main() {
   });
 
   console.log("Seed completed:");
-  console.log("  6 profiles (2 admins, 4 borrowers)");
-  console.log("  6 user roles");
+  console.log("  5 profiles (1 admin, 4 borrowers)");
+  console.log("  5 user roles");
   console.log(`  ${tools.length} tools`);
   console.log("  12 bookings across all statuses");
 }

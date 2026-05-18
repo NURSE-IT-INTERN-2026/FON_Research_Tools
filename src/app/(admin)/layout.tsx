@@ -8,7 +8,9 @@ const ADMIN_NAV: NavItem[] = [
   { label: "คลังอุปกรณ์", href: "/admin/inventory", icon: "Wrench" },
   { label: "คำขอยืม", href: "/admin/requests", icon: "ClipboardList" },
   { label: "ผู้ใช้งาน", href: "/admin/users", icon: "Users" },
+  { label: "จัดการผู้ดูแล", href: "/admin/admins", icon: "Shield" },
   { label: "บันทึกกิจกรรม", href: "/admin/activity-log", icon: "Activity" },
+  { label: "เปลี่ยนรหัสผ่าน", href: "/admin/change-password", icon: "KeyRound" },
 ];
 
 export default async function AdminLayout({

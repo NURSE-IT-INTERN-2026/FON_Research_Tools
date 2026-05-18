@@ -35,5 +35,6 @@ export async function cancelBooking(bookingId: string) {
   });
 
   revalidatePath("/my-bookings");
+  revalidatePath("/dashboard");
   return { success: true };
 }
