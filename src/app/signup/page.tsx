@@ -71,15 +71,7 @@ export default function SignupPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="department" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">แผนก (ไม่จำเป็น)</Label>
-              <Input
-                id="department"
-                name="department"
-                placeholder="วิศวกรรมศาสตร์"
-                className="rounded"
-              />
-            </div>
+            <input type="hidden" name="department" value="คณะพยาบาลศาสตร์" />
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">รหัสผ่าน</Label>
