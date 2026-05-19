@@ -1,8 +1,8 @@
 import db from "@/lib/db";
 
 const ROLE_LABELS: Record<string, string> = {
-  ADMIN: "ผู้ดูแลระบบ",
-  BORROWER: "ผู้ยืม",
+  ADMIN: "เจ้าหน้าที่",
+  STUDENT: "นักศึกษา",
 };
 
 export default async function UsersPage() {
@@ -29,7 +29,6 @@ export default async function UsersPage() {
               <tr className="border-b bg-muted/50">
                 <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">ชื่อ</th>
                 <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">อีเมล</th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">แผนก</th>
                 <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">บทบาท</th>
               </tr>
             </thead>
@@ -42,9 +41,6 @@ export default async function UsersPage() {
                   <td className="px-4 py-3 font-medium">{user.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {user.email}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {user.department || "—"}
                   </td>
                   <td className="px-4 py-3">
                     <span className="rounded bg-muted px-2 py-0.5 text-xs font-semibold">

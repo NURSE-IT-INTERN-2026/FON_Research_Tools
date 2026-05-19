@@ -1,14 +1,14 @@
-export const ROLE_REDIRECT_PATHS: Record<"ADMIN" | "BORROWER", string> = {
+export const ROLE_REDIRECT_PATHS: Record<"ADMIN" | "STUDENT", string> = {
   ADMIN: "/admin/dashboard",
-  BORROWER: "/dashboard",
+  STUDENT: "/dashboard",
 };
 
-export function getRoleRedirectPath(role: "ADMIN" | "BORROWER") {
+export function getRoleRedirectPath(role: "ADMIN" | "STUDENT") {
   return ROLE_REDIRECT_PATHS[role];
 }
 
 export function getSafePostLoginRedirectPath(
-  role: "ADMIN" | "BORROWER",
+  role: "ADMIN" | "STUDENT",
   nextPath: string | null | undefined,
 ) {
   const fallbackPath = getRoleRedirectPath(role);

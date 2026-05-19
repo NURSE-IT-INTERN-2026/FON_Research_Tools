@@ -7,27 +7,23 @@ import {
   LogOut,
   LayoutDashboard,
   BookOpen,
-  Wrench,
-  ClipboardList,
+  FileText,
   Users,
   Activity,
   Menu,
   X,
   Shield,
-  KeyRound,
 } from "lucide-react";
 import Image from "next/image";
-import { logout } from "@/actions/login";
+import { logout } from "@/actions/logout";
 
 const ICON_MAP = {
   LayoutDashboard,
   BookOpen,
-  Wrench,
-  ClipboardList,
+  FileText,
   Users,
   Activity,
   Shield,
-  KeyRound,
 } as const;
 
 export type IconName = keyof typeof ICON_MAP;
@@ -39,7 +35,7 @@ export type NavItem = {
 };
 
 type SidebarProps = {
-  role: "ADMIN" | "BORROWER";
+  role: "ADMIN" | "STUDENT";
   navItems: NavItem[];
   userEmail: string;
   headerActions?: React.ReactNode;

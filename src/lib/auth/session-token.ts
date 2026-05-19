@@ -8,7 +8,7 @@ const SESSION_VERSION = process.env.AUTH_SESSION_VERSION?.trim() || "1";
 export type AuthSession = {
   userId: string;
   email: string;
-  role: "ADMIN" | "BORROWER";
+  role: "ADMIN" | "STUDENT";
   name: string;
   expiresAt: number;
 };

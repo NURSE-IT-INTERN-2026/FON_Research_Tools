@@ -8,15 +8,15 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-import { Wrench, PackageCheck, Clock, AlertTriangle } from "lucide-react";
+import { Users, FileText, Clock, PackageCheck } from "lucide-react";
 
 export default async function AdminDashboardPage() {
-  const [totalTools, borrowedTools, pendingRequests, overdueReturns, recentActivity] =
+  const [totalStudents, totalDocuments, pendingDocuments, approvedDocuments, recentActivity] =
     await Promise.all([
-      db.tool.count({ where: { isActive: true } }),
-      db.tool.count({ where: { status: "BORROWED" } }),
-      db.booking.count({ where: { status: "PENDING" } }),
-      db.booking.count({ where: { status: "OVERDUE" } }),
+      db.profile.count({ where: { userRole: { role: "STUDENT" } } }),
+      db.document.count(),
+      db.document.count({ where: { status: "PENDING" } }),
+      db.document.count({ where: { status: "APPROVED" } }),
       db.activityLog.findMany({
         take: 10,
         orderBy: { createdAt: "desc" },
@@ -30,33 +30,30 @@ export default async function AdminDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">แดชบอร์ด</h1>
-        <p className="text-muted-foreground mt-3">ภาพรวมการจัดการอุปกรณ์</p>
+        <p className="text-muted-foreground mt-3">ภาพรวมระบบจัดการเอกสารเครื่องมือวิจัย</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 stagger">
         <StatCard
-          icon={Wrench}
-          value={totalTools}
-          label="อุปกรณ์ทั้งหมด"
-          href="/admin/inventory"
+          icon={Users}
+          value={totalStudents}
+          label="นักศึกษาทั้งหมด"
+          href="/admin/users"
         />
         <StatCard
-          icon={PackageCheck}
-          value={borrowedTools}
-          label="กำลังยืม"
-          href="/admin/inventory"
+          icon={FileText}
+          value={totalDocuments}
+          label="เอกสารทั้งหมด"
         />
         <StatCard
           icon={Clock}
-          value={pendingRequests}
+          value={pendingDocuments}
           label="รอตรวจสอบ"
-          href="/admin/requests"
         />
         <StatCard
-          icon={AlertTriangle}
-          value={overdueReturns}
-          label="เกินกำหนดคืน"
-          href="/admin/requests"
+          icon={PackageCheck}
+          value={approvedDocuments}
+          label="อนุมัติแล้ว"
         />
       </div>
 

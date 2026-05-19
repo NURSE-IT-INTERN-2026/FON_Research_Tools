@@ -5,7 +5,7 @@ import db from "@/lib/db";
 export type AuthContext = {
   userId: string;
   email: string;
-  role: "ADMIN" | "BORROWER";
+  role: "ADMIN" | "STUDENT";
 };
 
 export async function getSession() {
@@ -26,7 +26,7 @@ export async function getUserRole(userId: string) {
   return userRole?.role ?? null;
 }
 
-export async function requireRole(role: "ADMIN" | "BORROWER"): Promise<AuthContext> {
+export async function requireRole(role: "ADMIN" | "STUDENT"): Promise<AuthContext> {
   const session = await readSession();
   if (!session) unauthorized();
 
@@ -36,6 +36,6 @@ export async function requireRole(role: "ADMIN" | "BORROWER"): Promise<AuthConte
   return {
     userId: session!.userId,
     email: session!.email,
-    role: userRole as "ADMIN" | "BORROWER",
+    role: userRole as "ADMIN" | "STUDENT",
   };
 }

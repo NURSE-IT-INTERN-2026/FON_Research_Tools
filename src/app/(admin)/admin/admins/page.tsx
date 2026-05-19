@@ -8,7 +8,6 @@ export default async function AdminsPage() {
       id: true,
       name: true,
       email: true,
-      department: true,
       createdAt: true,
     },
     orderBy: { createdAt: "asc" },

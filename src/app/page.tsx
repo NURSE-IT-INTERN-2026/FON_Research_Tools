@@ -26,16 +26,13 @@ export default function HomePage() {
         </div>
 
         <p className="text-muted-foreground max-w-sm animate-slide-up text-base leading-relaxed" style={{ animationDelay: "100ms" }}>
-          ระบบจัดการยืมคืนอุปกรณ์วิจัย<br />
-          สำหรับนักวิจัยและผู้ดูแลห้องปฏิบัติการ
+          ระบบจัดการเอกสารเครื่องมือวิจัย<br />
+          คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
         </p>
 
         <div className="flex gap-3 animate-slide-up" style={{ animationDelay: "200ms" }}>
           <Button asChild size="lg" className="font-heading font-semibold tracking-wide px-8">
-            <Link href="/login">เข้าสู่ระบบ</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg" className="font-heading tracking-wide px-8">
-            <Link href="/signup">สมัครใช้งาน</Link>
+            <Link href="/login">เข้าสู่ระบบด้วย CMU Account</Link>
           </Button>
         </div>
       </div>

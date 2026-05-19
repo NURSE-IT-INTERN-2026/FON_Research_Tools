@@ -5,9 +5,10 @@ import {
   SESSION_COOKIE_NAME,
 } from "@/lib/auth/session-token";
 
-const PUBLIC_ROUTES = ["/", "/login", "/signup"];
+const PUBLIC_ROUTES = ["/", "/login"];
+const API_PUBLIC_ROUTES = ["/api/auth/callback"];
 const ADMIN_PREFIX = "/admin";
-const BORROWER_PREFIXES = ["/dashboard", "/my-bookings", "/change-password"];
+const STUDENT_PREFIXES = ["/dashboard", "/change-password"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -16,8 +17,11 @@ export function proxy(request: NextRequest) {
   const session = verifySessionToken(token);
 
   const isPublic = PUBLIC_ROUTES.includes(pathname);
+  const isApiPublic = API_PUBLIC_ROUTES.some((p) => pathname.startsWith(p));
   const isAdmin = pathname.startsWith(ADMIN_PREFIX);
-  const isBorrower = BORROWER_PREFIXES.some((p) => pathname.startsWith(p));
+  const isStudent = STUDENT_PREFIXES.some((p) => pathname.startsWith(p));
+
+  if (isApiPublic) return NextResponse.next();
 
   if (session && isPublic) {
     const dest = session.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
@@ -32,7 +36,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (session && isBorrower && session.role === "ADMIN") {
+  if (session && isStudent && session.role === "ADMIN") {
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
   }
 
