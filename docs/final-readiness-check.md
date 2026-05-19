@@ -1,6 +1,6 @@
 # Final Readiness Check
 
-Checked 2026-05-14. Docs audited: PRD, _features, route-map, data-model, auth-rbac, ui-pages, status-flow, implementation_rules, tech-stack, CLAUDE.md.
+Checked 2026-05-19. Post-pivot to research tool document management system.
 
 ---
 
@@ -8,44 +8,40 @@ Checked 2026-05-14. Docs audited: PRD, _features, route-map, data-model, auth-rb
 
 | Term | Result |
 |---|---|
-| `middleware.ts` as active pattern | Clean. All 6 mentions say "not middleware" or "replaces middleware". |
+| `BORROWER` role in docs | Clean. All docs use `STUDENT`. Code still has BORROWER — must update during implementation. |
+| `middleware.ts` as active pattern | Clean. All docs use `proxy.ts`. |
 | TanStack Router/Start/Query | Clean. Only in "do not use" lists. |
-| Supabase data queries | Clean. Zero hits for `.from()`, `.select()`, `.insert()` etc. |
-| Mock data / dev bypass | Clean. Only in "do not use" lists and "seed the database instead". |
-| Hard delete as default action | Clean. All docs use "deactivate" / "soft delete". Hard delete mentioned only as an exception for zero-booking tools. |
-| Stale `/dashboard/my-bookings` route | Clean. Zero hits. All docs use `/my-bookings`. |
+| Supabase references | Clean. Project uses custom auth, not Supabase. |
+| Mock data / dev bypass | Clean. Only in "do not use" lists. |
+| Old routes (`/my-bookings`, `/admin/inventory`, `/admin/requests`) | Clean in docs. Code still has them — must update during implementation. |
 
 ---
 
 ## Route Consistency
 
-All 9 routes referenced consistently across PRD, route-map, ui-pages, and auth-rbac:
+New routes referenced consistently across all docs:
 
 | Route | PRD | Route-map | UI-pages | Auth-rbac | Match |
 |---|---|---|---|---|---|
 | `/` | Yes | Yes | Yes | Yes | OK |
 | `/login` | Yes | Yes | Yes | Yes | OK |
 | `/signup` | Yes | Yes | Yes | Yes | OK |
-| `/dashboard` | Yes | Yes | Yes | Yes | OK |
-| `/my-bookings` | Yes | Yes | Yes | Yes | OK |
+| `/dashboard` (student) | Yes | Yes | Yes | Yes | OK |
 | `/admin/dashboard` | Yes | Yes | Yes | Yes | OK |
-| `/admin/inventory` | Yes | Yes | Yes | Yes | OK |
-| `/admin/requests` | Yes | Yes | Yes | Yes | OK |
-| `/admin/users` | Yes | Yes | Yes | Yes | OK |
-
-No missing routes. No stale routes.
+| `/admin/documents` | Yes | Yes | Yes | Yes | OK |
+| `/admin/students` | Yes | Yes | Yes | Yes | OK |
+| `/admin/activity-log` | Yes | Yes | Yes | Yes | OK |
 
 ---
 
 ## RBAC Consistency
 
-Auth-rbac proxy redirect rules cover all route groups:
-- Unauthenticated → `/login`
-- Borrower on `/admin/*` → `/dashboard`
-- Admin on `/dashboard/*`, `/my-bookings` → `/admin/dashboard`
-- Authenticated on `/`, `/login`, `/signup` → role-specific dashboard
-
-**Minor ambiguity:** Item 4 says "redirect to dashboard" generically. Should explicitly say "redirect to `/dashboard` for BORROWER, `/admin/dashboard` for ADMIN." Not a blocker — implementer will infer correctly from the role check — but worth noting.
+| Scenario | Rule |
+|---|---|
+| Unauthenticated | → `/` (landing) |
+| Student on `/admin/*` | → `/dashboard` |
+| Admin on `/dashboard` | → `/admin/dashboard` |
+| Authenticated on `/`, `/login` | → role-specific dashboard |
 
 ---
 
@@ -53,94 +49,71 @@ Auth-rbac proxy redirect rules cover all route groups:
 
 | Check | Result |
 |---|---|
-| `isActive` on Tool | Defined in data-model, referenced in route-map (deactivateTool), _features (F12), ui-pages (Deactivate action). Consistent. |
-| `returnDate` on Booking | Defined in data-model, set in status-flow (RETURNED transitions). Consistent. |
-| `userId @unique` on UserRole | Defined in data-model, matches PRD "one role per user" rule. Relations summary updated to 1──1. Consistent. |
-| Trigger migration order | Documented: trigger runs after Prisma creates tables + AppRole enum. Consistent. |
+| `Document` model with status | Defined in data-model, referenced in route-map, _features, status-flow. Consistent. |
+| `approvedAt` field | Defined in data-model, used in API `/api/my/documents`, status-flow. Consistent. |
+| `studentStatus` field (Phase 2) | Defined as nullable. Referenced in ui-pages (admin students). Consistent. |
+| `userId @unique` on UserRole | One role per user. Consistent. |
 
 ---
 
 ## Status Flow Consistency
 
-All booking status transitions in status-flow match the Server Actions in route-map:
+All document status transitions match Server Actions:
 
 | Transition | Status-flow | Route-map Action | Match |
 |---|---|---|---|
-| — → PENDING | Borrower submits | `createBooking` | OK |
-| PENDING → APPROVED | Admin approves | `approveBooking` | OK |
-| PENDING → REJECTED | Admin rejects | `rejectBooking` | OK |
-| PENDING → REJECTED | Borrower cancels | `cancelBooking` | OK |
-| APPROVED → RETURNED | Admin marks returned | `markReturned` | OK |
-| APPROVED → OVERDUE | Admin flags overdue | `markOverdue` | OK |
-| OVERDUE → RETURNED | Admin marks returned | `markReturned` | OK |
-
-Tool side effects match: APPROVE → BORROWED, RETURN → AVAILABLE (with availability check). Consistent.
-
-**Minor clarity issue:** Status-flow says "set `returnDate` to null" on PENDING → APPROVED. This is a no-op since `returnDate` is already null for a new booking. Harmless but slightly misleading.
+| — → PENDING | Student uploads | `uploadDocument` | OK |
+| PENDING → APPROVED | Admin approves | `approveDocument` / `approveAllDocuments` | OK |
+| PENDING → REJECTED | Admin rejects | `rejectDocument` | OK |
+| PENDING → deleted | Student removes | `removeDocument` | OK |
+| any → deleted | Admin removes | `removeDocument` | OK |
 
 ---
 
-## Feature Dependency Consistency
+## Feature Dependency Consistency (Phase 1)
 
 | Feature | Depends On | Valid? |
 |---|---|---|
-| F1 (schema) | — | Yes — no deps |
-| F2 (auth setup) | F1 | Yes — needs DB for UserRole queries |
-| F3 (signup) | F1, F2 | Yes — needs schema (trigger targets) + auth helpers |
-| F4 (login) | F2 | Yes — needs auth helpers only |
-| F5 (proxy) | F2 | Yes — needs session reading |
-| F6 (layouts) | F5 | Yes — needs proxy for auth guard |
-| F7 (theme) | — | Yes — no deps |
-| F8 (catalog) | F6, F7 | Yes — needs layout + theme |
-| F9 (borrow request) | F8 | Yes — needs catalog page to host the modal |
-| F10 (my bookings) | F6, F7 | Yes — needs layout + theme |
-| F11 (admin dashboard) | F6, F7 | Yes — needs layout + theme |
-| F12 (inventory) | F6, F7 | Yes — needs layout + theme |
-| F13 (requests) | F6, F7 | Yes — needs layout + theme |
-| F14 (users) | F6, F7 | Yes — needs layout + theme |
+| F1 (schema) | — | Yes |
+| F2 (auth - email/password) | F1 | Yes |
+| F3 (proxy + RBAC) | F2 | Yes |
+| F4 (layouts) | F3 | Yes |
+| F5 (theme) | — | Yes |
+| F6 (student dashboard) | F4, F5 | Yes |
+| F7 (upload) | F6 | Yes |
+| F8 (document management) | F6 | Yes |
+| F9 (admin dashboard) | F4, F5 | Yes |
+| F10 (admin documents) | F4, F5 | Yes |
+| F11 (admin students) | F4, F5 | Yes |
+| F12 (admin search) | F11 | Yes |
+| F13 (activity log) | F4, F5 | Yes |
+| F14 (API my/documents) | F1, F2 | Yes |
 
-No circular dependencies. No missing deps. Implementation order in `_features.md` respects all dependencies.
+No circular dependencies. Implementation order in `_features.md` is valid.
 
 ---
 
-## One Gap Found
+## Phase 2 Readiness
 
-**`implementation_rules.md` tool catalog example query does not filter `isActive`.**
+Phase 2 items are documented but not blocking:
 
-The borrower catalog query example (line 119-126) reads:
-```ts
-const tools = await db.tool.findMany({
-  where: {
-    ...(q && { name: { contains: q, mode: "insensitive" } }),
-    ...(category && category !== "ALL" && { category }),
-    ...(status && status !== "ALL" && { status: status as ToolStatus }),
-  },
-});
-```
-
-Missing: `isActive: true` in the where clause. Deactivated tools would appear in the borrower catalog. The data-model doc says `isActive` "hides it from the borrower catalog" and F12's acceptance criteria says "deactivated tools hidden from borrower catalog" — but the example code doesn't enforce this.
-
-**Fix:** Add `isActive: true` as a constant filter in the example:
-```ts
-where: {
-  isActive: true,
-  ...(q && { ... }),
-}
-```
+| Item | Status | Blocker? |
+|---|---|---|
+| CMU OAuth 2.0 | Documented in `auth-rbac.md`, `phasing-plan.md` | No — waiting for API access |
+| CMU MIS API data fetch | Documented in `auth-rbac.md`, `data-model.md` | No — waiting for API access |
+| Student status badge | Model field exists (nullable), UI spec ready | No — needs MIS API data |
+| Email notifications | Listed as Post-MVP | No |
 
 ---
 
 ## Can F1 Start Safely?
 
-**Yes.** F1 has zero dependencies and is first in the implementation order.
+**Yes.** F1 has zero dependencies.
 
-What F1 will create:
-- `prisma/schema.prisma` with all models and enums
-- `docker-compose.yml` with PostgreSQL + Supabase Auth
-- `prisma/seed.ts` with test data
-- `prisma/migrations/` with trigger SQL (run after Prisma migrate)
-
-No existing code depends on these files. F1 is safe to start immediately.
+What F1 will change:
+- `prisma/schema.prisma` — new enums, remove Tool/Booking, add Document
+- `prisma/seed.ts` — new seed data for documents
+- `docker-compose.yml` — PostgreSQL only (no Supabase Auth needed)
 
 ---
 
@@ -148,13 +121,11 @@ No existing code depends on these files. F1 is safe to start immediately.
 
 | Category | Status |
 |---|---|
-| Banned terms | Clean |
-| Route consistency | Clean |
-| RBAC consistency | Clean (minor wording note) |
+| Banned terms | Clean in docs |
+| Route consistency | Clean — 8 routes, all consistent |
+| RBAC consistency | Clean |
 | Data model consistency | Clean |
-| Status flow consistency | Clean (minor clarity note) |
-| Feature dependencies | Clean |
-| Gaps requiring a doc fix | 1 — `isActive` filter missing from example query |
+| Status flow consistency | Clean |
+| Feature dependencies | Clean — valid order |
+| Phase 2 readiness | Documented, not blocking |
 | F1 readiness | Ready to start |
-
-The docs are implementation-ready. The one gap (missing `isActive` filter in the example query) is a code example issue in `implementation_rules.md`, not a spec conflict — it won't block F1.

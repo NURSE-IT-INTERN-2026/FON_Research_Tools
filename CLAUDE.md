@@ -4,9 +4,18 @@
 
 ## Project Overview
 
-Research Tools is a research equipment lending management system. Borrowers browse and request equipment; admins manage inventory and approve requests. Two roles, two themed portals (orange for borrowers, purple for admins).
+Research Tools is a **ระบบจัดการเอกสารเครื่องมือวิจัย** (Research Tool Document Management System) for คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่. Students upload research instrument documents (PDF); admins approve/reject them. Two roles, two themed portals (orange for students, purple for admins).
 
 This is the real production Next.js App Router project. It is the source of truth.
+
+## Phasing
+
+**IMPORTANT:** This project has 2 phases. Check `docs/phasing-plan.md` for details.
+
+- **Phase 1 (current):** Email/password auth + students fill profile manually + all app features
+- **Phase 2 (later):** Swap to CMU OAuth 2.0 + CMU MIS API for auto data fetching
+
+When implementing, build for Phase 1. The data model already has fields for Phase 2 data (thesisTitleTh, thesisTitleEn, studentStatus, etc.) — they're just nullable for now.
 
 ## Lovable Reference Project
 
@@ -28,15 +37,18 @@ Convert Lovable pages into Next.js App Router pages manually. No auto-ports.
 
 Before writing any code for a feature, read these docs:
 
-1. `docs/implementation_rules.md` — coding standards, architecture, and constraints
-2. `docs/tech-stack.md` — technologies, versions, and scope boundaries
-3. `docs/PRD.md` — product requirements and MVP scope
-4. `docs/_features.md` — feature tracking and current status
-5. `docs/route-map.md` — App Router route definitions and Server Actions
-6. `docs/data-model.md` — Prisma schema, enums, and relations
-7. `docs/auth-rbac.md` — authentication and role-based access control
-8. `docs/ui-pages.md` — page layouts and component specifications
-9. `docs/status-flow.md` — booking and tool state machines
+1. `docs/phasing-plan.md` — **READ THIS FIRST** — what to build now vs later
+2. `docs/requirements-summary.md` — concise requirements for boss review
+3. `docs/implementation_rules.md` — coding standards, architecture, and constraints
+4. `docs/tech-stack.md` — technologies, versions, and scope boundaries
+5. `docs/PRD.md` — product requirements
+6. `docs/_features.md` — feature tracking and current status
+7. `docs/route-map.md` — App Router route definitions and Server Actions
+8. `docs/data-model.md` — Prisma schema, enums, and relations
+9. `docs/auth-rbac.md` — authentication and role-based access control
+10. `docs/ui-pages.md` — page layouts and component specifications
+11. `docs/status-flow.md` — document status state machine
+12. `docs/ResearchTool-overview/` — reference docs from the old ASP.NET system
 
 ## Architecture Decisions
 
@@ -45,9 +57,10 @@ Before writing any code for a feature, read these docs:
 - Follow `.agents/skills/review-feature/SKILL.md` after completing a feature or when reviewing/fixing a completed slice.
 - Use Next.js App Router (`src/app/` directory). No `pages/` directory.
 - Use `proxy.ts` for route protection and RBAC — not `middleware.ts`.
-- **Supabase Auth only for identity, sessions, and cookies. Prisma for all application data queries and mutations.** Never use the Supabase client for application data queries.
+- **Custom auth (HMAC-SHA256 session tokens) for identity. Prisma for all application data queries and mutations.**
 - Use real data. No mock data unless explicitly requested.
 - Server Components by default. Client Components only when hooks or event handlers are needed.
+- **Keep existing UI styling** — the current UI design is good, only change data/content.
 - **Never modify files under `docs/lovable-reference/`** — it is a read-only UI/design reference.
 
 ## Language
@@ -62,19 +75,17 @@ Use these mappings for all user-facing status display:
 
 | Enum Value | Thai Label |
 |---|---|
-| **BookingStatus** | |
+| **DocumentStatus** | |
 | `PENDING` | รอตรวจสอบ |
 | `APPROVED` | อนุมัติแล้ว |
 | `REJECTED` | ปฏิเสธแล้ว |
-| `RETURNED` | คืนแล้ว |
-| `OVERDUE` | เกินกำหนด |
-| **ToolStatus** | |
-| `AVAILABLE` | พร้อมใช้งาน |
-| `BORROWED` | กำลังยืม |
-| `MAINTENANCE` | ซ่อมบำรุง |
 | **AppRole** | |
-| `ADMIN` | ผู้ดูแลระบบ |
-| `BORROWER` | ผู้ยืม |
+| `ADMIN` | เจ้าหน้าที่ |
+| `STUDENT` | นักศึกษา |
+| **StudentStatus** (Phase 2) | |
+| Active | กำลังศึกษา |
+| Resigned | ลาออก |
+| Dismissed | พ้นสภาพ |
 
 ## Implementation Rules
 
@@ -83,6 +94,7 @@ Use these mappings for all user-facing status display:
 - Do not add dependencies unless necessary and justified.
 - Enforce RBAC on both server-side and UI where applicable.
 - After completing a feature, update `docs/_features.md`.
+- **Keep existing UI** — only change data/content, not styling or layout.
 
 ## Workflow
 

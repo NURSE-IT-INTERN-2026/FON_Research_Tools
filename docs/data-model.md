@@ -1,6 +1,6 @@
 # Data Model
 
-PostgreSQL via Prisma 7. Auth identity managed by Supabase; application data managed by Prisma.
+PostgreSQL via Prisma 7. Auth managed by CMU OAuth 2.0; application data managed by Prisma.
 
 ---
 
@@ -9,36 +9,22 @@ PostgreSQL via Prisma 7. Auth identity managed by Supabase; application data man
 ```prisma
 enum AppRole {
   ADMIN
-  BORROWER
+  STUDENT
 }
 
-enum ToolStatus {
-  AVAILABLE
-  BORROWED
-  MAINTENANCE
-}
-
-enum BookingStatus {
+enum DocumentStatus {
   PENDING
   APPROVED
   REJECTED
-  RETURNED
-  OVERDUE
 }
 
 enum ActivityAction {
-  BOOKING_CREATE
-  BOOKING_APPROVE
-  BOOKING_REJECT
-  BOOKING_RETURN
-  BOOKING_OVERDUE
-  BOOKING_CANCEL
-  TOOL_CREATE
-  TOOL_UPDATE
-  TOOL_DEACTIVATE
-  TOOL_TOGGLE_STATUS
-  USER_SIGNUP
   USER_LOGIN
+  DOCUMENT_UPLOAD
+  DOCUMENT_APPROVE
+  DOCUMENT_REJECT
+  DOCUMENT_REMOVE
+  ADMIN_CREATED
 }
 ```
 
@@ -46,26 +32,32 @@ enum ActivityAction {
 
 ## Models
 
-### User (managed by Supabase Auth)
-
-Auth identity lives in Supabase. The app references the user ID from the session cookie. No self-managed `users` table.
-
 ### Profile
 
 ```prisma
 model Profile {
-  id         String    @id                       // Matches Supabase auth user ID
-  name       String
-  email      String    @unique
-  department String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id            String    @id
+  name          String
+  email         String    @unique
+  studentId     String?   @unique
+  department    String?
+  degree        String?
+  program       String?
+  thesisTitleTh String?
+  thesisTitleEn String?
+  accountType   String?   // StdAcc, MISEmpAcc
+  cmuItAccount  String?
+  studentStatus String?   // กำลังศึกษา, ลาออก, พ้นสภาพ (ดึงจาก CMU MIS API)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   userRole      UserRole?
-  bookings      Booking[]
+  documents     Document[]
   activityLogs  ActivityLog[]
 }
 ```
+
+ข้อมูลส่วนใหญ่ดึงจาก CMU MIS API อัตโนมัติเมื่อล็อกอิน (name, email, studentId, department, degree, program, thesisTitleTh, thesisTitleEn, accountType, studentStatus)
 
 ### UserRole
 
@@ -78,50 +70,34 @@ model UserRole {
 }
 ```
 
-`userId` is `@unique` so each user has exactly one role. The schema-level constraint makes the one-role-per-user rule enforceable by the database, not just the application layer.
+`userId` is `@unique` — one role per user. Role determined by `accountType`: `StdAcc` → STUDENT, `MISEmpAcc` → ADMIN.
 
-### Tool
-
-```prisma
-model Tool {
-  id           String     @id @default(cuid())
-  name         String
-  description  String     @default("")
-  category     String     @default("General")
-  serialNumber String     @unique
-  imageUrl     String?
-  status       ToolStatus @default(AVAILABLE)
-  location     String     @default("")
-  isActive     Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  bookings Booking[]
-}
-```
-
-`isActive` soft-delete flag. Admin can deactivate a tool (hides it from the borrower catalog). Tools with booking history are deactivated, never hard-deleted, to preserve referential integrity. Tools with zero bookings can optionally be hard-deleted.
-
-### Booking
+### Document
 
 ```prisma
-model Booking {
-  id         String        @id @default(cuid())
-  userId     String
-  toolId     String
-  startDate  DateTime
-  endDate    DateTime
-  purpose    String
-  status     BookingStatus @default(PENDING)
-  adminNotes String?
-  returnDate DateTime?                          // Actual return date (set when admin marks returned)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+model Document {
+  id           String         @id @default(cuid())
+  userId       String
+  title        String         // ชื่อเครื่องมือวิจัย (นักศึกษากรอก)
+  fileName     String         // ชื่อไฟล์บนเซิร์ฟเวอร์ ({studentId}_{n}.pdf)
+  originalName String         // ชื่อไฟล์ต้นฉบับ
+  fileSize     Int            // ขนาดไฟล์ (bytes)
+  status       DocumentStatus @default(PENDING)
+  approvedBy   String?        // อีเมลผู้อนุมัติ/ปฏิเสธ
+  approvedAt   DateTime?      // เวลาที่อนุมัติ/ปฏิเสธ
+  adminNotes   String?        // หมายเหตุ (กรณีปฏิเสธ)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tool    Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 ```
+
+ฟิลด์ที่นักศึกษากรอกเอง: `title`, `fileName`, `originalName`, `fileSize` (ผ่านอัปโหลด PDF)
 
 ### ActivityLog
 
@@ -130,10 +106,10 @@ model ActivityLog {
   id          String         @id @default(cuid())
   action      ActivityAction
   userId      String
-  targetType  String?        // "Booking" | "Tool" | "Profile"
+  targetType  String?        // "Document" | "Profile"
   targetId    String?
-  targetLabel String?        // snapshot label (tool name, borrower→tool, etc.)
-  metadata    String?        // JSON string for extra context
+  targetLabel String?        // "สมชาย → The Positive Discipline Questionnaire"
+  metadata    String?
   createdAt   DateTime       @default(now())
   profile     Profile        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -144,68 +120,42 @@ model ActivityLog {
 }
 ```
 
-Fire-and-forget audit trail. `logActivity()` wraps writes in try/catch so a failed log never breaks user actions. `targetLabel` captures a human-readable snapshot (e.g. `"Somchai → Microscope"`) so the log remains readable even if the referenced entity is later modified or deleted.
+---
+
+## Relations
 
 ```
-Profile 1──1 UserRole     (userId @unique)
-Profile 1──N Booking
+Profile 1──1 UserRole
+Profile 1──N Document
 Profile 1──N ActivityLog
-Tool    1──N Booking
 ```
 
 ---
 
-## Indexes (beyond defaults)
+## File Storage
 
-- `Profile.email` — unique lookup
-- `Tool.serialNumber` — unique lookup
-- `Booking.userId` — borrower's bookings query
-- `Booking.toolId` — tool's booking history
-- `Booking.status` — filtered queries (pending, overdue)
-- `UserRole.userId` — unique lookup (enforced by `@unique`)
-
----
-
-## PostgreSQL Trigger
-
-`handle_new_user` trigger fires after Supabase Auth creates a new user. Defined as a raw SQL migration, not managed by Prisma.
-
-**Migration order matters:** This trigger must be created **after** Prisma has created the `Profile` table, `UserRole` table, and `AppRole` enum. Run `npx prisma migrate dev` first to create the public schema, then apply the trigger migration separately. The trigger function references `"AppRole"` as a cast target — it will fail if the enum does not exist yet.
-
-```sql
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO "Profile" (id, name, email, department)
-  VALUES (
-    NEW.id,
-    NEW.raw_user_meta_data->>'name',
-    NEW.email,
-    NEW.raw_user_meta_data->>'department'
-  );
-  INSERT INTO "UserRole" ("userId", role)
-  VALUES (
-    NEW.id,
-    (NEW.raw_user_meta_data->>'role')::"AppRole"
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 ```
+uploads/
+├── {studentId_1}/
+│   ├── {studentId_1}_1.pdf
+│   ├── {studentId_1}_2.pdf
+│   └── ...
+├── {studentId_2}/
+│   ├── {studentId_2}_1.pdf
+│   └── ...
+└── ...
+```
+
+- รองรับเฉพาะ PDF
+- ขนาดสูงสุด 100 MB ต่อไฟล์
+- ชื่อไฟล์อัตโนมัติ: `{studentId}_{ลำดับ}.pdf`
 
 ---
 
 ## Seed Data (Dev)
 
-Docker Compose seeds the database via `prisma/seed.ts`:
-
-- 2 admin profiles + roles
-- 4 borrower profiles + roles
-- 8–10 tools across 4–5 categories
-- 10–15 bookings across all statuses
-
-No mock data in application code — seed the database instead.
+- 1 admin profile + role
+- 4 student profiles + roles (Thai names, CMU-style student IDs)
+- Student profiles with thesis info
+- 8-10 documents across PENDING/APPROVED/REJECTED statuses
+- Matching activity log entries

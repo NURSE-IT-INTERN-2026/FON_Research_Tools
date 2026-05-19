@@ -4,44 +4,49 @@
 
 ## Phase 1 — Foundation
 
-- [x] **F1** Database schema + Prisma models + Docker Compose + seed script *(— | `docker compose up` creates DB, `npx prisma migrate dev` applies schema, `npx prisma db seed` populates test data`)*
-- [x] **F2** Custom auth setup: HMAC-SHA256 session tokens + bcrypt password hashing + auth helpers (`getSession`, `requireAuth`, `requireRole`) *(F1 | Server Components can call `getSession()` and read authenticated user ID from cookies)*
-- [x] **F3** Signup page: form + Server Action + Prisma transaction (Profile + UserRole) + role selection *(F1, F2 | User can register, Profile + UserRole rows are created, redirect to correct dashboard)*
-- [x] **F4** Login page: form + Server Action + session + role-based redirect + rate limiting *(F2 | User can sign in, gets redirected by role, error shown on failure)*
-- [x] **F5** `proxy.ts`: route protection + RBAC redirect (unauthenticated → `/login`, wrong role → correct dashboard) *(F2 | Unauthenticated users redirected from protected routes; wrong-role users redirected)*
-- [x] **F6** Layout shell: root layout, public layout (centered card), borrower layout (orange sidebar), admin layout (purple sidebar) *(F5 | Each role group renders the correct sidebar; public pages have no sidebar)*
-- [x] **F7** Design tokens + theme system (CSS custom properties for orange borrower / purple admin) *(— | Two theme CSS classes swap primary, accent, sidebar, and ring tokens)*
+- [ ] **F1** Database schema + Prisma models + Docker Compose + seed script *(Profile with thesis fields, Document model, DocumentStatus enum, ActivityAction for documents)*
+- [ ] **F2** CMU OAuth 2.0 login flow: redirect to Microsoft Azure AD → receive code → exchange token → call CMU MIS API → create/update Profile + UserRole → session → redirect by role
+- [ ] **F3** Route protection + RBAC: `proxy.ts` redirect by role (STUDENT → `/dashboard`, ADMIN → `/admin/dashboard`), unauthorized → landing page, AlumAcc → `/unauthorized`
+- [ ] **F4** Layout shell: root layout, public layout, student layout (orange sidebar), admin layout (purple sidebar with search button on navbar)
+- [ ] **F5** Design tokens + theme system (orange student / purple admin)
 
-## Phase 2 — Borrower Portal
+## Phase 2 — Student Portal
 
-- [x] **F8** Tool catalog: browse, search (URL searchParams), category/status filter pills, responsive tool card grid *(F6, F7 | Borrower sees tool cards, can filter by category and status, search by name; filters update URL and re-render server-side)*
-- [x] **F9** Borrow request: modal form with date pickers + validation + Server Action `createBooking` *(F8 | Borrower can submit a borrow request with dates and purpose; PENDING booking created; tool remains AVAILABLE until approved)*
-- [x] **F10** My Bookings: tab view (Current / Pending / Past), cancel pending booking *(F6, F7 | Borrower sees bookings grouped by tab; can cancel PENDING bookings (→ REJECTED); status badges render correctly)*
+- [ ] **F6** Student Dashboard: profile info (from MIS API) + thesis info + upload form + document list with status badges
+- [ ] **F7** Document upload: PDF upload with title input, save to `uploads/{studentId}/`, create Document record
+- [ ] **F8** Document management: view own documents with status, remove own PENDING documents
 
 ## Phase 3 — Admin Portal
 
-- [x] **F11** Admin dashboard: 4 stat cards (linked) + recent activity feed *(F6, F7 | Admin sees live counts from DB; activity feed shows latest 10 bookings with borrower name + verb + tool name)*
-- [x] **F12** Inventory CRUD: data table, create/edit tool modal, status toggle, deactivate/archive with confirm *(F6, F7 | Admin can add, edit, deactivate tools (soft delete); toggle MAINTENANCE ↔ AVAILABLE; data persists in DB; deactivated tools hidden from borrower catalog)*
-- [x] **F13** Request management: approve/reject with notes dialog, mark returned, flag overdue *(F6, F7 | Admin can approve (→ tool BORROWED), reject with notes, mark returned (→ tool AVAILABLE), flag overdue; availability check runs on return)*
-- [x] **F14** Users list: read-only table (name, email, department, role) *(F6, F7 | Admin sees all registered users with roles)*
-- [x] **F15** Activity log: comprehensive audit trail tracking all app mutations (bookings, tools, auth) with admin-only slide-out panel (25 recent) + dedicated full page with search, filter by action/targetType/user, and pagination *(F6, F7, F11 | Admin sees recent activities in panel via bell icon; full page at /admin/activity-log with URL-driven filters; dashboard reads from ActivityLog table)*
+- [ ] **F9** Admin Dashboard: 4 stat cards (นักศึกษาทั้งหมด, เอกสารทั้งหมด, รอตรวจสอบ, อนุมัติแล้ว) + recent activity feed
+- [ ] **F10** Document management: list all documents, filter by status (ทั้งหมด/รอตรวจสอบ/อนุมัติแล้ว/ปฏิเสธแล้ว), approve single, approve all (PENDING only), reject with notes, remove, view PDF
+- [ ] **F11** Student list: รายชื่อนักศึกษา + สถานะ (กำลังศึกษา/ลาออก/พ้นสภาพ) + จำนวนเอกสาร
+- [ ] **F12** Admin search: ค้นหาจากรหัสนักศึกษา / ชื่อ / ชื่อวิทยานิพนธ์ (search button on navbar)
+
+## Phase 4 — System
+
+- [ ] **F13** Activity log: comprehensive audit trail (document upload, approve, reject, remove, login)
+- [ ] **F14** API `/api/my/documents`: นักศึกษาตรวจสอบสถานะเอกสารและเวลาที่ได้รับการอนุมัติ
+
+## Phase 5 — Post-MVP
+
+- [ ] **F15** Email notifications: ส่งอีเมลแจ้งเตือนเมื่ออนุมัติ/ปฏิเสธ (Nodemailer + SMTP)
+- [ ] **F16** Student detail page: `/admin/students/[id]`
+- [ ] **F17** Export data (Excel/CSV)
+- [ ] **F18** Pagination
 
 ---
 
 ## Implementation Order (Vertical Slices)
 
-Each slice delivers a working end-to-end feature:
-
-1. **F1 + F7** — Schema + theme (parallel, no dependencies)
-2. **F2** — Supabase Auth setup + helpers
-3. **F3** — Signup page + trigger
-4. **F4** — Login page + redirect
-5. **F5 + F6** — Proxy + layouts
-6. **F8** — Tool catalog
-7. **F9** — Borrow request flow
-8. **F10** — My Bookings
-9. **F11** — Admin dashboard
-10. **F12** — Admin inventory
-11. **F13** — Admin requests
-12. **F14** — Admin users
-13. **F15** — Activity log (panel + page)
+1. **F1 + F5** — Schema + theme (parallel)
+2. **F2** — CMU OAuth + MIS API integration
+3. **F3 + F4** — Proxy + layouts
+4. **F6 + F7 + F8** — Student portal (dashboard + upload + manage)
+5. **F9** — Admin dashboard
+6. **F10** — Admin document management
+7. **F11** — Admin student list
+8. **F12** — Admin search
+9. **F13** — Activity log
+10. **F14** — Status check API
+11. **F15-F18** — Post-MVP

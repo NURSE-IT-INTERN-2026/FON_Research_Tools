@@ -2,19 +2,17 @@
 
 ## Project Name
 
-Research Tools — Equipment Lending Management System
+FON Research Tool — ระบบจัดการเอกสารเครื่องมือวิจัย
 
 ## 1. Problem
 
-Research institutions manage shared equipment (microscopes, oscilloscopes, 3D printers, etc.) through paper forms and spreadsheets. This leads to lost equipment, scheduling conflicts, and no visibility into availability.
+คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่ ต้องเก็บข้อมูลเครื่องมือวิจัยที่นักศึกษาใช้ในการทำวิทยานิพนธ์ ปัจจุบันใช้ระบบเก่า (ASP.NET Web Forms) ที่ต้องการพัฒนาใหม่ด้วยเทคโนโลยีสมัยใหม่
 
 ## 2. Solution
 
-A web application where:
-- **Borrowers** browse a tool catalog, submit borrow requests, and track their bookings.
-- **Admins** manage the inventory, approve/reject requests, process returns, and flag overdue items.
-
-All online, no paper.
+เว็บแอปพลิเคชันที่:
+- **นักศึกษา** ล็อกอินด้วย CMU Account กรอกชื่อเครื่องมือวิจัยและอัปโหลดเอกสาร PDF ทิ้งไว้
+- **เจ้าหน้าที่** ตรวจสอบและอนุมัติเอกสาร พร้อมดู Dashboard สรุปข้อมูล
 
 ## 3. Technical Stack
 
@@ -22,68 +20,61 @@ All online, no paper.
 |---|---|
 | Framework | Next.js 16 (App Router) |
 | UI | React 19, Tailwind CSS v4, shadcn/ui |
-| Auth | Supabase Auth (email/password) with `@supabase/ssr` |
+| Auth | CMU Microsoft Azure AD OAuth 2.0 |
 | Database | PostgreSQL |
 | ORM | Prisma 7 |
-| Local Dev | Docker Compose (Postgres + Supabase Auth) |
+| File Storage | Local filesystem (`uploads/`) |
+| Email (Post-MVP) | Nodemailer + SMTP |
 
 ### Architecture Split
 
-Supabase Auth handles user identity and sessions (signup, login, cookie management). Prisma handles all application data queries (profiles, tools, bookings). The Supabase client is never used for data queries — only Prisma.
+ระบบดึงข้อมูลส่วนตัวและวิทยานิพนธ์จาก CMU MIS API ทั้งหมด ยกเว้น 2 ฟิลด์ที่นักศึกษากรอกเอง: ชื่อเครื่องมือวิจัย + อัปโหลด PDF
 
 ## 4. User Roles
 
 | Role | Description |
 |---|---|
-| **Borrower** | Students, researchers, staff who browse and request equipment |
-| **Admin** | Lab managers who manage inventory and approve requests |
+| **Student (นักศึกษา)** | ล็อกอินด้วย CMU Account, อัปโหลดเอกสารเครื่องมือวิจัย, ดูสถานะ |
+| **Admin (เจ้าหน้าที่)** | ล็อกอินด้วย CMU Account, อนุมัติ/ปฏิเสธเอกสาร, ดู Dashboard |
 
-MVP supports one role per user. A user cannot hold both roles simultaneously.
+ระบบแยกบทบาทจากประเภทบัญชี CMU (`StdAcc` = Student, `MISEmpAcc` = Admin)
 
 ## 5. Design System
 
 | Context | Primary Color | Purpose |
 |---|---|---|
-| Borrower UI | Orange `#f26e2c` | Clean, user-centric browsing experience |
-| Admin UI | Purple `#aa74ab` | Data-dense management interface |
+| Student UI | Orange `#f26e2c` | หน้าจัดการเอกสารของนักศึกษา |
+| Admin UI | Purple `#aa74ab` | หน้า Dashboard และจัดการเอกสาร |
 | Shared | Slate base, system fonts | Neutral foundation |
-
-Both themes share the same background, card, border, and status colors. Only the primary/accent/sidebar tokens change.
 
 ## 6. Core Features (MVP)
 
 ### 6.1 Authentication
-- Email/password signup with role selection (Borrower or Admin)
-- Email/password login with role-based redirect
-- Session management with server-side protection via `proxy.ts`
+- CMU Microsoft Azure AD OAuth 2.0
+- ดึงข้อมูลส่วนตัว + วิทยานิพนธ์จาก CMU MIS API อัตโนมัติ
+- Role-based redirect (Student → `/dashboard`, Admin → `/admin/dashboard`)
 
-### 6.2 Borrower Portal
-- **Tool Catalog** (`/dashboard`) — Browse, search, filter by category/status, request to borrow
-- **My Bookings** (`/my-bookings`) — Track bookings by tab (Current / Pending / Past), cancel pending requests
+### 6.2 Student Portal
+- **Dashboard** (`/dashboard`) — ข้อมูลส่วนตัว + วิทยานิพนธ์ + อัปโหลดเอกสาร + รายการเอกสาร
+- อัปโหลด PDF พร้อมกรอกชื่อเครื่องมือวิจัย
+- ดูสถานะเอกสาร (รอตรวจสอบ / อนุมัติแล้ว / ปฏิเสธแล้ว)
+- ลบเอกสารของตัวเอง (เฉพาะ PENDING)
 
 ### 6.3 Admin Portal
-- **Dashboard** (`/admin/dashboard`) — Stat cards (total tools, borrowed, pending, overdue) + recent activity feed
-- **Inventory** (`/admin/inventory`) — CRUD table for tools (add, edit, deactivate/archive, toggle status)
-- **Requests** (`/admin/requests`) — Approve/reject borrow requests, mark returns, flag overdue
-- **Users** (`/admin/users`) — Read-only list of registered accounts
+- **Dashboard** (`/admin/dashboard`) — 4 stat cards + กิจกรรมล่าสุด
+- **Documents** (`/admin/documents`) — รายการเอกสารทั้งหมด, กรองสถานะ, อนุมัติ/ปฏิเสธ/ลบ
+- **Students** (`/admin/students`) — รายชื่อนักศึกษา + สถานะ (กำลังศึกษา/ลาออก/พ้นสภาพ)
+- **Activity Log** (`/admin/activity-log`) — บันทึกกิจกรรม
 
-### 6.4 Booking Lifecycle
-- Borrower submits request → status: `PENDING`
-- Admin approves → status: `APPROVED`, tool status: `BORROWED`
-- Admin rejects → status: `REJECTED`, optional notes
-- Admin marks returned → status: `RETURNED`, tool status: `AVAILABLE`
-- Admin flags overdue → status: `OVERDUE` (manual action, not auto-detected in MVP)
+### 6.4 Document Lifecycle
+- นักศึกษาอัปโหลด → `PENDING`
+- แอดมินอนุมัติ (ทีละฉบับหรือ "อนุมัติทั้งหมด") → `APPROVED`
+- แอดมินปฏิเสธพร้อมเหตุผล → `REJECTED`
+- Bulk approve กระทบเฉพาะ PENDING เท่านั้น
 
-## 7. Out of Scope (Post-MVP)
+## 7. Post-MVP
 
-- Automatic overdue detection (cron job or scheduled function)
-- Borrower "request return" action (deferred — admin marks returned directly)
-- File/image upload for tools (use URL field for now)
-- Email notifications
-- Pagination (load all for MVP)
-- Advanced mobile navigation experience
-- Optimistic UI updates
-- Real-time updates (WebSockets)
-- Calendar/scheduling view
-- Audit log
-- Dual-role users (ADMIN + BORROWER on one account)
+- ส่งอีเมลแจ้งเตือนเมื่ออนุมัติ/ปฏิเสธ
+- หน้ารายละเอียดนักศึกษา `/admin/students/[id]`
+- Export ข้อมูล (Excel/CSV)
+- Pagination

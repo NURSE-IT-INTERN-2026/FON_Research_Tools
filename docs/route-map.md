@@ -9,34 +9,45 @@ All routes use Next.js App Router (`src/app/`).
 ```
 src/app/
 ├── layout.tsx                    ← Root layout (html, body, fonts, providers)
-├── page.tsx                      ← Landing page (redirect if authenticated)
+├── page.tsx                      ← Landing page
 ├── login/
-│   └── page.tsx                  ← Sign in
-├── signup/
-│   └── page.tsx                  ← Register with role selection
-├── unauthorized.tsx              ← 401 page (unauthenticated on protected route)
-├── forbidden.tsx                 ← 403 page (wrong role)
-├── not-found.tsx                 ← 404 page
-├── error.tsx                     ← Error boundary (client component)
-├── global-error.tsx              ← Root error boundary (catches layout errors)
-├── (borrower)/                   ← Route group: borrower layout + auth guard
+│   └── page.tsx                  ← Redirect to CMU OAuth 2.0
+├── api/
+│   └── auth/
+│       └── callback/
+│           └── route.ts          ← OAuth callback (receive code, exchange, create session)
+│   └── documents/
+│       └── [id]/
+│           ├── file/
+│           │   └── route.ts      ← Serve PDF file
+│           ├── approve/
+│           │   └── route.ts      ← Approve document
+│           ├── reject/
+│           │   └── route.ts      ← Reject document
+│           └── route.ts          ← DELETE: remove document
+│   └── my/
+│       └── documents/
+│           └── route.ts          ← GET: student's own documents with status
+├── unauthorized.tsx              ← 401 (AlumAcc or no access)
+├── forbidden.tsx                 ← 403 (wrong role)
+├── not-found.tsx                 ← 404
+├── error.tsx                     ← Error boundary
+├── global-error.tsx              ← Root error boundary
+├── (student)/                    ← Route group: student layout + auth guard
 │   ├── layout.tsx                ← Sidebar (orange theme) + main content
-│   ├── dashboard/
-│   │   └── page.tsx              ← Tool catalog (browse, search, filter, request)
-│   └── my-bookings/
-│       └── page.tsx              ← Booking tracker (Current / Pending / Past tabs)
+│   └── dashboard/
+│       └── page.tsx              ← Profile + thesis info + upload form + document list
 └── (admin)/                      ← Route group: admin layout + auth guard
-    ├── layout.tsx                ← Sidebar (purple theme) + main content
-    ├── dashboard/
-    │   └── page.tsx              ← Stat cards + recent activity
-    ├── inventory/
-    │   └── page.tsx              ← Tool CRUD table
-    ├── requests/
-    │   └── page.tsx              ← Borrow request management
-    ├── users/
-    │   └── page.tsx              ← Read-only user list
-    └── activity-log/
-        └── page.tsx              ← Full activity log with search + filters
+    ├── layout.tsx                ← Sidebar (purple theme) + search button on navbar
+    └── admin/
+        ├── dashboard/
+        │   └── page.tsx          ← Stat cards + recent activity
+        ├── documents/
+        │   └── page.tsx          ← Document list with filters + approve/reject/remove
+        ├── students/
+        │   └── page.tsx          ← Student list with status + document counts
+        └── activity-log/
+            └── page.tsx          ← Full activity log with search + filters
 ```
 
 ---
@@ -47,67 +58,63 @@ src/app/
 
 | Route | Page | Auth | Data |
 |---|---|---|---|
-| `/` | Landing | Redirect if logged in | None |
-| `/login` | Sign in | Redirect if logged in | None |
-| `/signup` | Register | Redirect if logged in | None |
+| `/` | Landing | No auth required | None |
+| `/login` | Redirect to CMU OAuth | No auth required | None |
+| `/api/auth/callback` | OAuth callback handler | Public (receives code) | CMU MIS API |
 
-### Borrower Routes (requires `BORROWER` role)
+### Student Routes (requires `STUDENT` role)
 
 | Route | Page | Data Source |
 |---|---|---|
-| `/dashboard` | Tool catalog | `tools` table, filtered/searched via URL `searchParams` (server-side) |
-| `/my-bookings` | Booking tracker | `bookings` + `tools` join, filtered by `user_id` |
+| `/dashboard` | Profile + upload + documents | Profile (MIS API data), Document table filtered by userId |
 
 ### Admin Routes (requires `ADMIN` role)
 
 | Route | Page | Data Source |
 |---|---|---|
-| `/admin/dashboard` | Stats + activity | Aggregate counts on `tools` + `bookings`; recent `bookings` + `profiles` join |
-| `/admin/inventory` | Tool CRUD | `tools` table, ordered by name |
-| `/admin/requests` | Request management | `bookings` + `tools` + `profiles` join |
-| `/admin/users` | User list | `profiles` + `user_roles` join |
-| `/admin/activity-log` | Activity log | `activity_logs` + `profiles` join, filtered/searched via URL `searchParams` (server-side), paginated with `take` param |
+| `/admin/dashboard` | Stats + activity | Aggregate counts on Document; recent ActivityLog + Profile join |
+| `/admin/documents` | Document management | Document + Profile join, filtered by status via URL `searchParams` |
+| `/admin/students` | Student list | Profile (with studentStatus), Document count per student |
+| `/admin/activity-log` | Activity log | ActivityLog + Profile join, filtered/searched via URL `searchParams` |
+
+### API Routes
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | `/api/documents` | Student | Upload PDF + create Document record |
+| GET | `/api/documents/[id]/file` | Student (own) / Admin | Serve PDF file |
+| DELETE | `/api/documents/[id]` | Student (own, PENDING) / Admin | Remove document + file |
+| PATCH | `/api/documents/[id]/approve` | Admin | Approve document |
+| PATCH | `/api/documents/[id]/reject` | Admin | Reject document with notes |
+| GET | `/api/my/documents` | Student | Own documents with status + approval timestamps |
 
 ---
 
 ## Auth & Guard Strategy
 
-- **Proxy** (`proxy.ts`): runs on every request, reads session cookie via `verifySessionToken()`, redirects unauthenticated users to `/login`, redirects wrong-role users to their correct dashboard. Uses Next.js 16 `proxy()` export (not `middleware()`).
-- **Layout guards**: `(borrower)/layout.tsx` and `(admin)/layout.tsx` call `requireRole()` server-side and render the appropriate sidebar. Proxy handles coarse redirect; layouts render role-specific UI.
-- **Server Components**: fetch data server-side using the session — no client-side auth flashing.
-- **Auth errors**: use `unauthorized()` (renders `unauthorized.tsx`) and `forbidden()` (renders `forbidden.tsx`) from `next/navigation` where applicable.
+- **Proxy** (`proxy.ts`): reads session cookie, redirects unauthenticated to `/`, redirects wrong-role to correct dashboard. Uses Next.js 16 `proxy()` export.
+- **Layout guards**: `(student)/layout.tsx` calls `requireRole("STUDENT")`, `(admin)/layout.tsx` calls `requireRole("ADMIN")`.
+- **Server Components**: fetch data server-side using session — no client-side auth flashing.
 
 ---
 
-## API / Server Actions
-
-All mutations use Next.js Server Actions, not API routes.
+## Server Actions
 
 | Action | Trigger | Mutations |
 |---|---|---|
-| `signup` | Signup form submit | `hashPassword` + Prisma transaction (Profile + UserRole) → `createSession` → redirect by role |
-| `login` | Login form submit | Query Profile by email → `verifyPassword` → query role → `createSession` → redirect by role |
-| `logout` | Sidebar sign-out button | `clearSession` → redirect to `/login` |
-| `createBooking` | Borrower submits request form | Insert `bookings` row (status: PENDING) |
-| `cancelBooking` | Borrower cancels pending request | Update `bookings` status → REJECTED |
-| `createTool` | Admin adds new tool | Insert `tools` row |
-| `updateTool` | Admin edits tool | Update `tools` row |
-| `deactivateTool` | Admin deactivates tool | Set `tools.isActive` → false (soft delete; hard delete only if tool has zero bookings) |
-| `toggleToolStatus` | Admin toggles maintenance | Update `tools` status |
-| `approveBooking` | Admin approves request | Update `bookings` → APPROVED; Update `tools` → BORROWED |
-| `rejectBooking` | Admin rejects request | Update `bookings` → REJECTED + adminNotes |
-| `markReturned` | Admin marks returned | Update `bookings` → RETURNED, set `returnDate`; Update `tools` → AVAILABLE (if no other APPROVED bookings) |
-| `markOverdue` | Admin flags overdue | Update `bookings` → OVERDUE |
-| `getRecentActivity` | Activity panel open | Query `activity_logs` last 25, admin-only |
-| `logActivity` | Internal (after every mutation) | Insert `activity_logs` row (fire-and-forget, wrapped in try/catch) |
+| `uploadDocument` | Student upload form | Save PDF to filesystem + insert Document row |
+| `removeDocument` | Student/Admin remove button | Delete file + delete Document row |
+| `approveDocument` | Admin approve button | Update Document → APPROVED, set approvedBy + approvedAt |
+| `approveAllDocuments` | Admin "อนุมัติทั้งหมด" button | Update all PENDING documents for a student → APPROVED |
+| `rejectDocument` | Admin reject button | Update Document → REJECTED, set adminNotes + approvedBy + approvedAt |
+| `getRecentActivity` | Activity panel | Query ActivityLog last 25, admin-only |
+| `logActivity` | Internal (after every mutation) | Insert ActivityLog row (fire-and-forget) |
 
 ---
 
 ## Naming Conventions
 
-- Route groups use parentheses: `(borrower)`, `(admin)`
+- Route groups use parentheses: `(student)`, `(admin)`
 - Page files are always `page.tsx`
 - Layout files are always `layout.tsx`
-- Error boundaries are `error.tsx` (add per-segment as needed)
-- Loading states are `loading.tsx` (add per-segment as needed)
 - Route protection uses `proxy.ts` with `export function proxy()` (Next.js 16+)

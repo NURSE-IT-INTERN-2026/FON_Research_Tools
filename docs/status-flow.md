@@ -1,126 +1,76 @@
-# Status Flow — Booking & Tool State Machines
+# Status Flow — Document State Machine
 
 ---
 
-## Booking Status
+## Document Status
 
 ```
                     ┌──────────────────┐
                     │                  │
-      borrower      │    PENDING       │
-      submits       │                  │
+   นักศึกษา         │    PENDING       │
+   อัปโหลด          │   รอตรวจสอบ      │
   ─────────────►    └────────┬─────────┘
-                             │
-                    ┌────────┴─────────┐
-                    │                  │
-               ┌────▼─────┐     ┌─────▼─────┐
-               │          │     │           │
-               │ APPROVED │     │ REJECTED  │
-               │          │     │           │
-               └────┬─────┘     └─────┬─────┘
-                    │                 ▲
-                    │           borrower
-                    │           cancels
-                    │           (PENDING only)
-                    │                 │
-              ┌─────┴──────┐         │
-              │            │         │
-         ┌────▼────┐  ┌───▼──────┐  │
-         │         │  │          │  │
-         │ RETURNED│  │ OVERDUE  │──┘ (OVERDUE cannot be cancelled)
-         │         │  │          │
-         └─────────┘  └────┬─────┘
-                           │
-                      admin marks
-                       returned
-                           │
-                      ┌────▼─────┐
-                      │          │
-                      │ RETURNED │
-                      │          │
-                      └──────────┘
+                            │
+                   ┌────────┴─────────┐
+                   │                  │
+              ┌────▼─────┐     ┌─────▼─────┐
+              │          │     │           │
+              │ APPROVED │     │ REJECTED  │
+              │อนุมัติแล้ว  │     │ปฏิเสธแล้ว   │
+              │          │     │           │
+              └──────────┘     └───────────┘
 ```
 
 ---
 
-## Booking Status Transitions
+## Document Status Transitions
 
 | From | To | Triggered By | Side Effects |
 |---|---|---|---|
-| — | PENDING | Borrower submits request | — |
-| PENDING | APPROVED | Admin approves | Tool → BORROWED; set `returnDate` to null |
-| PENDING | REJECTED | Admin rejects (with optional notes) | — |
-| PENDING | REJECTED | Borrower cancels | — |
-| APPROVED | RETURNED | Admin marks returned | Tool → AVAILABLE (availability check); set `returnDate` = now |
-| APPROVED | OVERDUE | Admin flags overdue | — |
-| OVERDUE | RETURNED | Admin marks returned | Tool → AVAILABLE (availability check); set `returnDate` = now |
+| — | PENDING | นักศึกษาอัปโหลดเอกสาร | บันทึกลง ActivityLog |
+| PENDING | APPROVED | แอดมินอนุมัติ (ทีละฉบับ หรือ "อนุมัติทั้งหมด") | set approvedBy, approvedAt; ส่งอีเมลแจ้งนักศึกษา (Post-MVP) |
+| PENDING | REJECTED | แอดมินปฏิเสธ (พร้อมเหตุผล) | set approvedBy, approvedAt, adminNotes; ส่งอีเมลแจ้งนักศึกษา (Post-MVP) |
+| PENDING | (deleted) | นักศึกษาลบเอกสารตัวเอง | ลบไฟล์ + ลบ record |
+| any | (deleted) | แอดมินลบเอกสาร | ลบไฟล์ + ลบ record |
 
 ### Immutable rules
-- REJECTED and RETURNED are terminal states — no further transitions.
-- Only PENDING bookings can be cancelled by the borrower.
-- OVERDUE is set manually by admin — no automatic detection in MVP.
-- OVERDUE bookings cannot be cancelled by the borrower.
+
+- APPROVED และ REJECTED เป็น terminal states — เปลี่ยนสถานะต่อไม่ได้
+- นักศึกษาลบได้เฉพาะ PENDING ของตัวเอง
+- แอดมินลบได้ทุกสถานะ
+- "อนุมัติทั้งหมด" กระทบเฉพาะ PENDING เท่านั้น — APPROVED ที่ผ่านมาแล้วไม่ถูก approve ซ้ำ
 
 ---
 
-## Tool Status
+## Bulk Approve Flow
 
 ```
-  ┌────────────┐         ┌──────────┐
-  │            │         │          │
-  │ AVAILABLE  │◄────────┤ BORROWED │
-  │            │         │          │
-  └─────┬──────┘         └────▲─────┘
-        │                     │
-        │               booking
-        │               approved
-        │
-  admin toggles
-  maintenance
-        │
-  ┌─────▼──────┐
-  │            │
-  │MAINTENANCE │
-  │            │
-  └────────────┘
+แอดมินกด "อนุมัติทั้งหมด"
+    │
+    ▼
+ค้นหาเอกสารทั้งหมดที่ status = PENDING
+    │
+    ▼
+อัปเดตทุกฉบับ → APPROVED
+  - set approvedBy = admin email
+  - set approvedAt = now
+    │
+    ▼
+นักศึกษาเพิ่มเครื่องมือใหม่ครั้งที่ 2
+  → เอกสารใหม่เป็น PENDING
+  → แอดมินกด "อนุมัติทั้งหมด" อีกครั้งได้
+  → approve เฉพาะ PENDING ใหม่เท่านั้น
+  → APPROVED เดิมไม่กระทบ
 ```
 
 ---
 
-## Tool Status Transitions
+## Student Status (from CMU MIS API)
 
-| From | To | Triggered By | Condition |
-|---|---|---|---|
-| AVAILABLE | BORROWED | Booking approved | Tool has no other APPROVED bookings |
-| BORROWED | AVAILABLE | Booking returned or rejected | No other APPROVED bookings exist for this tool |
-| AVAILABLE | MAINTENANCE | Admin toggles | — |
-| MAINTENANCE | AVAILABLE | Admin toggles | — |
+ไม่ใช่ state machine — เป็นข้อมูลแสดงผลเท่านั้น:
 
-### Rules
-- BORROWED status is managed automatically via booking transitions — admin cannot set it manually.
-- MAINTENANCE tools cannot be requested (treated as unavailable in the catalog).
-- A tool with multiple APPROVED bookings stays BORROWED until the last one is RETURNED.
-
----
-
-## Tool Availability Check
-
-When a booking is returned or rejected:
-
-```
-1. Update booking status to RETURNED or REJECTED
-   - If RETURNED: set returnDate = current timestamp
-2. Check: does this tool have any other bookings with status APPROVED?
-   - YES → tool stays BORROWED
-   - NO  → set tool status to AVAILABLE
-```
-
-This prevents prematurely marking a tool as available when multiple active loans exist.
-
----
-
-## Calendar Date Rules (Borrow Request Form)
-
-- Start date: cannot be before today
-- End date: cannot be before start date
-- No overlap checking in MVP (same tool can have multiple APPROVED bookings — handled by trust/quantity)
+| สถานะ | Thai Label | สี Badge |
+|---|---|---|
+| Active | กำลังศึกษา | เขียว |
+| Resigned | ลาออก | เทา |
+| Dismissed | พ้นสภาพ | แดง |

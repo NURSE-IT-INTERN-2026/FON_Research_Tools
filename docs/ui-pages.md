@@ -1,7 +1,5 @@
 # UI Pages — Layout & Component Specs
 
-Reference for implementing each page. Based on Lovable UI patterns, converted to Next.js App Router.
-
 ---
 
 ## Shared Components
@@ -12,14 +10,17 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 - Sections: Logo area → Nav links → User footer
 - Nav items: icon (Lucide) + label, active state highlight
 - User footer: email display + sign-out button
-- **Props:** `role: "ADMIN" | "BORROWER"`, `navItems`, `userEmail`
-- **Theme:** Orange sidebar for borrower, purple for admin (CSS class on parent layout swaps CSS custom properties)
+- **Props:** `role: "ADMIN" | "STUDENT"`, `navItems`, `userEmail`
+- **Theme:** Orange sidebar for student, purple for admin
 
 ### Status Badge (`src/components/status-badge.tsx`)
 
 - Pill: `rounded-full px-2.5 py-0.5 text-xs font-medium border`
-- Colors use `bg-{token}/15 text-{token} border-{token}/30` pattern
-- **Props:** `status: BookingStatus | ToolStatus`
+- **Props:** `status: DocumentStatus`
+- Colors:
+  - PENDING → เหลือง/ส้ม
+  - APPROVED → เขียว
+  - REJECTED → แดง
 
 ### Stat Card (`src/components/stat-card.tsx`)
 
@@ -27,25 +28,11 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 - Icon container + value + label
 - **Props:** `icon`, `value: number`, `label: string`, `href: string`
 
-### Data Table (`src/components/data-table.tsx`)
-
-- `rounded-xl border bg-card` wrapper with `overflow-x-auto`
-- Header: `bg-muted/50`, sticky
-- Rows: `border-t` dividers, hover highlight
-- **Props:** `columns`, `data`, `actions?`
-
-### Empty State (`src/components/empty-state.tsx`)
-
-- `rounded-lg border border-dashed p-10 text-center text-muted-foreground`
-- **Props:** `message: string`, `icon?`
-
 ### Filter Pills (`src/components/filter-pills.tsx`)
 
 - Row of `rounded-full px-3 py-1 text-xs border` buttons
 - Active: `bg-primary text-primary-foreground border-primary`
-- Inactive: `border-input bg-background hover:bg-accent`
-- **Props:** `options: string[]`, `selected: string`, `onSelect: (val) => void`
-- **Client Component** — uses `useRouter` to update URL `searchParams` on selection
+- **Client Component** — uses `useRouter` to update URL `searchParams`
 
 ---
 
@@ -54,152 +41,126 @@ Reference for implementing each page. Based on Lovable UI patterns, converted to
 ### Landing — `/`
 
 - Full-screen centered layout (no sidebar)
-- Microscope icon (h-12, primary color)
-- "ToolLend" title (text-4xl, bold)
-- Description paragraph (max-w-md, muted)
-- Two CTA buttons: "Sign in" (primary) + "Create account" (outline)
-- Server-side: redirect to dashboard if authenticated
+- Logo + "Research Tools" title
+- Description: ระบบจัดการเอกสารเครื่องมือวิจัย
+- CTA button: "เข้าสู่ระบบด้วย CMU Account" (primary) → `/login`
 
 ### Login — `/login`
 
-- Centered card (max-w-md)
-- Logo bar: Microscope icon + "ToolLend"
-- "Welcome back" heading
-- Form: Email input, Password input, Submit button (full-width)
-- Footer: "No account? Sign up" link → `/signup`
-- Server Action for login, error display inline
-
-### Signup — `/signup`
-
-- Same centered card layout
-- "Create your account" heading
-- Form: Full name, Email, Department (optional), Password (min 6), Role selector (2-column toggle grid: Borrower / Administrator)
-- Submit → Server Action for signup
-- Footer: "Already have an account? Sign in" link → `/login`
+- Redirect ไป CMU Microsoft Azure AD OAuth 2.0 ทันที (ไม่มี form)
+- หรือแสดงหน้า Loading ระหว่าง redirect
 
 ---
 
-## Borrower Pages (orange theme, borrower sidebar)
+## Student Pages (orange theme, student sidebar)
 
-### Tool Catalog — `/dashboard`
+### Student Dashboard — `/dashboard`
 
-**Header:** "Tool Catalog" (text-2xl, semibold) + "Browse and request research equipment" (muted)
+**แสดงทั้งหมดในหน้าเดียว:**
 
-**Search & Filter Bar** (card container):
-- Search input with Search icon — updates URL `searchParam` `q` on submit
-- Category filter pills (ALL + dynamic categories) — updates URL `searchParam` `category`
-- Status filter pills (ALL, AVAILABLE, BORROWED, MAINTENANCE) — updates URL `searchParam` `status`
-- **Implementation:** Server Component reads `searchParams` from page props. Client-side filter pills update URL, triggering server re-render with filtered data.
+**ส่วนที่ 1: ข้อมูลส่วนตัว** (card)
+- ชื่อ-นามสกุล, รหัสนักศึกษา, ภาควิชา, ระดับปริญญา, หลักสูตร
+- ข้อมูลดึงจาก CMU MIS API อัตโนมัติ
 
-**Tool Grid** (responsive 1/2/3 col):
-- Card: image (aspect-video, fallback Wrench icon), status badge (top-right), title, category (primary), description (line-clamp-2), location + serial meta row
-- CTA: "Request to Borrow" (primary, if AVAILABLE) or "Unavailable" (disabled)
+**ส่วนที่ 2: ข้อมูลวิทยานิพนธ์** (card)
+- ชื่อวิทยานิพนธ์ (ไทย/อังกฤษ)
 
-**Borrow Request Modal** (Client Component):
-- Triggered by "Request to Borrow" click
-- Two-column: tool info (left) + form (right)
-- Form: Start Date (calendar), End Date (calendar), Purpose (textarea)
-- Validation: both dates required, end >= start, purpose non-empty
-- Submit → Server Action `createBooking`
-- Success → toast + close modal + `revalidatePath`
+**ส่วนที่ 3: อัปโหลดเอกสาร** (card with form)
+- ช่องกรอก: ชื่อเครื่องมือวิจัย (Input)
+- เลือกไฟล์: PDF file picker
+- ปุ่ม Upload (primary, สีเขียว)
+- Validation: PDF เท่านั้น, ขนาดสูงสุด 100 MB
 
-### My Bookings — `/my-bookings`
+**ส่วนที่ 4: รายการเอกสาร** (table)
+- คอลัมน์: ลำดับ, ชื่อเครื่องมือวิจัย, ไฟล์ (link เปิด PDF), สถานะ (badge), วันที่, การดำเนินการ
+- การดำเนินการ: ลบ (เฉพาะ PENDING)
+- Empty state: ยังไม่มีเอกสาร
 
-**Header:** "My Bookings" + "Track your requests and active loans"
-
-**Tab Bar:** Current (APPROVED + OVERDUE) / Pending / Past (RETURNED + REJECTED)
-- Active tab: border-bottom underline, count badge
-- **Implementation:** URL `searchParam` `tab` controls active tab. Server Component pre-filters bookings by tab.
-
-**Booking Cards:**
-- Left: 96x96px thumbnail
-- Right: tool name, category, status badge, date range, purpose, admin notes (if any)
-- Actions: PENDING → "Cancel request" button → Server Action `cancelBooking`
-- Dates displayed as formatted strings (serialized from Server Component)
+**Sidebar nav items (Student):**
+- แดชบอร์ด (LayoutDashboard) → `/dashboard`
 
 ---
 
 ## Admin Pages (purple theme, admin sidebar)
 
+### Navbar Search Button
+- ปุ่ม search (Search icon) บน navbar ของ admin layout
+- คลิก → เปิด search input/dropdown
+- ค้นหาจาก: รหัสนักศึกษา, ชื่อ, ชื่อวิทยานิพนธ์
+- ผลลัพธ์: แสดงรายการนักศึกษาที่ตรงกัน → คลิกเพื่อดูรายละเอียด
+
 ### Dashboard — `/admin/dashboard`
 
-**Header:** "Dashboard" + "Admin overview of the equipment library"
+**Header:** "แดชบอร์ด" + "ภาพรวมการจัดการเอกสารเครื่องมือวิจัย"
 
-**Stat Cards** (4-card grid, responsive 1/2/4 col):
+**Stat Cards** (4-card grid):
 | Label | Icon | Link |
 |---|---|---|
-| Total Tools | Wrench | `/admin/inventory` |
-| Currently Borrowed | PackageCheck | `/admin/inventory` |
-| Pending Requests | Clock | `/admin/requests` |
-| Overdue Returns | AlertTriangle | `/admin/requests` |
+| นักศึกษาทั้งหมด | Users | `/admin/students` |
+| เอกสารทั้งหมด | FileText | `/admin/documents` |
+| รอตรวจสอบ | Clock | `/admin/documents?status=PENDING` |
+| อนุมัติแล้ว | CheckCircle | `/admin/documents?status=APPROVED` |
 
 **Recent Activities** (card):
-- Header: "Recent Activities"
-- List: borrower name + verb + tool name + timestamp
-- Verb mapping: PENDING→"requested", APPROVED→"was approved for", REJECTED→"was rejected for", RETURNED→"returned", OVERDUE→"is overdue for"
+- รายการ: ชื่อผู้ใช้ + การกระทำ + ชื่อเอกสาร + เวลา
+- Verb: อัปโหลดเอกสาร, อนุมัติเอกสาร, ปฏิเสธเอกสาร, ลบเอกสาร
 
-### Inventory — `/admin/inventory`
+### Documents — `/admin/documents`
 
-**Header:** "Inventory" + "Add New Tool" button (primary, Plus icon)
+**Header:** "เอกสารเครื่องมือวิจัย"
 
-**Data Table:**
-- Columns: Image, Name (+ category), Serial #, Status (badge), Location, Actions
-- Actions: Edit (Pencil), Toggle status (MAINTENANCE ↔ AVAILABLE), Deactivate (Trash2, with confirm — soft delete; hard delete only if tool has zero bookings)
-
-**Tool Form Modal** (create/edit):
-- Fields: Name, Description (textarea), Category, Serial Number, Image URL, Location, Status (select)
-- Two-column grid for paired fields
-- Submit → Server Action `createTool` or `updateTool`
-
-### Requests — `/admin/requests`
-
-**Header:** "Borrowing Requests" + "Approve, reject and track returns"
-
-**Status Filter Pills:** ALL, PENDING, APPROVED, REJECTED, RETURNED, OVERDUE
-- **Implementation:** Same URL `searchParam` pattern as tool catalog filters.
+**Status Filter Pills:** ทั้งหมด / รอตรวจสอบ / อนุมัติแล้ว / ปฏิเสธแล้ว
+- URL `searchParam` `status` controls filter
 
 **Data Table:**
-- Columns: Borrower (name + dept), Tool, Dates, Purpose (line-clamp-2), Status (badge), Actions
+- คอลัมน์: ลำดับ, ชื่อนักศึกษา (link), รหัสนักศึกษา, ชื่อเครื่องมือวิจัย, ไฟล์ (link PDF), สถานะ (badge), วันที่อัปโหลด, การดำเนินการ
 
 **Actions by status:**
 | Status | Buttons |
 |---|---|
-| PENDING | Approve (primary) + Reject (outline) — opens notes dialog |
-| APPROVED | Mark Returned (primary) + Flag Overdue (outline) |
-| OVERDUE | Mark Returned (primary) |
+| PENDING | อนุมัติ (primary) + ปฏิเสธ (outline) + ลบ (destructive) |
+| APPROVED | ลบ (destructive) |
+| REJECTED | ลบ (destructive) |
 
-**Admin Notes Dialog:**
-- Modal with textarea for optional notes
-- NOT `window.prompt()` — use a shadcn/ui Dialog component
-- Submit → Server Action `approveBooking` or `rejectBooking`
+**"อนุมัติทั้งหมด" button** — approve ทุกเอกสารที่ PENDING (อันที่ approve ไปแล้วไม่กระทบ)
 
-### Users — `/admin/users`
+**Reject Dialog:**
+- Modal with textarea for หมายเหตุ/เหตุผล
+- Submit → reject document
 
-**Header:** "Users" + "Registered accounts"
+**Student name link** → `/admin/students` (filtered by that student)
 
-**Data Table (read-only):**
-- Columns: Name, Email, Department, Role
+### Students — `/admin/students`
+
+**Header:** "รายชื่อนักศึกษา"
+
+**Data Table:**
+- คอลัมน์: ลำดับ, ชื่อ-นามสกุล, รหัสนักศึกษา, หลักสูตร, วิทยานิพนธ์, สถานะนักศึกษา, จำนวนเอกสาร
+
+**สถานะนักศึกษา** (badge):
+- กำลังศึกษา → เขียว
+- ลาออก → เทา
+- พ้นสภาพ → แดง
+
+### Activity Log — `/admin/activity-log`
+
+- ค้นหา + กรองตาม action type / ผู้ใช้
+- รายการ: ผู้กระทำ, การกระทำ, เป้าหมาย, เวลา
+
+**Sidebar nav items (Admin):**
+- แดชบอร์ด (LayoutDashboard) → `/admin/dashboard`
+- เอกสารรอตรวจสอบ (FileText) → `/admin/documents`
+- รายชื่อนักศึกษา (Users) → `/admin/students`
+- บันทึกกิจกรรม (Activity) → `/admin/activity-log`
 
 ---
 
-## Error & Loading States
+## Error Pages
 
 | File | Purpose |
 |---|---|
-| `src/app/global-error.tsx` | Root error boundary: catches layout errors, must include `<html>` + `<body>` |
-| `src/app/error.tsx` | App-level error boundary: "Something went wrong" + message + retry button |
-| `src/app/unauthorized.tsx` | 401: "Please sign in to continue" + link to `/login` |
-| `src/app/forbidden.tsx` | 403: "You don't have access to this page" + link to correct dashboard |
-| `src/app/not-found.tsx` | 404: centered "404" (text-7xl) + "Page not found" + "Go home" link |
-| `loading.tsx` (per segment) | Skeleton placeholder matching the page layout |
-
-All error boundary files are Client Components (`"use client"`).
-
----
-
-## Toast Notifications
-
-- Library: `sonner` (shadcn/ui integration)
-- Position: top-right
-- Use after all mutations: `toast.success(...)`, `toast.error(...)`
-- Client-side only — call from Client Components after Server Action results
+| `src/app/global-error.tsx` | Root error boundary |
+| `src/app/error.tsx` | App-level error boundary |
+| `src/app/unauthorized.tsx` | 401: ไม่มีสิทธิ์เข้าถึง |
+| `src/app/forbidden.tsx` | 403: ไม่มีสิทธิ์สำหรับหน้านี้ |
+| `src/app/not-found.tsx` | 404 |
