@@ -6,8 +6,8 @@
 
 - [x] **F1** Database schema + Prisma models + Docker Compose + seed script *(Profile, Document model, DocumentStatus enum, ActivityAction for documents — thesis data NOT stored)*
 - [x] **F2** CMU OAuth 2.0 login flow: redirect to Microsoft Azure AD → receive code → exchange token → call CMU MIS API → create/update Profile + UserRole → session → redirect by role
-- [ ] **F3** Route protection + RBAC: `proxy.ts` redirect by role (STUDENT → `/dashboard`, ADMIN → `/admin/dashboard`), unauthorized → landing page, AlumAcc → `/unauthorized`
-- [ ] **F4** Layout shell: root layout, public layout, student layout (orange sidebar), admin layout (purple sidebar with search button on navbar)
+- [x] **F3** Route protection + RBAC: `proxy.ts` redirect by role (STUDENT → `/thesis`, ADMIN → `/admin/dashboard`), unauthorized → landing page, AlumAcc → `/unauthorized`
+- [x] **F4** Layout shell: root layout, public layout, student layout (orange sidebar), admin layout (purple sidebar with search button on navbar)
 - [ ] **F5** Design tokens + theme system (orange student / purple admin)
 
 ## Phase 2 — Student Portal

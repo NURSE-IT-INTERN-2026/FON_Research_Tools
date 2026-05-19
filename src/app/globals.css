@@ -121,8 +121,8 @@
   --sidebar-ring: oklch(0.50 0.01 260);
 }
 
-/* ── Borrower theme (Industrial Orange) ──────────────────────── */
-.borrower-theme {
+/* ── Student theme (Industrial Orange) ──────────────────────── */
+.student-theme {
   --primary: oklch(0.635 0.20 40);
   --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.95 0.04 45);
