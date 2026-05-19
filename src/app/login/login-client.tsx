@@ -31,7 +31,7 @@ export function LoginClient({ authUrl }: { authUrl: string }) {
           alt="เข้าสู่ระบบด้วย CMU Account"
           width={300}
           height={50}
-          className="cursor-pointer hover:opacity-90 transition-opacity"
+          className="cursor-pointer hover:opacity-90 transition-opacity h-auto"
         />
       </a>
 

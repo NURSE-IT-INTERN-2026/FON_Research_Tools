@@ -1,13 +1,21 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/status-badge";
 import { uploadDocument, removeDocument, type UploadDocumentState } from "@/actions/document-actions";
-import { Upload, Trash2, FileText } from "lucide-react";
+import { Upload, Trash2, FileText, Download } from "lucide-react";
 
 type DocumentRow = {
   id: string;
@@ -163,9 +171,15 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                         <RemoveButton documentId={doc.id} />
                       )}
                       {doc.status === "APPROVED" && (
-                        <span className="text-xs text-muted-foreground">
-                          อนุมัติแล้ว
-                        </span>
+                        <a
+                          href={`/api/documents/${doc.id}/certificate`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          ใบรับรอง
+                        </a>
                       )}
                       {doc.status === "REJECTED" && doc.adminNotes && (
                         <span className="text-xs text-destructive line-clamp-1" title={doc.adminNotes}>
@@ -185,29 +199,75 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
 }
 
 function RemoveButton({ documentId }: { documentId: string }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     removeDocument,
     {} as UploadDocumentState,
   );
+  const prevSuccessRef = useRef(false);
 
   useEffect(() => {
     if (state.error) toast.error(state.error);
   }, [state.error]);
 
+  useEffect(() => {
+    if (state.success && !prevSuccessRef.current) {
+      prevSuccessRef.current = true;
+      toast.success("ลบเอกสารสำเร็จ");
+    }
+    if (!state.success) prevSuccessRef.current = false;
+  }, [state.success]);
+
+  if (state.success && confirmOpen) {
+    setConfirmOpen(false);
+  }
+
   return (
-    <form action={formAction}>
-      <input type="hidden" name="documentId" value={documentId} />
+    <>
       <Button
-        type="submit"
+        type="button"
         variant="ghost"
         size="sm"
-        disabled={pending}
+        onClick={() => setConfirmOpen(true)}
         className="text-destructive hover:text-destructive rounded h-8"
       >
         <Trash2 className="h-3.5 w-3.5 mr-1" />
-        {pending ? "..." : "ลบ"}
+        ลบ
       </Button>
-    </form>
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="sm:max-w-md rounded">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-bold tracking-tight">
+              ยืนยันการลบ
+            </DialogTitle>
+            <DialogDescription>
+              ต้องการลบเอกสารนี้หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              className="rounded"
+            >
+              ยกเลิก
+            </Button>
+            <form action={formAction}>
+              <input type="hidden" name="documentId" value={documentId} />
+              <Button
+                type="submit"
+                disabled={pending}
+                variant="destructive"
+                className="rounded font-semibold"
+              >
+                {pending ? "กำลังลบ..." : "ลบ"}
+              </Button>
+            </form>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

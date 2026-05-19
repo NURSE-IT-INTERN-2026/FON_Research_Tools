@@ -14,7 +14,6 @@ import {
   X,
   Shield,
 } from "lucide-react";
-import Image from "next/image";
 import { logout } from "@/actions/logout";
 
 const ICON_MAP = {
@@ -63,7 +62,7 @@ export function Sidebar({ navItems, userEmail, headerActions }: SidebarProps) {
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-2.5">
-          <Image src="/nurse_logo.svg" alt="Research Tools" width={20} height={20} />
+          <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/nurse_logo.svg`} alt="Research Tools" width={20} height={20} />
           <span className="font-heading font-semibold text-sm tracking-wide">RESEARCH TOOLS</span>
         </div>
         {headerActions && <div className="ml-auto">{headerActions}</div>}
@@ -88,7 +87,7 @@ export function Sidebar({ navItems, userEmail, headerActions }: SidebarProps) {
         <div className="flex h-16 items-center justify-between px-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded bg-sidebar-accent">
-              <Image src="/nurse_logo.svg" alt="" width={18} height={18} className="brightness-0 invert" />
+              <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/nurse_logo.svg`} alt="" width={18} height={18} className="brightness-0 invert" />
             </div>
             <div>
               <span className="font-heading font-bold text-sm tracking-widest uppercase text-sidebar-foreground">

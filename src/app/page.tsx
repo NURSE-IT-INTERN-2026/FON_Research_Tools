@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
@@ -15,7 +14,7 @@ export default function HomePage() {
 
       <div className="flex flex-col items-center gap-8 text-center max-w-lg relative z-10">
         <div className="animate-fade-in">
-          <Image src="/nurse_logo.svg" alt="Research Tools" width={56} height={56} />
+          <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/nurse_logo.svg`} alt="Research Tools" width={56} height={56} />
         </div>
 
         <div className="animate-slide-up space-y-3">

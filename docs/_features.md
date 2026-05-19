@@ -13,8 +13,8 @@
 ## Phase 2 — Student Portal
 
 - [x] **F6** Student Dashboard: profile info (from MIS API) + thesis info (from Thesis API, not stored in DB) + upload form + document list with status badges
-- [ ] **F7** Document upload: PDF upload with title input, save to `uploads/{studentId}/`, create Document record → send email to admin
-- [ ] **F8** Document management: view own documents with status, remove own PENDING documents, download PDF certificate for APPROVED documents
+- [x] **F7** Document upload: PDF upload with title input, save to `uploads/{studentId}/`, create Document record → send email to admin
+- [x] **F8** Document management: view own documents with status, remove own PENDING documents, download PDF certificate for APPROVED documents
 
 ## Phase 3 — Admin Portal
 

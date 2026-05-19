@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
+import { sendEmail, getAdminEmails } from "@/lib/email";
 import db from "@/lib/db";
 import { writeFile, mkdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -32,7 +33,7 @@ export async function uploadDocument(
 
   const profile = await db.profile.findUnique({
     where: { id: userId },
-    select: { studentId: true },
+    select: { name: true, studentId: true },
   });
 
   const studentFolder = profile?.studentId ?? userId;
@@ -66,6 +67,15 @@ export async function uploadDocument(
     targetId: doc.id,
     targetLabel: title,
   });
+
+  // Notify admins (fire-and-forget)
+  const adminEmails = getAdminEmails();
+  sendEmail({
+    subject: `เอกสารใหม่: ${title}`,
+    sentTo: adminEmails.to,
+    ccTo: adminEmails.cc,
+    message: `นักศึกษา ${profile?.name ?? ""} (${profile?.studentId ?? ""}) ได้อัปโหลดเอกสารเครื่องมือวิจัย\n\nชื่อเครื่องมือ: ${title}\nไฟล์: ${file.name}\n\nกรุณาเข้าระบบเพื่อตรวจสอบ`,
+  }).catch(() => {});
 
   revalidatePath("/thesis");
   return { success: true };
@@ -142,6 +152,24 @@ export async function approveDocument(
     targetLabel: doc.title,
   });
 
+  // Check if student has no remaining PENDING docs → notify
+  const remainingPending = await db.document.count({
+    where: { userId: doc.userId, status: "PENDING" },
+  });
+  if (remainingPending === 0) {
+    const studentProfile = await db.profile.findUnique({
+      where: { id: doc.userId },
+      select: { email: true, name: true },
+    });
+    if (studentProfile?.email) {
+      sendEmail({
+        subject: "ผลการพิจารณาเอกสารเครื่องมือวิจัย",
+        sentTo: studentProfile.email,
+        message: `เรียน ${studentProfile.name}\n\nเอกสารเครื่องมือวิจัยของท่านได้รับการอนุมัติครบถ้วนแล้ว\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย`,
+      }).catch(() => {});
+    }
+  }
+
   revalidatePath("/admin/documents");
   return { success: true };
 }
@@ -173,6 +201,19 @@ export async function rejectDocument(
     targetId: documentId,
     targetLabel: doc.title,
   });
+
+  // Notify student immediately on rejection
+  const studentProfile = await db.profile.findUnique({
+    where: { id: doc.userId },
+    select: { email: true, name: true },
+  });
+  if (studentProfile?.email) {
+    sendEmail({
+      subject: "ผลการพิจารณาเอกสารเครื่องมือวิจัย",
+      sentTo: studentProfile.email,
+      message: `เรียน ${studentProfile.name}\n\nเอกสาร "${doc.title}" ไม่ได้รับการอนุมัติ\nเหตุผล: ${notes}\n\nกรุณาแก้ไขและอัปโหลดใหม่\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย`,
+    }).catch(() => {});
+  }
 
   revalidatePath("/admin/documents");
   return { success: true };

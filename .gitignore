@@ -46,3 +46,6 @@ next-env.d.ts
 # uploads (keep .gitkeep)
 /uploads/*
 !/uploads/.gitkeep
+
+# email token cache
+/.cache/
