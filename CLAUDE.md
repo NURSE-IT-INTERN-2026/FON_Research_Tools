@@ -59,10 +59,10 @@ Before writing any code for a feature, read these docs:
 
 ## Architecture Decisions
 
-- Follow `.agents/skills/next-best-practices/SKILL.md` for all Next.js architecture and implementation decisions.
-- Follow `.agents/skills/implement-feature/SKILL.md` when implementing a feature end-to-end.
-- Follow `.agents/skills/review-feature/SKILL.md` after completing a feature or when reviewing/fixing a completed slice.
-- Follow `.agents/skills/cmu-oauth-integration/SKILL.md` as reference for CMU OAuth patterns (not authoritative — `docs/ReserchTool-api/00-research-tool-detail.md` is source of truth).
+- **MANDATORY:** When the user asks to implement a feature, you MUST read and follow `.agents/skills/implement-feature/SKILL.md` step-by-step. Do not skip this.
+- **MANDATORY:** After completing any feature, you MUST read and follow `.agents/skills/review-feature/SKILL.md` before marking it done. Do not skip this.
+- **MANDATORY:** Follow `.agents/skills/next-best-practices/SKILL.md` for all Next.js architecture and implementation decisions. Read it before writing any Next.js code.
+- **MANDATORY:** When working on CMU OAuth, read `.agents/skills/cmu-oauth-integration/SKILL.md` as reference for patterns (not authoritative — `docs/ReserchTool-api/00-research-tool-detail.md` is source of truth).
 - Use Next.js App Router (`src/app/` directory). No `pages/` directory.
 - Use `proxy.ts` for route protection and RBAC — not `middleware.ts`.
 - **CMU OAuth 2.0 for authentication + HMAC-SHA256 session tokens. Prisma for all application data queries and mutations.**
@@ -106,8 +106,15 @@ Use these mappings for all user-facing status display:
 
 ## Workflow
 
-1. Read required docs before coding.
-2. Explain the plan and list files to be changed.
-3. Implement the vertical slice.
-4. Update `docs/_features.md` to reflect completion.
-5. Run `.agents/skills/review-feature/SKILL.md` to review the completed slice.
+For every feature the user asks you to implement, you MUST follow this exact sequence:
+
+1. **Read** `.agents/skills/implement-feature/SKILL.md` and follow its workflow.
+2. **Read** all required docs listed in the skill before writing any code.
+3. **Summarize** the plan and list files to be changed (as the skill requires).
+4. **Implement** the vertical slice.
+5. **Read** `.agents/skills/review-feature/SKILL.md` and run the full review checklist.
+6. **Fix** any issues found during review.
+7. **Update** `docs/_features.md` to reflect completion.
+8. **Report** the review result to the user.
+
+Do NOT skip steps 1 or 5. Do NOT implement without reading the skill first. Do NOT mark complete without running the review.

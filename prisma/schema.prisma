@@ -10,52 +10,37 @@ datasource db {
 
 enum AppRole {
   ADMIN
-  BORROWER
+  STUDENT
 }
 
-enum ToolStatus {
-  AVAILABLE
-  BORROWED
-  MAINTENANCE
-}
-
-enum BookingStatus {
+enum DocumentStatus {
   PENDING
   APPROVED
   REJECTED
-  RETURNED
-  OVERDUE
 }
 
 enum ActivityAction {
-  BOOKING_CREATE
-  BOOKING_APPROVE
-  BOOKING_REJECT
-  BOOKING_RETURN
-  BOOKING_OVERDUE
-  BOOKING_CANCEL
-  TOOL_CREATE
-  TOOL_UPDATE
-  TOOL_DEACTIVATE
-  TOOL_TOGGLE_STATUS
-  USER_SIGNUP
   USER_LOGIN
+  DOCUMENT_UPLOAD
+  DOCUMENT_APPROVE
+  DOCUMENT_REJECT
+  DOCUMENT_REMOVE
   ADMIN_CREATED
-  PASSWORD_CHANGED
 }
 
 model Profile {
   id           String    @id
   name         String
   email        String    @unique
-  department   String?
-  passwordHash String
+  studentId    String?   @unique
+  accountType  String?
+  cmuItAccount String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  userRole     UserRole?
-  bookings     Booking[]
-  activityLogs ActivityLog[]
+  userRole      UserRole?
+  documents     Document[]
+  activityLogs  ActivityLog[]
 }
 
 model UserRole {
@@ -65,41 +50,25 @@ model UserRole {
   profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Tool {
-  id           String     @id @default(cuid())
-  name         String
-  description  String     @default("")
-  category     String     @default("General")
-  serialNumber String     @unique
-  imageUrl     String?
-  status       ToolStatus @default(AVAILABLE)
-  location     String     @default("")
-  isActive     Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  bookings Booking[]
-}
-
-model Booking {
-  id         String        @id @default(cuid())
-  userId     String
-  toolId     String
-  startDate  DateTime
-  endDate    DateTime
-  purpose    String
-  status     BookingStatus @default(PENDING)
-  adminNotes String?
-  returnDate DateTime?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+model Document {
+  id           String         @id @default(cuid())
+  userId       String
+  title        String
+  fileName     String
+  originalName String
+  fileSize     Int
+  status       DocumentStatus @default(PENDING)
+  approvedBy   String?
+  approvedAt   DateTime?
+  adminNotes   String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tool    Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([toolId])
   @@index([status])
+  @@index([createdAt])
 }
 
 model ActivityLog {
