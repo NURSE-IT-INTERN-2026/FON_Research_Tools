@@ -8,11 +8,11 @@
 - [x] **F2** CMU OAuth 2.0 login flow: redirect to Microsoft Azure AD → receive code → exchange token → call CMU MIS API → create/update Profile + UserRole → session → redirect by role
 - [x] **F3** Route protection + RBAC: `proxy.ts` redirect by role (STUDENT → `/thesis`, ADMIN → `/admin/dashboard`), unauthorized → landing page, AlumAcc → `/unauthorized`
 - [x] **F4** Layout shell: root layout, public layout, student layout (orange sidebar), admin layout (purple sidebar with search button on navbar)
-- [ ] **F5** Design tokens + theme system (orange student / purple admin)
+- [x] **F5** Design tokens + theme system (orange student / purple admin)
 
 ## Phase 2 — Student Portal
 
-- [ ] **F6** Student Dashboard: profile info (from MIS API) + thesis info (from Thesis API, not stored in DB) + upload form + document list with status badges
+- [x] **F6** Student Dashboard: profile info (from MIS API) + thesis info (from Thesis API, not stored in DB) + upload form + document list with status badges
 - [ ] **F7** Document upload: PDF upload with title input, save to `uploads/{studentId}/`, create Document record → send email to admin
 - [ ] **F8** Document management: view own documents with status, remove own PENDING documents, download PDF certificate for APPROVED documents
 

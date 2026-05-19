@@ -1,8 +1,21 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
+
+const UPLOAD_DIR = join(process.cwd(), "uploads");
+
+function createSeedPdf(studentId: string, fileName: string, title: string) {
+  const folder = join(UPLOAD_DIR, studentId);
+  if (!existsSync(folder)) mkdirSync(folder, { recursive: true });
+  const filePath = join(folder, fileName);
+  // Minimal valid PDF with title as text content
+  const content = `%PDF-1.0\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>>endobj\n4 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n5 0 obj<</Length 44>>stream\nBT /F1 12 Tf 100 700 Td (${title}) Tj ET\nendstream\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000266 00000 n \n0000000340 00000 n \ntrailer<</Size 6/Root 1 0 R>>\nstartxref\n434\n%%EOF`;
+  writeFileSync(filePath, content);
+}
 
 async function main() {
   // Admin
@@ -173,6 +186,22 @@ async function main() {
       },
     ],
   });
+
+  // Create seed PDF files on disk
+  const seedDocs: { studentId: string; fileName: string; title: string }[] = [
+    { studentId: "621251001", fileName: "621251001_1.pdf", title: "แบบสอบถามพฤติกรรมสุขภาพ" },
+    { studentId: "621251001", fileName: "621251001_2.pdf", title: "แบบประเมินคุณภาพชีวิต" },
+    { studentId: "621251001", fileName: "621251001_3.pdf", title: "แบบวัดความเครียด" },
+    { studentId: "621251002", fileName: "621251002_1.pdf", title: "Positive Discipline Questionnaire" },
+    { studentId: "621251002", fileName: "621251002_2.pdf", title: "แบบสัมภาษณ์ผู้ปกครอง" },
+    { studentId: "621251003", fileName: "621251003_1.pdf", title: "แบบสังเกตพฤติกรรมเด็ก" },
+    { studentId: "621251003", fileName: "621251003_2.pdf", title: "แบบวัดพัฒนาการ" },
+    { studentId: "621251004", fileName: "621251004_1.pdf", title: "แบบประเมินภาวะโภชนาการ" },
+    { studentId: "621251004", fileName: "621251004_2.pdf", title: "Food Frequency Questionnaire" },
+  ];
+  for (const d of seedDocs) {
+    createSeedPdf(d.studentId, d.fileName, d.title);
+  }
 
   // Activity logs
   await prisma.activityLog.createMany({
