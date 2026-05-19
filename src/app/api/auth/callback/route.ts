@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   const role = determineRole(userInfo.itaccount_type_id);
   if (!role) {
     return NextResponse.redirect(
-      new URL(`/login?error=not_allowed_faculty`, request.url),
+      new URL(`/unauthorized`, request.url),
     );
   }
 

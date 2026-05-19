@@ -5,10 +5,10 @@ import {
   SESSION_COOKIE_NAME,
 } from "@/lib/auth/session-token";
 
-const PUBLIC_ROUTES = ["/", "/login"];
+const PUBLIC_ROUTES = ["/", "/login", "/unauthorized"];
 const API_PUBLIC_ROUTES = ["/api/auth/callback"];
 const ADMIN_PREFIX = "/admin";
-const STUDENT_PREFIXES = ["/dashboard", "/change-password"];
+const STUDENT_PREFIXES = ["/thesis"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -24,7 +24,7 @@ export function proxy(request: NextRequest) {
   if (isApiPublic) return NextResponse.next();
 
   if (session && isPublic) {
-    const dest = session.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
+    const dest = session.role === "ADMIN" ? "/admin/dashboard" : "/thesis";
     return NextResponse.redirect(new URL(dest, request.url));
   }
 
@@ -33,7 +33,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (session && isAdmin && session.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/thesis", request.url));
   }
 
   if (session && isStudent && session.role === "ADMIN") {
