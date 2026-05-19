@@ -12,10 +12,16 @@ This is the real production Next.js App Router project. It is the source of trut
 
 **IMPORTANT:** This project has 2 phases. Check `docs/phasing-plan.md` for details.
 
-- **Phase 1 (current):** Email/password auth + students fill profile manually + all app features
-- **Phase 2 (later):** Swap to CMU OAuth 2.0 + CMU MIS API for auto data fetching
+- **Phase 1 (current):** CMU OAuth 2.0 login + Thesis API (fetch on display) + Document Management + Email API + Download PDF
+- **Phase 2 (later):** OCR, Export (Excel/CSV), Tool usage history
 
-When implementing, build for Phase 1. The data model already has fields for Phase 2 data (thesisTitleTh, thesisTitleEn, studentStatus, etc.) — they're just nullable for now.
+**Dev setup:** Port 4141, base path `/researchtool` (matches Azure redirect URL). Run with `npm run dev`.
+
+**API credentials** are in `docs/ReserchTool-api/00-research-tool-detail.md`. The `.agents/skills/cmu-oauth-integration/` skill is reference only for patterns like `oauth_state` CSRF and error codes.
+
+**Thesis data is NOT stored in DB.** Fetch from Thesis API on display only. Profile stores: name, email, studentId, cmuItAccount, accountType.
+
+**Dev testing:** Set `MOCK_THESIS=true` in `.env.local` to use mock thesis data. Set `DEV_TEST_STUDENT_ID` to test with a specific student ID.
 
 ## Lovable Reference Project
 
@@ -48,16 +54,18 @@ Before writing any code for a feature, read these docs:
 9. `docs/auth-rbac.md` — authentication and role-based access control
 10. `docs/ui-pages.md` — page layouts and component specifications
 11. `docs/status-flow.md` — document status state machine
-12. `docs/ResearchTool-overview/` — reference docs from the old ASP.NET system
+12. `docs/ReserchTool-api/00-research-tool-detail.md` — **API credentials and endpoints (source of truth)**
+13. `docs/ReserchTool-api/Email_API_Manual.pdf` — Email API documentation
 
 ## Architecture Decisions
 
 - Follow `.agents/skills/next-best-practices/SKILL.md` for all Next.js architecture and implementation decisions.
 - Follow `.agents/skills/implement-feature/SKILL.md` when implementing a feature end-to-end.
 - Follow `.agents/skills/review-feature/SKILL.md` after completing a feature or when reviewing/fixing a completed slice.
+- Follow `.agents/skills/cmu-oauth-integration/SKILL.md` as reference for CMU OAuth patterns (not authoritative — `docs/ReserchTool-api/00-research-tool-detail.md` is source of truth).
 - Use Next.js App Router (`src/app/` directory). No `pages/` directory.
 - Use `proxy.ts` for route protection and RBAC — not `middleware.ts`.
-- **Custom auth (HMAC-SHA256 session tokens) for identity. Prisma for all application data queries and mutations.**
+- **CMU OAuth 2.0 for authentication + HMAC-SHA256 session tokens. Prisma for all application data queries and mutations.**
 - Use real data. No mock data unless explicitly requested.
 - Server Components by default. Client Components only when hooks or event handlers are needed.
 - **Keep existing UI styling** — the current UI design is good, only change data/content.

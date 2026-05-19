@@ -32,8 +32,9 @@ Single source for every technology decision and its scope.
 | API | Purpose |
 |---|---|
 | CMU MIS API (`/v3/me/basicinfo`) | ดึงข้อมูลผู้ใช้หลัง OAuth login |
-| CMU MIS API (`StudentThesisProfile`) | ดึงข้อมูลวิทยานิพนธ์นักศึกษา |
+| Thesis API (`mis.nurse.cmu.ac.th/thesis/student/GetDataThesis`) | ดึงข้อมูลวิทยานิพนธ์ (ไม่เก็บใน DB) |
 | Microsoft Azure AD OAuth | Authentication |
+| Email API (`mis.nurse.cmu.ac.th/thesis/EmailApi`) | ส่งอีเมลแจ้งเตือน (GetToken + SendEmail) |
 
 ## File Storage
 

@@ -36,20 +36,14 @@ enum ActivityAction {
 
 ```prisma
 model Profile {
-  id            String    @id
-  name          String
-  email         String    @unique
-  studentId     String?   @unique
-  department    String?
-  degree        String?
-  program       String?
-  thesisTitleTh String?
-  thesisTitleEn String?
-  accountType   String?   // StdAcc, MISEmpAcc
-  cmuItAccount  String?
-  studentStatus String?   // กำลังศึกษา, ลาออก, พ้นสภาพ (ดึงจาก CMU MIS API)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id
+  name         String
+  email        String    @unique
+  studentId    String?   @unique
+  accountType  String?   // StdAcc, MISEmpAcc
+  cmuItAccount String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   userRole      UserRole?
   documents     Document[]
@@ -57,7 +51,9 @@ model Profile {
 }
 ```
 
-ข้อมูลส่วนใหญ่ดึงจาก CMU MIS API อัตโนมัติเมื่อล็อกอิน (name, email, studentId, department, degree, program, thesisTitleTh, thesisTitleEn, accountType, studentStatus)
+ข้อมูลที่ดึงจาก CMU Login อัตโนมัติเมื่อล็อกอิน: name, email, studentId, accountType, cmuItAccount
+
+**ข้อมูลวิทยานิพนธ์ไม่เก็บใน DB** — ดึงจาก Thesis API ทุกครั้งที่แสดงผล (title_th, title_en, major_th, level_name_th, curriculum)
 
 ### UserRole
 
@@ -156,6 +152,5 @@ uploads/
 
 - 1 admin profile + role
 - 4 student profiles + roles (Thai names, CMU-style student IDs)
-- Student profiles with thesis info
 - 8-10 documents across PENDING/APPROVED/REJECTED statuses
 - Matching activity log entries

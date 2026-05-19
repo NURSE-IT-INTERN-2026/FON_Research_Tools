@@ -11,8 +11,8 @@ FON Research Tool — ระบบจัดการเอกสารเคร�
 ## 2. Solution
 
 เว็บแอปพลิเคชันที่:
-- **นักศึกษา** ล็อกอินด้วย CMU Account กรอกชื่อเครื่องมือวิจัยและอัปโหลดเอกสาร PDF ทิ้งไว้
-- **เจ้าหน้าที่** ตรวจสอบและอนุมัติเอกสาร พร้อมดู Dashboard สรุปข้อมูล
+- **นักศึกษา** ล็อกอินด้วย CMU Account อัปโหลดเอกสารเครื่องมือวิจัย (PDF) + กรอกชื่อเครื่องมือ เมื่อ Submit ส่งอีเมลแจ้งแอดมิน
+- **เจ้าหน้าที่** ตรวจสอบและอนุมัติ/ปฏิเสธเอกสาร ส่งอีเมลแจ้งนักศึกษา พร้อมดู Dashboard
 
 ## 3. Technical Stack
 
@@ -24,20 +24,23 @@ FON Research Tool — ระบบจัดการเอกสารเคร�
 | Database | PostgreSQL |
 | ORM | Prisma 7 |
 | File Storage | Local filesystem (`uploads/`) |
-| Email (Post-MVP) | Nodemailer + SMTP |
+| Email | Email API (nurse.cmu.ac.th) |
+| Thesis Data | Thesis API (mis.nurse.cmu.ac.th) |
 
-### Architecture Split
+### Data Sources
 
-ระบบดึงข้อมูลส่วนตัวและวิทยานิพนธ์จาก CMU MIS API ทั้งหมด ยกเว้น 2 ฟิลด์ที่นักศึกษากรอกเอง: ชื่อเครื่องมือวิจัย + อัปโหลด PDF
+| ข้อมูล | แหล่งที่มา | เก็บใน DB? |
+|---|---|---|
+| ชื่อ, อีเมล, รหัสนักศึกษา | CMU Login (OAuth) | Yes — Profile |
+| ภาควิชา, ระดับ, หลักสูตร, ชื่อ thesis | Thesis API | No ❌ — ดึงแสดงผลเฉยๆ |
+| ชื่อเครื่องมือ + PDF | นักศึกษากรอก/อัปโหลด | Yes — Document |
 
 ## 4. User Roles
 
 | Role | Description |
 |---|---|
-| **Student (นักศึกษา)** | ล็อกอินด้วย CMU Account, อัปโหลดเอกสารเครื่องมือวิจัย, ดูสถานะ |
-| **Admin (เจ้าหน้าที่)** | ล็อกอินด้วย CMU Account, อนุมัติ/ปฏิเสธเอกสาร, ดู Dashboard |
-
-ระบบแยกบทบาทจากประเภทบัญชี CMU (`StdAcc` = Student, `MISEmpAcc` = Admin)
+| **Student (นักศึกษา)** | StdAcc — ล็อกอินด้วย CMU Account, อัปโหลดเอกสาร, ดูสถานะ |
+| **Admin (เจ้าหน้าที่)** | MISEmpAcc — ล็อกอินด้วย CMU Account, อนุมัติ/ปฏิเสธ, ดู Dashboard |
 
 ## 5. Design System
 
@@ -47,34 +50,43 @@ FON Research Tool — ระบบจัดการเอกสารเคร�
 | Admin UI | Purple `#aa74ab` | หน้า Dashboard และจัดการเอกสาร |
 | Shared | Slate base, system fonts | Neutral foundation |
 
-## 6. Core Features (MVP)
+## 6. Core Features
 
 ### 6.1 Authentication
 - CMU Microsoft Azure AD OAuth 2.0
-- ดึงข้อมูลส่วนตัว + วิทยานิพนธ์จาก CMU MIS API อัตโนมัติ
+- ดึงข้อมูลส่วนตัวจาก CMU Basic Info API อัตโนมัติ
 - Role-based redirect (Student → `/dashboard`, Admin → `/admin/dashboard`)
 
 ### 6.2 Student Portal
-- **Dashboard** (`/dashboard`) — ข้อมูลส่วนตัว + วิทยานิพนธ์ + อัปโหลดเอกสาร + รายการเอกสาร
-- อัปโหลด PDF พร้อมกรอกชื่อเครื่องมือวิจัย
+- **Dashboard** (`/dashboard`) — ข้อมูลส่วนตัว + ข้อมูลวิทยานิพนธ์ (จาก Thesis API) + อัปโหลดเอกสาร + รายการเอกสาร
+- Submit เอกสาร → ส่งอีเมลแจ้งแอดมิน (`supapan.ch@cmu.ac.th` cc `ampika.s@cmu.ac.th`)
 - ดูสถานะเอกสาร (รอตรวจสอบ / อนุมัติแล้ว / ปฏิเสธแล้ว)
 - ลบเอกสารของตัวเอง (เฉพาะ PENDING)
+- Download PDF ใบรับรองเมื่ออนุมัติแล้ว (ชื่อ, รหัส, รายการเครื่องมือ, วันที่)
 
 ### 6.3 Admin Portal
 - **Dashboard** (`/admin/dashboard`) — 4 stat cards + กิจกรรมล่าสุด
-- **Documents** (`/admin/documents`) — รายการเอกสารทั้งหมด, กรองสถานะ, อนุมัติ/ปฏิเสธ/ลบ
-- **Students** (`/admin/students`) — รายชื่อนักศึกษา + สถานะ (กำลังศึกษา/ลาออก/พ้นสภาพ)
-- **Activity Log** (`/admin/activity-log`) — บันทึกกิจกรรม
+- **Documents** (`/admin/documents`) — Card สถิติด้านบน + ตาราง Backend Pagination + Filter สถานะ + อนุมัติ/ปฏิเสธ/ลบ + "อนุมัติทั้งหมด"
+- **Students** (`/admin/students`) — รายชื่อนักศึกษา + จำนวนเอกสาร + ค้นหา
+- **Activity Log** (`/admin/activity-log`) — Backend Pagination + Date Filter
+- **ค้นหา** — ชื่อเครื่องมือ, ชื่อนักศึกษา, รหัสนักศึกษา, ชื่อวิทยานิพนธ์
 
 ### 6.4 Document Lifecycle
-- นักศึกษาอัปโหลด → `PENDING`
-- แอดมินอนุมัติ (ทีละฉบับหรือ "อนุมัติทั้งหมด") → `APPROVED`
-- แอดมินปฏิเสธพร้อมเหตุผล → `REJECTED`
+- นักศึกษา Submit → `PENDING` → ส่งอีเมลแจ้งแอดมิน
+- แอดมินอนุมัติ (ทีละฉบับหรือ "อนุมัติทั้งหมด") → `APPROVED` → ส่งอีเมลแจ้งนักศึกษา
+- แอดมินปฏิเสธพร้อมเหตุผล → `REJECTED` → ส่งอีเมลแจ้งนักศึกษา
 - Bulk approve กระทบเฉพาะ PENDING เท่านั้น
+
+### 6.5 Email Notifications
+- ใช้ Email API: `POST https://mis.nurse.cmu.ac.th/thesis/EmailApi/SendEmail`
+- อีเมลผู้ส่ง: `no-reply-ResearchTool@cmu.ac.th`
+- Token อายุ 24 ชั่วโมง → ขอใหม่เมื่อหมดอายุ
+
+### 6.6 API — นักศึกษาตรวจสอบสถานะ
+- `GET /api/my/documents` — ดูรายการเอกสาร + สถานะ + เวลาอนุมัติ
 
 ## 7. Post-MVP
 
-- ส่งอีเมลแจ้งเตือนเมื่ออนุมัติ/ปฏิเสธ
-- หน้ารายละเอียดนักศึกษา `/admin/students/[id]`
+- ฟีเจอร์เก็บประวัติการนำไปใช้ประโยชน์ของเครื่องมือ
+- OCR ช่วยเจ้าหน้าที่
 - Export ข้อมูล (Excel/CSV)
-- Pagination

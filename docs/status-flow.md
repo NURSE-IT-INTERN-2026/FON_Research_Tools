@@ -27,9 +27,9 @@
 
 | From | To | Triggered By | Side Effects |
 |---|---|---|---|
-| — | PENDING | นักศึกษาอัปโหลดเอกสาร | บันทึกลง ActivityLog |
-| PENDING | APPROVED | แอดมินอนุมัติ (ทีละฉบับ หรือ "อนุมัติทั้งหมด") | set approvedBy, approvedAt; ส่งอีเมลแจ้งนักศึกษา (Post-MVP) |
-| PENDING | REJECTED | แอดมินปฏิเสธ (พร้อมเหตุผล) | set approvedBy, approvedAt, adminNotes; ส่งอีเมลแจ้งนักศึกษา (Post-MVP) |
+| — | PENDING | นักศึกษาอัปโหลดเอกสาร | บันทึกลง ActivityLog; ส่งอีเมลแจ้งแอดมิน (supapan.ch@cmu.ac.th cc ampika.s@cmu.ac.th) |
+| PENDING | APPROVED | แอดมินอนุมัติ (ทีละฉบับ หรือ "อนุมัติทั้งหมด") | set approvedBy, approvedAt; เช็คว่านักศึกษา **ไม่มี PENDING เหลือ** → ส่งอีเมลแจ้งนักศึกษา 1 ฉบับ |
+| PENDING | REJECTED | แอดมินปฏิเสธ (พร้อมเหตุผล) | set approvedBy, approvedAt, adminNotes; ส่งอีเมลแจ้งนักศึกษาพร้อมเหตุผลทันที |
 | PENDING | (deleted) | นักศึกษาลบเอกสารตัวเอง | ลบไฟล์ + ลบ record |
 | any | (deleted) | แอดมินลบเอกสาร | ลบไฟล์ + ลบ record |
 

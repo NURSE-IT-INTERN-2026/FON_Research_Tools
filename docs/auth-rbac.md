@@ -29,7 +29,7 @@ Server-side first. Auth state is resolved in `proxy.ts` and Server Components �
 | Tenant ID | `cf81f1df-de59-4c29-91da-a2dfd04aa751` |
 | Authorize URL | `https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize` |
 | Token URL | `https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token` |
-| Scope | `openid profile email` |
+| Scope | `api://cmu/Mis.Account.Read.Me.Basicinfo` |
 | Callback URL | `/api/auth/callback` |
 
 ### Role Determination
@@ -49,9 +49,8 @@ Server-side first. Auth state is resolved in `proxy.ts` and Server Components �
 | ประเภทบัญชี | `itaccount_type_id` | Profile.accountType |
 | CMU IT Account | `cmuitaccount_name` | Profile.cmuItAccount |
 | รหัสนักศึกษา | `student_id` | Profile.studentId |
-| ภาควิชา, ระดับ, หลักสูตร | from StudentThesisProfile | Profile.department, degree, program |
-| ชื่อวิทยานิพนธ์ | from StudentThesisProfile | Profile.thesisTitleTh, thesisTitleEn |
-| สถานะนักศึกษา | from StudentThesisProfile | Profile.studentStatus |
+
+**ข้อมูลวิทยานิพนธ์ไม่เก็บใน DB** — ดึงจาก Thesis API ทุกครั้งที่แสดงผล (title_th, title_en, major_th, level_name_th, curriculum)
 
 ---
 

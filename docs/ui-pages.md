@@ -73,7 +73,7 @@
 
 **ส่วนที่ 4: รายการเอกสาร** (table)
 - คอลัมน์: ลำดับ, ชื่อเครื่องมือวิจัย, ไฟล์ (link เปิด PDF), สถานะ (badge), วันที่, การดำเนินการ
-- การดำเนินการ: ลบ (เฉพาะ PENDING)
+- การดำเนินการ: ลบ (เฉพาะ PENDING), ดาวน์โหลด PDF ใบรับรอง (เฉพาะ APPROVED)
 - Empty state: ยังไม่มีเอกสาร
 
 **Sidebar nav items (Student):**
@@ -109,11 +109,19 @@
 
 **Header:** "เอกสารเครื่องมือวิจัย"
 
+**Stat Cards** (3-card row):
+| Label | Color |
+|---|---|
+| รอตรวจสอบ | เหลือง/ส้ม |
+| อนุมัติแล้ว | เขียว |
+| เครื่องมือทั้งหมด | น้ำเงิน |
+
 **Status Filter Pills:** ทั้งหมด / รอตรวจสอบ / อนุมัติแล้ว / ปฏิเสธแล้ว
 - URL `searchParam` `status` controls filter
 
-**Data Table:**
+**Data Table** (Backend Pagination):
 - คอลัมน์: ลำดับ, ชื่อนักศึกษา (link), รหัสนักศึกษา, ชื่อเครื่องมือวิจัย, ไฟล์ (link PDF), สถานะ (badge), วันที่อัปโหลด, การดำเนินการ
+- Pagination: Previous/Next + page numbers, URL `searchParams` `page` + `limit`
 
 **Actions by status:**
 | Status | Buttons |
@@ -144,8 +152,10 @@
 
 ### Activity Log — `/admin/activity-log`
 
+- Date filter: date range picker สำหรับเลือกช่วงวันที่
 - ค้นหา + กรองตาม action type / ผู้ใช้
 - รายการ: ผู้กระทำ, การกระทำ, เป้าหมาย, เวลา
+- Backend Pagination: Previous/Next + page numbers
 
 **Sidebar nav items (Admin):**
 - แดชบอร์ด (LayoutDashboard) → `/admin/dashboard`

@@ -4,7 +4,7 @@
 
 ## Phase 1 — Foundation
 
-- [ ] **F1** Database schema + Prisma models + Docker Compose + seed script *(Profile with thesis fields, Document model, DocumentStatus enum, ActivityAction for documents)*
+- [ ] **F1** Database schema + Prisma models + Docker Compose + seed script *(Profile, Document model, DocumentStatus enum, ActivityAction for documents — thesis data NOT stored)*
 - [ ] **F2** CMU OAuth 2.0 login flow: redirect to Microsoft Azure AD → receive code → exchange token → call CMU MIS API → create/update Profile + UserRole → session → redirect by role
 - [ ] **F3** Route protection + RBAC: `proxy.ts` redirect by role (STUDENT → `/dashboard`, ADMIN → `/admin/dashboard`), unauthorized → landing page, AlumAcc → `/unauthorized`
 - [ ] **F4** Layout shell: root layout, public layout, student layout (orange sidebar), admin layout (purple sidebar with search button on navbar)
@@ -12,28 +12,33 @@
 
 ## Phase 2 — Student Portal
 
-- [ ] **F6** Student Dashboard: profile info (from MIS API) + thesis info + upload form + document list with status badges
-- [ ] **F7** Document upload: PDF upload with title input, save to `uploads/{studentId}/`, create Document record
-- [ ] **F8** Document management: view own documents with status, remove own PENDING documents
+- [ ] **F6** Student Dashboard: profile info (from MIS API) + thesis info (from Thesis API, not stored in DB) + upload form + document list with status badges
+- [ ] **F7** Document upload: PDF upload with title input, save to `uploads/{studentId}/`, create Document record → send email to admin
+- [ ] **F8** Document management: view own documents with status, remove own PENDING documents, download PDF certificate for APPROVED documents
 
 ## Phase 3 — Admin Portal
 
 - [ ] **F9** Admin Dashboard: 4 stat cards (นักศึกษาทั้งหมด, เอกสารทั้งหมด, รอตรวจสอบ, อนุมัติแล้ว) + recent activity feed
-- [ ] **F10** Document management: list all documents, filter by status (ทั้งหมด/รอตรวจสอบ/อนุมัติแล้ว/ปฏิเสธแล้ว), approve single, approve all (PENDING only), reject with notes, remove, view PDF
+- [ ] **F10** Document management: list all documents with backend pagination, filter by status (ทั้งหมด/รอตรวจสอบ/อนุมัติแล้ว/ปฏิเสธแล้ว), stat cards (รอตรวจสอบ/อนุมัติแล้ว/เครื่องมือทั้งหมด), approve single, approve all (PENDING only), reject with notes → email to student, remove, view PDF
 - [ ] **F11** Student list: รายชื่อนักศึกษา + สถานะ (กำลังศึกษา/ลาออก/พ้นสภาพ) + จำนวนเอกสาร
 - [ ] **F12** Admin search: ค้นหาจากรหัสนักศึกษา / ชื่อ / ชื่อวิทยานิพนธ์ (search button on navbar)
 
 ## Phase 4 — System
 
-- [ ] **F13** Activity log: comprehensive audit trail (document upload, approve, reject, remove, login)
+- [ ] **F13** Activity log: comprehensive audit trail (document upload, approve, reject, remove, login) with backend pagination + date filter
 - [ ] **F14** API `/api/my/documents`: นักศึกษาตรวจสอบสถานะเอกสารและเวลาที่ได้รับการอนุมัติ
 
-## Phase 5 — Post-MVP
+## Phase 5 — Email + Download PDF
 
-- [ ] **F15** Email notifications: ส่งอีเมลแจ้งเตือนเมื่ออนุมัติ/ปฏิเสธ (Nodemailer + SMTP)
-- [ ] **F16** Student detail page: `/admin/students/[id]`
-- [ ] **F17** Export data (Excel/CSV)
-- [ ] **F18** Pagination
+- [ ] **F15** Email notifications: ส่งอีเมลแจ้งเตือนผ่าน CMU Email API (upload → แจ้งแอดมิน, approve/reject → แจ้งนักศึกษา)
+- [ ] **F16** Download PDF certificate: นักศึกษาดาวน์โหลดใบรับรองเมื่ออนุมัติแล้ว (ชื่อ, รหัส, รายการเครื่องมือ, วันที่)
+
+## Phase 6 — Post-MVP
+
+- [ ] **F17** Student detail page: `/admin/students/[id]`
+- [ ] **F18** Export data (Excel/CSV)
+- [ ] **F19** OCR ช่วยเจ้าหน้าที่
+- [ ] **F20** Tool usage history feature
 
 ---
 
@@ -49,4 +54,6 @@
 8. **F12** — Admin search
 9. **F13** — Activity log
 10. **F14** — Status check API
-11. **F15-F18** — Post-MVP
+11. **F15** — Email notifications (CMU Email API)
+12. **F16** — Download PDF certificate
+13. **F17-F20** — Post-MVP

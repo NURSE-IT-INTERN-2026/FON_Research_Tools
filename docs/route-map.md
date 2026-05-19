@@ -73,9 +73,9 @@ src/app/
 | Route | Page | Data Source |
 |---|---|---|
 | `/admin/dashboard` | Stats + activity | Aggregate counts on Document; recent ActivityLog + Profile join |
-| `/admin/documents` | Document management | Document + Profile join, filtered by status via URL `searchParams` |
-| `/admin/students` | Student list | Profile (with studentStatus), Document count per student |
-| `/admin/activity-log` | Activity log | ActivityLog + Profile join, filtered/searched via URL `searchParams` |
+| `/admin/documents` | Document management | Document + Profile join, filtered by status via URL `searchParams`, backend pagination (`page`, `limit`) |
+| `/admin/students` | Student list | Profile, Document count per student, search by name/studentId |
+| `/admin/activity-log` | Activity log | ActivityLog + Profile join, filtered/searched via URL `searchParams`, backend pagination, date filter (`from`, `to`) |
 
 ### API Routes
 
@@ -102,11 +102,11 @@ src/app/
 
 | Action | Trigger | Mutations |
 |---|---|---|
-| `uploadDocument` | Student upload form | Save PDF to filesystem + insert Document row |
+| `uploadDocument` | Student upload form | Save PDF to filesystem + insert Document row + send email to admin |
 | `removeDocument` | Student/Admin remove button | Delete file + delete Document row |
-| `approveDocument` | Admin approve button | Update Document → APPROVED, set approvedBy + approvedAt |
-| `approveAllDocuments` | Admin "อนุมัติทั้งหมด" button | Update all PENDING documents for a student → APPROVED |
-| `rejectDocument` | Admin reject button | Update Document → REJECTED, set adminNotes + approvedBy + approvedAt |
+| `approveDocument` | Admin approve button | Update Document → APPROVED, set approvedBy + approvedAt + send email to student |
+| `approveAllDocuments` | Admin "อนุมัติทั้งหมด" button | Update all PENDING documents → APPROVED + send email to each student |
+| `rejectDocument` | Admin reject button | Update Document → REJECTED, set adminNotes + approvedBy + approvedAt + send email to student with reason |
 | `getRecentActivity` | Activity panel | Query ActivityLog last 25, admin-only |
 | `logActivity` | Internal (after every mutation) | Insert ActivityLog row (fire-and-forget) |
 

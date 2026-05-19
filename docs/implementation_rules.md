@@ -22,7 +22,7 @@ Rules for building this project. Every contribution must follow these.
 | User identity, login | CMU Microsoft Azure AD OAuth 2.0 | Redirect to Microsoft → callback → create session |
 | Session management | Custom HMAC-SHA256 tokens | HttpOnly cookie, verified on every request |
 | Application data | Prisma | All queries and mutations for profiles, documents, activity logs |
-| External data | CMU MIS API | ดึงข้อมูลส่วนตัว + วิทยานิพนธ์หลัง login |
+| External data | CMU MIS API + Thesis API | ดึงข้อมูลส่วนตัวหลัง login; ดึงข้อมูลวิทยานิพนธ์ทุกครั้งที่แสดงผล (ไม่เก็บใน DB) |
 
 ---
 
@@ -138,6 +138,30 @@ Admin navbar search: ค้นหาจากรหัสนักศึกษ�
 - Use shadcn/ui form components.
 - Validation: server-side in Server Actions. Return field-level errors.
 - No `window.prompt()` — use Dialog components.
+
+---
+
+## External API Patterns
+
+### CMU OAuth (Authentication)
+- Env vars from `docs/ReserchTool-api/00-research-tool-detail.md`: CLIENT_ID, CLIENT_SECRET, CMU_GET_TOKEN, CMU_BASIC_INFO, SCOPE, REDIRECT_URL
+- Reference skill: `.agents/skills/cmu-oauth-integration/` (patterns only, not authoritative)
+- OAuth state: generate random state → httpOnly cookie `oauth_state` (10 min TTL) → validate on callback
+
+### Thesis API (Display-only data)
+- URL: `POST https://mis.nurse.cmu.ac.th/thesis/student/GetDataThesis?student_id={id}`
+- Static Bearer token from env (`THESIS_API_TOKEN`)
+- **Never store** thesis data in DB — fetch on every display
+- When `MOCK_THESIS=true` → return mock data for dev testing
+- When API returns `count: 0` → show "ยังไม่พบข้อมูลวิทยานิพนธ์" (graceful empty state)
+
+### Email API (Notifications)
+- GetToken: `POST https://mis.nurse.cmu.ac.th/thesis/EmailApi/GetToken` with client_id + client_secret
+- SendEmail: `POST https://mis.nurse.cmu.ac.th/thesis/EmailApi/SendEmail` with Bearer token
+- Token valid 24 hours — cache and refresh when expired
+- Sender: `no-reply-ResearchTool@cmu.ac.th`
+- Upload → email to `supapan.ch@cmu.ac.th` cc `ampika.s@cmu.ac.th`
+- Approve/Reject → email to student
 
 ---
 
