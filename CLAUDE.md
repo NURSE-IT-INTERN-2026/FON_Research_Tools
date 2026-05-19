@@ -2,6 +2,10 @@
 
 # Research Tools — Next.js App Router Project
 
+## Security — Secrets
+
+**NEVER read `.env` or any file containing real secrets** (CLIENT_SECRET, AUTH_SECRET, DATABASE_URL passwords, API tokens, etc). When you need to know what environment variables are available, read `.env.example` instead. If the user asks you to check or fix env values, ask them to verify manually — do not read the file yourself.
+
 ## Project Overview
 
 Research Tools is a **ระบบจัดการเอกสารเครื่องมือวิจัย** (Research Tool Document Management System) for คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่. Students upload research instrument documents (PDF); admins approve/reject them. Two roles, two themed portals (orange for students, purple for admins).
