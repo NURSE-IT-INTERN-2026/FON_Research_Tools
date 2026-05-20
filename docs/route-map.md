@@ -108,7 +108,7 @@ src/app/
 | `uploadDocument` | Student upload form | Save PDF to filesystem + insert Document row + send email to admin |
 | `removeDocument` | Student/Admin remove button | Delete file + delete Document row |
 | `approveDocument` | Admin approve button | Update Document → APPROVED, set approvedBy + approvedAt + send email to student |
-| `approveAllDocuments` | Admin "อนุมัติทั้งหมด" button | Update all PENDING documents → APPROVED + send email to each student |
+| `approveAllStudentPending` | Admin "อนุมัติทั้งหมด" button | Update all PENDING documents for a specific student → APPROVED + send email to student |
 | `rejectDocument` | Admin reject button | Update Document → REJECTED, set adminNotes + approvedBy + approvedAt + send email to student with reason |
 | `getRecentActivity` | Activity panel | Query ActivityLog last 25, admin-only |
 | `logActivity` | Internal (after every mutation) | Insert ActivityLog row (fire-and-forget) |

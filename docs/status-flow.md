@@ -42,18 +42,22 @@
 
 ---
 
-## Bulk Approve Flow
+## Bulk Approve Flow (Per-Student)
 
 ```
-แอดมินกด "อนุมัติทั้งหมด"
+แอดมินกด "อนุมัติทั้งหมด" บนแถวเอกสารของนักศึกษาคนใดคนหนึ่ง
     │
     ▼
-ค้นหาเอกสารทั้งหมดที่ status = PENDING
+ค้นหาเอกสารทั้งหมดที่ userId = นักศึกษาคนนั้น AND status = PENDING
     │
     ▼
 อัปเดตทุกฉบับ → APPROVED
-  - set approvedBy = admin email
+  - set approvedBy = admin userId
   - set approvedAt = now
+    │
+    ▼
+ส่งอีเมลแจ้งนักศึกษาทันที
+  - แสดงรายการเอกสารที่อนุมัติ
     │
     ▼
 นักศึกษาเพิ่มเครื่องมือใหม่ครั้งที่ 2

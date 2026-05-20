@@ -139,11 +139,14 @@ export function determineRole(
 export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT") {
   const name = `${userInfo.firstname_TH} ${userInfo.lastname_TH}`.trim();
   const email =
-    userInfo.email || `${userInfo.cmuitaccount}@cmu.ac.th`;
+    userInfo.email ||
+    (userInfo.cmuitaccount.includes("@")
+      ? userInfo.cmuitaccount
+      : `${userInfo.cmuitaccount}@cmu.ac.th`);
   const studentId = userInfo.student_id || null;
 
   const profile = await prisma.profile.upsert({
-    where: { email },
+    where: { id: userInfo.cmuitaccount },
     create: {
       id: userInfo.cmuitaccount,
       name,
@@ -155,6 +158,7 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
     },
     update: {
       name,
+      email,
       studentId,
       accountType: userInfo.itaccount_type_id,
       cmuItAccount: userInfo.cmuitaccount,

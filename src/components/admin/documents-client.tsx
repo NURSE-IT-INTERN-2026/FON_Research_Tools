@@ -17,7 +17,7 @@ import { FilterPills } from "@/components/filter-pills";
 import { StatusBadge } from "@/components/status-badge";
 import {
   approveDocument,
-  approveAllPending,
+  approveAllStudentPending,
   rejectDocument,
   removeDocument,
   type UploadDocumentState,
@@ -27,6 +27,7 @@ import { formatDateTime } from "@/lib/utils";
 
 type DocumentRow = {
   id: string;
+  userId: string;
   title: string;
   originalName: string;
   studentName: string;
@@ -71,8 +72,8 @@ export function DocumentsClient({
 
   return (
     <div className="space-y-4">
-      {/* Toolbar: filter + approve all */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Toolbar: filter */}
+      <div className="flex flex-wrap items-center gap-3">
         <Suspense>
           <FilterPills
             paramName="status"
@@ -82,7 +83,6 @@ export function DocumentsClient({
             resetParams={["page"]}
           />
         </Suspense>
-        <ApproveAllButton />
       </div>
 
       {/* Table */}
@@ -159,7 +159,7 @@ export function DocumentsClient({
                     {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <ActionButtons doc={doc} />
+                    <ActionButtons doc={doc} documents={documents} />
                   </td>
                 </tr>
               ))}
@@ -180,11 +180,17 @@ export function DocumentsClient({
   );
 }
 
-function ActionButtons({ doc }: { doc: DocumentRow }) {
+function ActionButtons({ doc, documents }: { doc: DocumentRow; documents: DocumentRow[] }) {
   if (doc.status === "PENDING") {
+    const studentPendingCount = documents.filter(
+      (d) => d.userId === doc.userId && d.status === "PENDING",
+    ).length;
     return (
       <div className="flex items-center gap-1.5">
         <ApproveButton documentId={doc.id} />
+        {studentPendingCount > 1 && (
+          <ApproveAllStudentButton userId={doc.userId} studentName={doc.studentName} />
+        )}
         <RejectButton documentId={doc.id} />
         <RemoveButton documentId={doc.id} />
       </div>
@@ -364,26 +370,28 @@ function RemoveButton({ documentId }: { documentId: string }) {
   );
 }
 
-function ApproveAllButton() {
+function ApproveAllStudentButton({ userId, studentName }: { userId: string; studentName: string }) {
   const [pending, startTransition] = useTransition();
 
   function handleApproveAll() {
     startTransition(async () => {
-      const result = await approveAllPending();
+      const result = await approveAllStudentPending(userId);
       if (result.error) toast.error(result.error);
-      else toast.success(`อนุมัติเอกสารทั้งหมดสำเร็จ (${result.count} รายการ)`);
+      else toast.success(`อนุมัติเอกสาร ${studentName} ทั้งหมดสำเร็จ (${result.count} รายการ)`);
     });
   }
 
   return (
     <Button
       type="button"
+      variant="secondary"
+      size="sm"
       onClick={handleApproveAll}
       disabled={pending}
-      className="rounded font-semibold"
+      className="rounded h-8 text-xs"
     >
-      <CheckCircle className="h-4 w-4 mr-1.5" />
-      {pending ? "กำลังอนุมัติ..." : "อนุมัติทั้งหมด"}
+      <CheckCircle className="h-3.5 w-3.5 mr-1" />
+      {pending ? "..." : "อนุมัติทั้งหมด"}
     </Button>
   );
 }

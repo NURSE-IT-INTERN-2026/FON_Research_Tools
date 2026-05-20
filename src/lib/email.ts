@@ -61,6 +61,7 @@ type SendEmailParams = {
   sentTo: string;
   ccTo?: string;
   message: string;
+  systemName?: string;
 };
 
 export async function sendEmail(params: SendEmailParams): Promise<boolean> {
@@ -79,7 +80,7 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
         sent_to: params.sentTo,
         cc_to: params.ccTo ?? "",
         message: params.message,
-        system_name: "ResearchTool",
+        system_name: params.systemName ?? process.env.EMAIL_SYSTEM_NAME ?? "",
       }),
     });
 
@@ -101,9 +102,7 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
 export function getAdminEmails() {
   const devEmail = process.env.DEV_NOTIFICATION_EMAIL;
   return {
-    // to: devEmail ?? "supapan.ch@cmu.ac.th",
-    // cc: devEmail ?? "ampika.s@cmu.ac.th",
-    to: devEmail ?? "",
-    cc: devEmail ?? "",
+    to: devEmail ?? "supapan.ch@cmu.ac.th",
+    cc: devEmail ?? "ampika.s@cmu.ac.th",
   };
 }

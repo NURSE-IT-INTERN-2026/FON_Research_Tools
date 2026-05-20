@@ -37,6 +37,7 @@ export default async function DocumentsPage({
 
   const serialized = documents.map((doc) => ({
     id: doc.id,
+    userId: doc.userId,
     title: doc.title,
     originalName: doc.originalName,
     studentName: doc.profile.name,

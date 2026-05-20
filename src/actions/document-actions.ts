@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
-import { sendEmail, getAdminEmails } from "@/lib/email";
+import { sendEmail } from "@/lib/email";
 import db from "@/lib/db";
 import { writeFile, mkdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -67,15 +67,6 @@ export async function uploadDocument(
     targetId: doc.id,
     targetLabel: title,
   });
-
-  // Notify admins (fire-and-forget)
-  const adminEmails = getAdminEmails();
-  sendEmail({
-    subject: `เอกสารใหม่: ${title}`,
-    sentTo: adminEmails.to,
-    ccTo: adminEmails.cc,
-    message: `นักศึกษา ${profile?.name ?? ""} (${profile?.studentId ?? ""}) ได้อัปโหลดเอกสารเครื่องมือวิจัย\n\nชื่อเครื่องมือ: ${title}\nไฟล์: ${file.name}\n\nกรุณาเข้าระบบเพื่อตรวจสอบ`,
-  }).catch(() => {});
 
   revalidatePath("/thesis");
   return { success: true };
@@ -162,10 +153,11 @@ export async function approveDocument(
       select: { email: true, name: true },
     });
     if (studentProfile?.email) {
+      const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
       sendEmail({
-        subject: "ผลการพิจารณาเอกสารเครื่องมือวิจัย",
+        subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
         sentTo: studentProfile.email,
-        message: `${studentProfile.name}\n\nเอกสารเครื่องมือวิจัยของท่านได้รับการอนุมัติครบถ้วนแล้ว\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย\nคณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่`,
+        message: `เรียนนักศึกษา\n\nแจ้งผลการพิจารณาเรียบร้อยแล้ว\n\nขอแสดงความนับถือ\nดูรายละเอียดได้ที่: ${appUrl}/thesis`,
       }).catch(() => {});
     }
   }
@@ -208,10 +200,11 @@ export async function rejectDocument(
     select: { email: true, name: true },
   });
   if (studentProfile?.email) {
+    const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
     sendEmail({
-      subject: "ผลการพิจารณาเอกสารเครื่องมือวิจัย",
+      subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
       sentTo: studentProfile.email,
-      message: `${studentProfile.name}\n\nเอกสาร "${doc.title}" ไม่ได้รับการอนุมัติ\nเหตุผล: ${notes}\n\nกรุณาแก้ไขและอัปโหลดใหม่\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย`,
+      message: `เรียนนักศึกษา\n\nเอกสาร "${doc.title}" ไม่ได้รับการอนุมัติ\nเหตุผล: ${notes}\n\nกรุณาแก้ไขและอัปโหลดใหม่\n\nขอแสดงความนับถือ\nดูรายละเอียดได้ที่: ${appUrl}/thesis`,
     }).catch(() => {});
   }
 
@@ -219,19 +212,21 @@ export async function rejectDocument(
   return { success: true };
 }
 
-export async function approveAllPending(): Promise<{ success?: boolean; error?: string; count?: number }> {
+export async function approveAllStudentPending(
+  studentUserId: string,
+): Promise<{ success?: boolean; error?: string; count?: number }> {
   const ctx = await requireRole("ADMIN");
 
   const pending = await db.document.findMany({
-    where: { status: "PENDING" },
-    select: { id: true, title: true, userId: true },
+    where: { userId: studentUserId, status: "PENDING" },
+    select: { id: true, title: true },
   });
 
   if (pending.length === 0) return { error: "ไม่มีเอกสารที่รอตรวจสอบ" };
 
   const now = new Date();
   await db.document.updateMany({
-    where: { status: "PENDING" },
+    where: { userId: studentUserId, status: "PENDING" },
     data: {
       status: "APPROVED",
       approvedBy: ctx.userId,
@@ -249,28 +244,18 @@ export async function approveAllPending(): Promise<{ success?: boolean; error?: 
     });
   }
 
-  // Notify students — group by userId, send one email per student
-  const studentIds = [...new Set(pending.map((d) => d.userId))];
-  for (const studentId of studentIds) {
-    const studentDocs = pending.filter((d) => d.userId === studentId);
-    const remainingPending = await db.document.count({
-      where: { userId: studentId, status: "PENDING" },
-    });
-    // Only notify when student has no remaining pending docs
-    if (remainingPending === 0) {
-      const studentProfile = await db.profile.findUnique({
-        where: { id: studentId },
-        select: { email: true, name: true },
-      });
-      if (studentProfile?.email) {
-        const docList = studentDocs.map((d) => `- ${d.title}`).join("\n");
-        sendEmail({
-          subject: "ผลการพิจารณาเอกสารเครื่องมือวิจัย",
-          sentTo: studentProfile.email,
-          message: `${studentProfile.name}\n\nเอกสารเครื่องมือวิจัยของท่านได้รับการอนุมัติครบถ้วนแล้ว\n\nเอกสารที่อนุมัติ:\n${docList}\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย\nคณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่`,
-        }).catch(() => {});
-      }
-    }
+  // Notify student immediately
+  const studentProfile = await db.profile.findUnique({
+    where: { id: studentUserId },
+    select: { email: true, name: true },
+  });
+  if (studentProfile?.email) {
+    const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
+    sendEmail({
+      subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
+      sentTo: studentProfile.email,
+      message: `เรียนนักศึกษา\n\nแจ้งผลการพิจารณาเรียบร้อยแล้ว\n\nขอแสดงความนับถือ\nดูรายละเอียดได้ที่: ${appUrl}/thesis`,
+    }).catch(() => {});
   }
 
   revalidatePath("/admin/documents");
