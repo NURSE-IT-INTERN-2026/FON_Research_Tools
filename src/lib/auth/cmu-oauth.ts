@@ -42,13 +42,14 @@ export type ThesisData = {
   curriculum: string;
 } | null;
 
-export function getAuthorizationUrl() {
+export function getAuthorizationUrl(state: string) {
   const params = new URLSearchParams({
     client_id: CLIENT_ID!,
     response_type: "code",
     redirect_uri: REDIRECT_URI!,
     scope: SCOPE!,
     response_mode: "query",
+    state,
   });
   return `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize?${params}`;
 }

@@ -27,6 +27,44 @@ This is the real production Next.js App Router project. It is the source of trut
 
 **Dev testing:** Set `MOCK_THESIS=true` in `.env.local` to use mock thesis data. Set `DEV_TEST_STUDENT_ID` to test with a specific student ID.
 
+---
+
+## MANDATORY — Read Before Every Code Change
+
+**STOP. Do NOT write any code until you have completed the steps below.**
+
+### Step 1: Read relevant skills
+
+Read the SKILL.md file for every topic that applies to your task:
+
+| If your task involves... | Read this skill first |
+|---|---|
+| ANY Next.js code (routes, pages, layouts, components) | `.agents/skills/next-best-practices/SKILL.md` |
+| Redirects, navigation, URL matching, proxy, basePath | `.agents/skills/basepath-handling/SKILL.md` |
+| Implementing a new feature or modifying an existing one | `.agents/skills/implement-feature/SKILL.md` |
+| CMU OAuth login, token exchange, user info | `.agents/skills/cmu-oauth-integration/SKILL.md` |
+| Finishing a feature (before marking done) | `.agents/skills/review-feature/SKILL.md` |
+
+### Step 2: Read project docs (for feature work)
+
+1. `docs/phasing-plan.md` — is this feature Phase 1 or Phase 2?
+2. `docs/_features.md` — current feature status
+3. `docs/route-map.md` — which routes are involved?
+4. `docs/data-model.md` — which Prisma models are involved?
+5. `docs/auth-rbac.md` — which roles can access this?
+
+### Step 3: Read existing code
+
+Before changing a file, READ IT FIRST. Understand what exists before modifying.
+
+### Step 4: Summarize plan to user
+
+Tell the user what files you will change and why. Wait for confirmation before implementing.
+
+**Only after completing ALL steps above, start writing code.**
+
+---
+
 ## Lovable Reference Project
 
 A Lovable-generated project exists solely as a UI/design reference. Its docs are stored under `docs/lovable-reference/`.
@@ -43,11 +81,13 @@ A Lovable-generated project exists solely as a UI/design reference. Its docs are
 
 Convert Lovable pages into Next.js App Router pages manually. No auto-ports.
 
-## Pre-Implementation Checklist
+---
 
-Before writing any code for a feature, read these docs:
+## Pre-Implementation Docs Reference
 
-1. `docs/phasing-plan.md` — **READ THIS FIRST** — what to build now vs later
+Full docs list for deeper reading when needed:
+
+1. `docs/phasing-plan.md` — what to build now vs later
 2. `docs/requirements-summary.md` — concise requirements for boss review
 3. `docs/implementation_rules.md` — coding standards, architecture, and constraints
 4. `docs/tech-stack.md` — technologies, versions, and scope boundaries
@@ -58,16 +98,13 @@ Before writing any code for a feature, read these docs:
 9. `docs/auth-rbac.md` — authentication and role-based access control
 10. `docs/ui-pages.md` — page layouts and component specifications
 11. `docs/status-flow.md` — document status state machine
-12. `docs/ReserchTool-api/00-research-tool-detail.md` — **API credentials and endpoints (source of truth)**
+12. `docs/ReserchTool-api/00-research-tool-detail.md` — API credentials and endpoints (source of truth)
 13. `docs/ReserchTool-api/Email_API_Manual.pdf` — Email API documentation
 
-## Architecture Decisions
+---
 
-- **MANDATORY:** When the user asks to implement a feature, you MUST read and follow `.agents/skills/implement-feature/SKILL.md` step-by-step. Do not skip this.
-- **MANDATORY:** After completing any feature, you MUST read and follow `.agents/skills/review-feature/SKILL.md` before marking it done. Do not skip this.
-- **MANDATORY:** Follow `.agents/skills/next-best-practices/SKILL.md` for all Next.js architecture and implementation decisions. Read it before writing any Next.js code.
-- **MANDATORY:** When writing redirects, navigation, or URL matching, read `.agents/skills/basepath-handling/SKILL.md`. The project uses `basePath: "/researchtool"` and each context (proxy, route handlers, server actions, client components) handles basePath differently. Wrong usage causes double-path or missing-path bugs.
-- **MANDATORY:** When working on CMU OAuth, read `.agents/skills/cmu-oauth-integration/SKILL.md` as reference for patterns (not authoritative — `docs/ReserchTool-api/00-research-tool-detail.md` is source of truth).
+## Architecture Rules
+
 - Use Next.js App Router (`src/app/` directory). No `pages/` directory.
 - Use `proxy.ts` for route protection and RBAC — not `middleware.ts`.
 - **CMU OAuth 2.0 for authentication + HMAC-SHA256 session tokens. Prisma for all application data queries and mutations.**
@@ -75,6 +112,12 @@ Before writing any code for a feature, read these docs:
 - Server Components by default. Client Components only when hooks or event handlers are needed.
 - **Keep existing UI styling** — the current UI design is good, only change data/content.
 - **Never modify files under `docs/lovable-reference/`** — it is a read-only UI/design reference.
+- Implement one vertical slice at a time (route + page + data + UI + RBAC).
+- Keep changes minimal and focused. No speculative features.
+- Do not add dependencies unless necessary and justified.
+- Enforce RBAC on both server-side and UI where applicable.
+
+---
 
 ## Language
 
@@ -100,26 +143,23 @@ Use these mappings for all user-facing status display:
 | Resigned | ลาออก |
 | Dismissed | พ้นสภาพ |
 
-## Implementation Rules
+---
 
-- Implement one vertical slice at a time (route + page + data + UI + RBAC). See `.agents/skills/implement-feature/SKILL.md` for the full workflow.
-- Keep changes minimal and focused. No speculative features.
-- Do not add dependencies unless necessary and justified.
-- Enforce RBAC on both server-side and UI where applicable.
-- After completing a feature, update `docs/_features.md`.
-- **Keep existing UI** — only change data/content, not styling or layout.
+## Workflow — Complete Feature Cycle
 
-## Workflow
+For every feature the user asks you to implement:
 
-For every feature the user asks you to implement, you MUST follow this exact sequence:
+```
+1. READ SKILLS → 2. READ DOCS → 3. READ CODE → 4. PLAN → 5. IMPLEMENT → 6. REVIEW → 7. UPDATE DOCS
+```
 
-1. **Read** `.agents/skills/implement-feature/SKILL.md` and follow its workflow.
-2. **Read** all required docs listed in the skill before writing any code.
-3. **Summarize** the plan and list files to be changed (as the skill requires).
-4. **Implement** the vertical slice.
-5. **Read** `.agents/skills/review-feature/SKILL.md` and run the full review checklist.
-6. **Fix** any issues found during review.
-7. **Update** `docs/_features.md` to reflect completion.
-8. **Report** the review result to the user.
+1. **Read skills** — Follow "MANDATORY — Read Before Every Code Change" above
+2. **Read docs** — Check phasing, features, route-map, data-model, auth-rbac
+3. **Read existing code** — Read files you will modify before changing them
+4. **Summarize plan** — Tell user what files will change, get confirmation
+5. **Implement** — Write the vertical slice
+6. **Review** — Read `.agents/skills/review-feature/SKILL.md` and run the checklist
+7. **Update docs** — Update `docs/_features.md` to reflect completion
+8. **Report** — Tell user the review result
 
-Do NOT skip steps 1 or 5. Do NOT implement without reading the skill first. Do NOT mark complete without running the review.
+**Do NOT skip steps 1-4. Do NOT implement without reading skills first. Do NOT mark complete without running the review.**

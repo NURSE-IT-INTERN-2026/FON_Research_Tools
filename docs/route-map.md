@@ -14,8 +14,10 @@ src/app/
 │   └── page.tsx                  ← Redirect to CMU OAuth 2.0
 ├── api/
 │   └── auth/
+│       ├── cmu/
+│       │   └── route.ts          ← Generate state + redirect to Microsoft authorize URL
 │       └── callback/
-│           └── route.ts          ← OAuth callback (receive code, exchange, create session)
+│           └── route.ts          ← OAuth callback (validate state, exchange code, create session)
 │   └── documents/
 │       └── [id]/
 │           ├── file/
@@ -59,8 +61,9 @@ src/app/
 | Route | Page | Auth | Data |
 |---|---|---|---|
 | `/` | Landing | No auth required | None |
-| `/login` | Redirect to CMU OAuth | No auth required | None |
-| `/api/auth/callback` | OAuth callback handler | Public (receives code) | CMU MIS API |
+| `/login` | Login page (link to `/api/auth/cmu`) | No auth required | None |
+| `/api/auth/cmu` | Generate state cookie + redirect to Microsoft | No auth required | None |
+| `/api/auth/callback` | OAuth callback (validate state, exchange code) | Public (receives code) | CMU MIS API |
 
 ### Student Routes (requires `STUDENT` role)
 

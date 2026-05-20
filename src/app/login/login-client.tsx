@@ -6,12 +6,13 @@ import loginCmuImg from "@/../public/login_cmu.png";
 
 const ERROR_MESSAGES: Record<string, string> = {
   oauth_error: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่",
+  oauth_state_mismatch: "เกิดข้อผิดพลาดด้านความปลอดภัย กรุณาลองใหม่",
   oauth_token_failed: "ไม่สามารถยืนยันตัวตนกับระบบ CMU ได้ กรุณาลองใหม่",
   oauth_userinfo_failed: "ไม่สามารถดึงข้อมูลผู้ใช้ได้ กรุณาลองใหม่",
   not_allowed_faculty: "ระบบไม่รองรับบัญชีประเภทนี้",
 };
 
-export function LoginClient({ authUrl }: { authUrl: string }) {
+export function LoginClient({ loginHref }: { loginHref: string }) {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
@@ -24,7 +25,7 @@ export function LoginClient({ authUrl }: { authUrl: string }) {
       )}
 
       <a
-        href={authUrl}
+        href={loginHref}
         className="flex items-center justify-center w-full"
       >
         <Image

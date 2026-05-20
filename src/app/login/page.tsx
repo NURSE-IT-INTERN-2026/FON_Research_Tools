@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { getAuthorizationUrl } from "@/lib/auth/cmu-oauth";
 import { LoginClient } from "./login-client";
 
-export default function LoginPage() {
-  const authUrl = getAuthorizationUrl();
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const LOGIN_HREF = `${basePath}/api/auth/cmu`;
 
+export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -28,7 +28,7 @@ export default function LoginPage() {
         </div>
         <div className="p-6 pt-0 space-y-4">
           <Suspense>
-            <LoginClient authUrl={authUrl} />
+            <LoginClient loginHref={LOGIN_HREF} />
           </Suspense>
         </div>
       </div>
