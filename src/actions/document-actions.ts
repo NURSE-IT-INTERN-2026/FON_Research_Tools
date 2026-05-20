@@ -89,7 +89,7 @@ export async function removeDocument(
   const isOwner = doc.userId === userId;
 
   if (!isAdmin && !isOwner) return { error: "ไม่มีสิทธิ์ลบเอกสารนี้" };
-  if (!isAdmin && doc.status !== "PENDING") return { error: "ลบได้เฉพาะเอกสารที่ยังรอตรวจสอบ" };
+  if (!isAdmin && doc.status !== "PENDING" && doc.status !== "REJECTED") return { error: "ลบได้เฉพาะเอกสารที่ยังรอตรวจสอบหรือถูกปฏิเสธ" };
 
   // Delete file from disk
   const profile = await db.profile.findUnique({

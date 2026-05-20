@@ -182,10 +182,17 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                           ใบรับรอง
                         </a>
                       )}
-                      {doc.status === "REJECTED" && doc.adminNotes && (
-                        <span className="text-xs text-destructive line-clamp-1" title={doc.adminNotes}>
-                          {doc.adminNotes}
-                        </span>
+                      {doc.status === "REJECTED" && (
+                        <div className="flex items-start justify-between gap-2">
+                          {doc.adminNotes ? (
+                            <span className="text-xs text-destructive line-clamp-2" title={doc.adminNotes}>
+                              เหตุผล: {doc.adminNotes}
+                            </span>
+                          ) : (
+                            <span />
+                          )}
+                          <RemoveButton documentId={doc.id} />
+                        </div>
                       )}
                     </td>
                   </tr>
