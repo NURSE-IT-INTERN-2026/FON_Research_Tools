@@ -7,9 +7,10 @@ type FilterPillsProps = {
   options: { label: string; value: string }[];
   selected: string;
   basePath?: string;
+  resetParams?: string[];
 };
 
-export function FilterPills({ paramName, options, selected, basePath = "/dashboard" }: FilterPillsProps) {
+export function FilterPills({ paramName, options, selected, basePath = "/dashboard", resetParams }: FilterPillsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -19,6 +20,9 @@ export function FilterPills({ paramName, options, selected, basePath = "/dashboa
       params.delete(paramName);
     } else {
       params.set(paramName, value);
+    }
+    if (resetParams) {
+      for (const p of resetParams) params.delete(p);
     }
     router.push(`${basePath}?${params.toString()}`);
   }
