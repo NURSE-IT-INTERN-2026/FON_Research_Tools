@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { Sidebar } from "@/components/sidebar";
 import type { NavItem } from "@/components/sidebar";
 import { ActivityPanelTrigger } from "@/components/admin/activity-panel";
+import { SearchButton } from "@/components/admin/search-button";
 
 const ADMIN_NAV: NavItem[] = [
   { label: "แดชบอร์ด", href: "/admin/dashboard", icon: "LayoutDashboard" },
@@ -24,7 +25,12 @@ export default async function AdminLayout({
         role="ADMIN"
         navItems={ADMIN_NAV}
         userEmail={email}
-        headerActions={<ActivityPanelTrigger />}
+        headerActions={
+          <>
+            <SearchButton />
+            <ActivityPanelTrigger />
+          </>
+        }
       />
       <main className="flex-1 pt-14 p-4 lg:p-6">{children}</main>
     </div>
