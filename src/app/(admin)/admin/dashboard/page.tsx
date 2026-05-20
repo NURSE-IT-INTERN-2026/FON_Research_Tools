@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-import { Users, FileText, Clock, PackageCheck } from "lucide-react";
+import { Users, FileText, Clock, CheckCircle } from "lucide-react";
 
 export default async function AdminDashboardPage() {
   const [totalStudents, totalDocuments, pendingDocuments, approvedDocuments, recentActivity] =
@@ -44,16 +44,19 @@ export default async function AdminDashboardPage() {
           icon={FileText}
           value={totalDocuments}
           label="เอกสารทั้งหมด"
+          href="/admin/documents"
         />
         <StatCard
           icon={Clock}
           value={pendingDocuments}
           label="รอตรวจสอบ"
+          href="/admin/documents?status=PENDING"
         />
         <StatCard
-          icon={PackageCheck}
+          icon={CheckCircle}
           value={approvedDocuments}
           label="อนุมัติแล้ว"
+          href="/admin/documents?status=APPROVED"
         />
       </div>
 
