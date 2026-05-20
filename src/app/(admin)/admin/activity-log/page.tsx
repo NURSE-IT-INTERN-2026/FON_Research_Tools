@@ -3,7 +3,7 @@ import { ActivityLogClient } from "@/components/admin/activity-log-client";
 import type { ActivityAction } from "@/generated/prisma/enums";
 import type { ActivityLogWhereInput } from "@/generated/prisma/models/ActivityLog";
 
-const DEFAULT_TAKE = 50;
+const PAGE_SIZE = 20;
 
 export default async function ActivityLogPage({
   searchParams,
@@ -13,11 +13,13 @@ export default async function ActivityLogPage({
     targetType?: string;
     userId?: string;
     q?: string;
-    take?: string;
+    page?: string;
+    from?: string;
+    to?: string;
   }>;
 }) {
   const params = await searchParams;
-  const take = Math.min(Math.max(parseInt(params.take ?? String(DEFAULT_TAKE), 10) || DEFAULT_TAKE, 10), 500);
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
 
   const where: ActivityLogWhereInput = {};
 
@@ -28,10 +30,23 @@ export default async function ActivityLogPage({
     where.targetLabel = { contains: params.q, mode: "insensitive" };
   }
 
+  if (params.from || params.to) {
+    where.createdAt = {};
+    if (params.from) {
+      where.createdAt.gte = new Date(params.from);
+    }
+    if (params.to) {
+      const toDate = new Date(params.to);
+      toDate.setHours(23, 59, 59, 999);
+      where.createdAt.lte = toDate;
+    }
+  }
+
   const [rows, users] = await Promise.all([
     db.activityLog.findMany({
       where,
-      take: take + 1,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE + 1,
       orderBy: { createdAt: "desc" },
       include: { profile: { select: { name: true, email: true } } },
     }),
@@ -41,8 +56,8 @@ export default async function ActivityLogPage({
     }),
   ]);
 
-  const hasMore = rows.length > take;
-  const logs = hasMore ? rows.slice(0, take) : rows;
+  const hasMore = rows.length > PAGE_SIZE;
+  const logs = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
 
   const serialized = logs.map((log) => ({
     id: log.id,
@@ -71,6 +86,7 @@ export default async function ActivityLogPage({
       <ActivityLogClient
         logs={serialized}
         users={serializedUsers}
+        page={page}
         hasMore={hasMore}
         currentFilters={params}
       />

@@ -2,10 +2,10 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { FilterPills } from "@/components/filter-pills";
-import { CheckCircle } from "lucide-react";
 import { timeAgo } from "@/lib/utils";
 import { ACTION_LABELS, ACTION_ICONS, ACTION_COLORS, ACTION_OPTIONS, TARGET_OPTIONS } from "@/lib/activity-meta";
 
@@ -29,13 +29,16 @@ type UserOption = {
 type ActivityLogClientProps = {
   logs: LogEntry[];
   users: UserOption[];
+  page: number;
   hasMore: boolean;
   currentFilters: {
     action?: string;
     targetType?: string;
     userId?: string;
     q?: string;
-    take?: string;
+    page?: string;
+    from?: string;
+    to?: string;
   };
 };
 
@@ -52,6 +55,7 @@ function SearchBar({ initialQuery }: { initialQuery: string }) {
     } else {
       params.delete("q");
     }
+    params.delete("page");
     router.push(`/admin/activity-log?${params.toString()}`);
   }
 
@@ -69,7 +73,106 @@ function SearchBar({ initialQuery }: { initialQuery: string }) {
   );
 }
 
-export function ActivityLogClient({ logs, users, hasMore, currentFilters }: ActivityLogClientProps) {
+function DateRangeFilter({
+  from,
+  to,
+}: {
+  from: string;
+  to: string;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  function updateDate(field: "from" | "to", value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(field, value);
+    } else {
+      params.delete(field);
+    }
+    params.delete("page");
+    router.push(`/admin/activity-log?${params.toString()}`);
+  }
+
+  function clearDates() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("from");
+    params.delete("to");
+    params.delete("page");
+    router.push(`/admin/activity-log?${params.toString()}`);
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Input
+        type="date"
+        value={from}
+        onChange={(e) => updateDate("from", e.target.value)}
+        className="h-8 rounded text-xs w-auto"
+      />
+      <span className="text-xs text-muted-foreground">ถึง</span>
+      <Input
+        type="date"
+        value={to}
+        onChange={(e) => updateDate("to", e.target.value)}
+        className="h-8 rounded text-xs w-auto"
+      />
+      {(from || to) && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={clearDates}
+          className="h-8 text-xs text-muted-foreground px-2"
+        >
+          ล้าง
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function Pagination({
+  page,
+  hasMore,
+  onPageChange,
+}: {
+  page: number;
+  hasMore: boolean;
+  onPageChange: (p: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={page <= 1}
+        onClick={() => onPageChange(page - 1)}
+        className="rounded text-xs"
+      >
+        <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+        ก่อนหน้า
+      </Button>
+      <span className="text-xs text-muted-foreground px-2">
+        หน้า {page} / {hasMore ? "…" : page}
+      </span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={!hasMore}
+        onClick={() => onPageChange(page + 1)}
+        className="rounded text-xs"
+      >
+        ถัดไป
+        <ChevronRight className="h-3.5 w-3.5 ml-1" />
+      </Button>
+    </div>
+  );
+}
+
+export function ActivityLogClient({ logs, users, page, hasMore, currentFilters }: ActivityLogClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -80,14 +183,17 @@ export function ActivityLogClient({ logs, users, hasMore, currentFilters }: Acti
     } else {
       params.set("userId", userId);
     }
-    params.delete("take");
+    params.delete("page");
     router.push(`/admin/activity-log?${params.toString()}`);
   }
 
-  function loadMore() {
+  function goToPage(p: number) {
     const params = new URLSearchParams(searchParams.toString());
-    const current = parseInt(params.get("take") ?? "50", 10);
-    params.set("take", String(current + 50));
+    if (p <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(p));
+    }
     router.push(`/admin/activity-log?${params.toString()}`);
   }
 
@@ -106,6 +212,7 @@ export function ActivityLogClient({ logs, users, hasMore, currentFilters }: Acti
               options={ACTION_OPTIONS}
               selected={currentFilters.action || "ALL"}
               basePath="/admin/activity-log"
+              resetParams={["page"]}
             />
           </div>
           <div className="space-y-1">
@@ -115,6 +222,7 @@ export function ActivityLogClient({ logs, users, hasMore, currentFilters }: Acti
               options={TARGET_OPTIONS}
               selected={currentFilters.targetType || "ALL"}
               basePath="/admin/activity-log"
+              resetParams={["page"]}
             />
           </div>
           <div className="space-y-1">
@@ -129,6 +237,15 @@ export function ActivityLogClient({ logs, users, hasMore, currentFilters }: Acti
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </select>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ช่วงวันที่</p>
+            <Suspense>
+              <DateRangeFilter
+                from={currentFilters.from ?? ""}
+                to={currentFilters.to ?? ""}
+              />
+            </Suspense>
           </div>
         </div>
       </div>
@@ -165,15 +282,10 @@ export function ActivityLogClient({ logs, users, hasMore, currentFilters }: Acti
           })}
         </div>
       )}
-      {hasMore && logs.length > 0 && (
-        <div className="flex justify-center">
-          <button
-            onClick={loadMore}
-            className="text-sm font-semibold text-primary hover:underline underline-offset-4 py-2"
-          >
-            โหลดเพิ่มเติม
-          </button>
-        </div>
+
+      {/* Pagination */}
+      {(page > 1 || hasMore) && (
+        <Pagination page={page} hasMore={hasMore} onPageChange={goToPage} />
       )}
     </div>
   );

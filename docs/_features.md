@@ -25,7 +25,7 @@
 
 ## Phase 4 — System
 
-- [ ] **F13** Activity log: comprehensive audit trail (document upload, approve, reject, remove, login) with backend pagination + date filter
+- [x] **F13** Activity log: comprehensive audit trail (document upload, approve, reject, remove, login) with backend pagination + date filter
 - [ ] **F14** API `/api/my/documents`: นักศึกษาตรวจสอบสถานะเอกสารและเวลาที่ได้รับการอนุมัติ
 
 ## Phase 5 — Email + Download PDF
