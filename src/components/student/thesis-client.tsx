@@ -16,6 +16,7 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { uploadDocument, removeDocument, type UploadDocumentState } from "@/actions/document-actions";
 import { Upload, Trash2, FileText, Download } from "lucide-react";
+import { formatDateTime } from "@/lib/utils";
 
 type DocumentRow = {
   id: string;
@@ -164,7 +165,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                       <StatusBadge status={doc.status} />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {formatDate(doc.createdAt)}
+                      {formatDateTime(doc.createdAt)}
                     </td>
                     <td className="px-4 py-3">
                       {doc.status === "PENDING" && (
@@ -269,12 +270,4 @@ function RemoveButton({ documentId }: { documentId: string }) {
       </Dialog>
     </>
   );
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }

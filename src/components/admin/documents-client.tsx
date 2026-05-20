@@ -23,6 +23,7 @@ import {
   type UploadDocumentState,
 } from "@/actions/document-actions";
 import { CheckCircle, XCircle, Trash2, FileText, Check } from "lucide-react";
+import { formatDateTime } from "@/lib/utils";
 
 type DocumentRow = {
   id: string;
@@ -32,6 +33,7 @@ type DocumentRow = {
   studentId: string;
   status: string;
   createdAt: string;
+  approvedAt: string | null;
 };
 
 type DocumentsClientProps = {
@@ -115,6 +117,9 @@ export function DocumentsClient({
                   วันที่อัปโหลด
                 </th>
                 <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                  วันที่อนุมัติ
+                </th>
+                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                   การดำเนินการ
                 </th>
               </tr>
@@ -148,7 +153,10 @@ export function DocumentsClient({
                     <StatusBadge status={doc.status} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
-                    {formatDate(doc.createdAt)}
+                    {formatDateTime(doc.createdAt)}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                    {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <ActionButtons doc={doc} />
@@ -416,12 +424,4 @@ function Pagination({
       </Button>
     </div>
   );
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }

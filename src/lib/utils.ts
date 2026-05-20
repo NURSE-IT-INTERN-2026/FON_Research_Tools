@@ -17,3 +17,14 @@ export function timeAgo(date: Date | string): string {
   if (days < 30) return `${days} วันที่แล้ว`;
   return d.toLocaleDateString("th-TH");
 }
+
+export function formatDateTime(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}

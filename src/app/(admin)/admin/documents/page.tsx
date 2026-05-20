@@ -43,6 +43,7 @@ export default async function DocumentsPage({
     studentId: doc.profile.studentId ?? "—",
     status: doc.status,
     createdAt: doc.createdAt.toISOString(),
+    approvedAt: doc.approvedAt?.toISOString() ?? null,
   }));
 
   return (

@@ -14,7 +14,7 @@ import {
   getRecentActivity,
   type ActivityEntry,
 } from "@/actions/activity-actions";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, formatDateTime } from "@/lib/utils";
 import { ACTION_LABELS, ACTION_ICONS, ACTION_COLORS } from "@/lib/activity-meta";
 import { CheckCircle } from "lucide-react";
 
@@ -37,7 +37,7 @@ function ActivityItem({ entry }: { entry: ActivityEntry }) {
         )}
       </div>
       <span className="shrink-0 text-xs text-muted-foreground font-mono pt-0.5">
-        {timeAgo(entry.createdAt)}
+        {formatDateTime(entry.createdAt)}
       </span>
     </div>
   );

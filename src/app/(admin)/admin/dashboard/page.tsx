@@ -1,5 +1,5 @@
 import db from "@/lib/db";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, formatDateTime } from "@/lib/utils";
 import { ACTION_LABELS } from "@/lib/activity-meta";
 import { StatCard } from "@/components/stat-card";
 import {
@@ -91,7 +91,7 @@ export default async function AdminDashboardPage() {
                     )}
                   </p>
                   <span className="shrink-0 text-xs text-muted-foreground font-mono">
-                    {timeAgo(log.createdAt)}
+                    {formatDateTime(log.createdAt)}
                   </span>
                 </div>
               ))}

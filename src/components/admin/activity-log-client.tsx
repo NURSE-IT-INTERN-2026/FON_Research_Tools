@@ -6,7 +6,7 @@ import { Search, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FilterPills } from "@/components/filter-pills";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, formatDateTime } from "@/lib/utils";
 import { ACTION_LABELS, ACTION_ICONS, ACTION_COLORS, ACTION_OPTIONS, TARGET_OPTIONS } from "@/lib/activity-meta";
 
 type LogEntry = {
@@ -275,7 +275,7 @@ export function ActivityLogClient({ logs, users, page, hasMore, currentFilters }
                   )}
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground font-mono pt-0.5">
-                  {timeAgo(log.createdAt)}
+                  {formatDateTime(log.createdAt)}
                 </span>
               </div>
             );
