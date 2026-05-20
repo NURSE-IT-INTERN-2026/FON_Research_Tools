@@ -26,13 +26,7 @@ export default async function AdminLayout({
         userEmail={email}
         headerActions={<ActivityPanelTrigger />}
       />
-      <div className="flex flex-1 flex-col lg:ml-64">
-        <header className="sticky top-0 z-30 hidden lg:flex h-14 items-center justify-between border-b bg-background/95 backdrop-blur-sm px-6">
-          <div />
-          <ActivityPanelTrigger />
-        </header>
-        <main className="flex-1 p-4 pt-18 lg:p-6 lg:pt-4">{children}</main>
-      </div>
+      <main className="flex-1 pt-14 p-4 lg:p-6">{children}</main>
     </div>
   );
 }
