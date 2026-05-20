@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   basePath: "/researchtool",
-  reactCompiler: true,
+  // reactCompiler: true, // disabled — causes OOM in dev mode
   experimental: {
     authInterrupts: true,
   },
