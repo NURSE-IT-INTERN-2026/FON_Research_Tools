@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 
-const EMAIL_API_BASE = "https://mis.nurse.cmu.ac.th/thesis";
+const EMAIL_API_BASE = process.env.EMAIL_API_BASE ?? "https://mis.nurse.cmu.ac.th/thesis";
 const TOKEN_CACHE_PATH = join(process.cwd(), ".cache", "email-token.json");
 
 type TokenCache = {
@@ -30,8 +30,8 @@ async function getEmailToken(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      client_id: "nurse-email-api",
-      client_secret: "NurseEmail@CMU2025!",
+      client_id: process.env.EMAIL_CLIENT_ID ?? "nurse-email-api",
+      client_secret: process.env.EMAIL_CLIENT_SECRET ?? "NurseEmail@CMU2025!",
     }),
   });
 
@@ -66,6 +66,7 @@ type SendEmailParams = {
 export async function sendEmail(params: SendEmailParams): Promise<boolean> {
   try {
     const token = await getEmailToken();
+    console.log("[email] Sending to:", params.sentTo, "subject:", params.subject);
 
     const res = await fetch(`${EMAIL_API_BASE}/EmailApi/SendEmail`, {
       method: "POST",
@@ -82,13 +83,14 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
       }),
     });
 
+    const data = await res.json();
+    console.log("[email] API response:", JSON.stringify(data));
+
     if (!res.ok) {
-      const text = await res.text();
-      console.error("[email] SendEmail failed:", text);
+      console.error("[email] SendEmail failed:", res.status, data);
       return false;
     }
 
-    const data = await res.json();
     return data.success === true;
   } catch (err) {
     console.error("[email] sendEmail error:", err);
@@ -99,7 +101,9 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
 export function getAdminEmails() {
   const devEmail = process.env.DEV_NOTIFICATION_EMAIL;
   return {
-    to: devEmail ?? "supapan.ch@cmu.ac.th",
-    cc: devEmail ?? "ampika.s@cmu.ac.th",
+    // to: devEmail ?? "supapan.ch@cmu.ac.th",
+    // cc: devEmail ?? "ampika.s@cmu.ac.th",
+    to: devEmail ?? "",
+    cc: devEmail ?? "",
   };
 }

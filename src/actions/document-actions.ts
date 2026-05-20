@@ -152,7 +152,7 @@ export async function approveDocument(
     targetLabel: doc.title,
   });
 
-  // Check if student has no remaining PENDING docs → notify
+  // Notify student only when all their documents are approved
   const remainingPending = await db.document.count({
     where: { userId: doc.userId, status: "PENDING" },
   });
@@ -165,7 +165,7 @@ export async function approveDocument(
       sendEmail({
         subject: "ผลการพิจารณาเอกสารเครื่องมือวิจัย",
         sentTo: studentProfile.email,
-        message: `เรียน ${studentProfile.name}\n\nเอกสารเครื่องมือวิจัยของท่านได้รับการอนุมัติครบถ้วนแล้ว\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย`,
+        message: `${studentProfile.name}\n\nเอกสารเครื่องมือวิจัยของท่านได้รับการอนุมัติครบถ้วนแล้ว\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย\nคณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่`,
       }).catch(() => {});
     }
   }
@@ -211,7 +211,7 @@ export async function rejectDocument(
     sendEmail({
       subject: "ผลการพิจารณาเอกสารเครื่องมือวิจัย",
       sentTo: studentProfile.email,
-      message: `เรียน ${studentProfile.name}\n\nเอกสาร "${doc.title}" ไม่ได้รับการอนุมัติ\nเหตุผล: ${notes}\n\nกรุณาแก้ไขและอัปโหลดใหม่\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย`,
+      message: `${studentProfile.name}\n\nเอกสาร "${doc.title}" ไม่ได้รับการอนุมัติ\nเหตุผล: ${notes}\n\nกรุณาแก้ไขและอัปโหลดใหม่\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย`,
     }).catch(() => {});
   }
 
@@ -224,7 +224,7 @@ export async function approveAllPending(): Promise<{ success?: boolean; error?: 
 
   const pending = await db.document.findMany({
     where: { status: "PENDING" },
-    select: { id: true, title: true },
+    select: { id: true, title: true, userId: true },
   });
 
   if (pending.length === 0) return { error: "ไม่มีเอกสารที่รอตรวจสอบ" };
@@ -247,6 +247,30 @@ export async function approveAllPending(): Promise<{ success?: boolean; error?: 
       targetId: doc.id,
       targetLabel: doc.title,
     });
+  }
+
+  // Notify students — group by userId, send one email per student
+  const studentIds = [...new Set(pending.map((d) => d.userId))];
+  for (const studentId of studentIds) {
+    const studentDocs = pending.filter((d) => d.userId === studentId);
+    const remainingPending = await db.document.count({
+      where: { userId: studentId, status: "PENDING" },
+    });
+    // Only notify when student has no remaining pending docs
+    if (remainingPending === 0) {
+      const studentProfile = await db.profile.findUnique({
+        where: { id: studentId },
+        select: { email: true, name: true },
+      });
+      if (studentProfile?.email) {
+        const docList = studentDocs.map((d) => `- ${d.title}`).join("\n");
+        sendEmail({
+          subject: "ผลการพิจารณาเอกสารเครื่องมือวิจัย",
+          sentTo: studentProfile.email,
+          message: `${studentProfile.name}\n\nเอกสารเครื่องมือวิจัยของท่านได้รับการอนุมัติครบถ้วนแล้ว\n\nเอกสารที่อนุมัติ:\n${docList}\n\nขอแสดงความนับถือ\nระบบจัดการเอกสารเครื่องมือวิจัย\nคณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่`,
+        }).catch(() => {});
+      }
+    }
   }
 
   revalidatePath("/admin/documents");
