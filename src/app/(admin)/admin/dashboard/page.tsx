@@ -38,7 +38,7 @@ export default async function AdminDashboardPage() {
           icon={Users}
           value={totalStudents}
           label="นักศึกษาทั้งหมด"
-          href="/admin/users"
+          href="/admin/students"
         />
         <StatCard
           icon={FileText}

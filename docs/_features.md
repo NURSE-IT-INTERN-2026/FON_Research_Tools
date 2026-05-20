@@ -20,7 +20,7 @@
 
 - [x] **F9** Admin Dashboard: 4 stat cards (นักศึกษาทั้งหมด, เอกสารทั้งหมด, รอตรวจสอบ, อนุมัติแล้ว) + recent activity feed
 - [x] **F10** Document management: list all documents with backend pagination, filter by status (ทั้งหมด/รอตรวจสอบ/อนุมัติแล้ว/ปฏิเสธแล้ว), stat cards (รอตรวจสอบ/อนุมัติแล้ว/เครื่องมือทั้งหมด), approve single, approve all (PENDING only), reject with notes → email to student, remove, view PDF
-- [ ] **F11** Student list: รายชื่อนักศึกษา + สถานะ (กำลังศึกษา/ลาออก/พ้นสภาพ) + จำนวนเอกสาร
+- [x] **F11** Student list: รายชื่อนักศึกษา + สถานะ (กำลังศึกษา/ลาออก/พ้นสภาพ) + จำนวนเอกสาร
 - [ ] **F12** Admin search: ค้นหาจากรหัสนักศึกษา / ชื่อ / ชื่อวิทยานิพนธ์ (search button on navbar)
 
 ## Phase 4 — System
