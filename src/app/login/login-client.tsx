@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import loginCmuImg from "@/../public/login_cmu.png";
 
 const ERROR_MESSAGES: Record<string, string> = {
   oauth_error: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่",
@@ -27,10 +28,8 @@ export function LoginClient({ authUrl }: { authUrl: string }) {
         className="flex items-center justify-center w-full"
       >
         <Image
-          src="/login_cmu.png"
+          src={loginCmuImg}
           alt="เข้าสู่ระบบด้วย CMU Account"
-          width={300}
-          height={50}
           className="cursor-pointer hover:opacity-90 transition-opacity h-auto"
         />
       </a>

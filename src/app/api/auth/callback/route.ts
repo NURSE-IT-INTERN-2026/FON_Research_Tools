@@ -8,6 +8,8 @@ import {
 import { createSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 
+const BASE = "/researchtool";
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
@@ -15,13 +17,13 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_error`, request.url),
+      new URL(`${BASE}/login?error=oauth_error`, request.url),
     );
   }
 
   if (!code) {
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_error`, request.url),
+      new URL(`${BASE}/login?error=oauth_error`, request.url),
     );
   }
 
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
     accessToken = await exchangeCodeForToken(code);
   } catch {
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_token_failed`, request.url),
+      new URL(`${BASE}/login?error=oauth_token_failed`, request.url),
     );
   }
 
@@ -39,14 +41,14 @@ export async function GET(request: NextRequest) {
     userInfo = await getUserBasicInfo(accessToken);
   } catch {
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_userinfo_failed`, request.url),
+      new URL(`${BASE}/login?error=oauth_userinfo_failed`, request.url),
     );
   }
 
   const role = determineRole(userInfo.itaccount_type_id);
   if (!role) {
     return NextResponse.redirect(
-      new URL(`/unauthorized`, request.url),
+      new URL(`${BASE}/unauthorized`, request.url),
     );
   }
 
@@ -60,6 +62,6 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.redirect(
-    new URL(getRoleRedirectPath(role), request.url),
+    new URL(`${BASE}${getRoleRedirectPath(role)}`, request.url),
   );
 }

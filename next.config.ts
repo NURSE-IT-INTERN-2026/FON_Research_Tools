@@ -6,6 +6,16 @@ const nextConfig: NextConfig = {
   experimental: {
     authInterrupts: true,
   },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/researchtool",
+        permanent: true,
+        basePath: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

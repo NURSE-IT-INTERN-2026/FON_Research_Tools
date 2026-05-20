@@ -66,6 +66,7 @@ Before writing any code for a feature, read these docs:
 - **MANDATORY:** When the user asks to implement a feature, you MUST read and follow `.agents/skills/implement-feature/SKILL.md` step-by-step. Do not skip this.
 - **MANDATORY:** After completing any feature, you MUST read and follow `.agents/skills/review-feature/SKILL.md` before marking it done. Do not skip this.
 - **MANDATORY:** Follow `.agents/skills/next-best-practices/SKILL.md` for all Next.js architecture and implementation decisions. Read it before writing any Next.js code.
+- **MANDATORY:** When writing redirects, navigation, or URL matching, read `.agents/skills/basepath-handling/SKILL.md`. The project uses `basePath: "/researchtool"` and each context (proxy, route handlers, server actions, client components) handles basePath differently. Wrong usage causes double-path or missing-path bugs.
 - **MANDATORY:** When working on CMU OAuth, read `.agents/skills/cmu-oauth-integration/SKILL.md` as reference for patterns (not authoritative — `docs/ReserchTool-api/00-research-tool-detail.md` is source of truth).
 - Use Next.js App Router (`src/app/` directory). No `pages/` directory.
 - Use `proxy.ts` for route protection and RBAC — not `middleware.ts`.

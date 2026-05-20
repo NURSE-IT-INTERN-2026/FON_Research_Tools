@@ -5,6 +5,10 @@ import {
   SESSION_COOKIE_NAME,
 } from "@/lib/auth/session-token";
 
+// basePath for redirect URLs (new URL() replaces entire pathname, so must include it)
+const BASE = "/researchtool";
+
+// Path matching uses paths WITHOUT basePath — Next.js proxy strips basePath from pathname
 const PUBLIC_ROUTES = ["/", "/login", "/unauthorized"];
 const API_PUBLIC_ROUTES = ["/api/auth/callback"];
 const ADMIN_PREFIX = "/admin";
@@ -24,20 +28,20 @@ export function proxy(request: NextRequest) {
   if (isApiPublic) return NextResponse.next();
 
   if (session && isPublic) {
-    const dest = session.role === "ADMIN" ? "/admin/dashboard" : "/thesis";
+    const dest = session.role === "ADMIN" ? `${BASE}/admin/dashboard` : `${BASE}/thesis`;
     return NextResponse.redirect(new URL(dest, request.url));
   }
 
   if (!session && !isPublic) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL(`${BASE}/login`, request.url));
   }
 
   if (session && isAdmin && session.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/thesis", request.url));
+    return NextResponse.redirect(new URL(`${BASE}/thesis`, request.url));
   }
 
   if (session && isStudent && session.role === "ADMIN") {
-    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    return NextResponse.redirect(new URL(`${BASE}/admin/dashboard`, request.url));
   }
 
   return NextResponse.next();
