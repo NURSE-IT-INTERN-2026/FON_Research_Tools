@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, getAdminEmails } from "@/lib/email";
 import db from "@/lib/db";
 import { writeFile, mkdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -17,56 +17,100 @@ export type UploadDocumentState = {
   error?: string;
 };
 
-export async function uploadDocument(
+export async function uploadDocuments(
   _prev: UploadDocumentState,
   formData: FormData,
 ): Promise<UploadDocumentState> {
   const { userId } = await requireRole("STUDENT");
 
-  const title = (formData.get("title") as string)?.trim();
-  const file = formData.get("file") as File | null;
+  // Collect all rows: title_N / file_N
+  type Row = { index: number; title: string; file: File | null };
+  const rows: Row[] = [];
+  let i = 0;
+  while (true) {
+    const title = (formData.get(`title_${i}`) as string)?.trim();
+    const file = formData.get(`file_${i}`) as File | null;
+    if (title === null && file === null) break;
+    rows.push({ index: i, title: title ?? "", file });
+    i++;
+  }
 
-  if (!title) return { error: "กรุณากรอกชื่อเครื่องมือวิจัย" };
-  if (!file) return { error: "กรุณาเลือกไฟล์ PDF" };
-  if (file.type !== "application/pdf") return { error: "อัปโหลดไฟล์ PDF เท่านั้น" };
-  if (file.size > MAX_FILE_SIZE) return { error: "ไฟล์มีขนาดเกิน 100 MB" };
+  if (rows.length === 0) return { error: "กรุณาเพิ่มเอกสารอย่างน้อย 1 รายการ" };
+
+  // Validate each row
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    const rowNum = r + 1;
+    if (!row.title && !row.file) continue;
+    if (!row.title) return { error: `แถวที่ ${rowNum}: กรุณากรอกชื่อเครื่องมือวิจัย` };
+    if (!row.file || row.file.size === 0) return { error: `แถวที่ ${rowNum}: กรุณาเลือกไฟล์ PDF` };
+    if (row.file.type !== "application/pdf") return { error: `แถวที่ ${rowNum}: อัปโหลดไฟล์ PDF เท่านั้น` };
+    if (row.file.size > MAX_FILE_SIZE) return { error: `แถวที่ ${rowNum}: ไฟล์มีขนาดเกิน 100 MB` };
+  }
+
+  // Filter out fully empty rows — file is guaranteed non-null after filter
+  const validRows = rows.filter(
+    (r): r is Row & { file: File } => !!r.title && !!r.file && r.file.size > 0,
+  );
+  if (validRows.length === 0) return { error: "กรุณาเพิ่มเอกสารอย่างน้อย 1 รายการ" };
 
   const profile = await db.profile.findUnique({
     where: { id: userId },
-    select: { name: true, studentId: true },
+    select: { name: true, studentId: true, email: true },
   });
 
   const studentFolder = profile?.studentId ?? userId;
   const folderPath = join(UPLOAD_DIR, studentFolder);
-
   if (!existsSync(folderPath)) {
     await mkdir(folderPath, { recursive: true });
   }
 
   const timestamp = Date.now();
-  const fileName = `${studentFolder}_${timestamp}.pdf`;
-  const filePath = join(folderPath, fileName);
+  const uploadedTitles: string[] = [];
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(filePath, buffer);
+  for (let j = 0; j < validRows.length; j++) {
+    const row = validRows[j];
+    const fileName = `${studentFolder}_${timestamp}_${j}.pdf`;
+    const filePath = join(folderPath, fileName);
 
-  const doc = await db.document.create({
-    data: {
+    const buffer = Buffer.from(await row.file.arrayBuffer());
+    await writeFile(filePath, buffer);
+
+    const doc = await db.document.create({
+      data: {
+        userId,
+        title: row.title,
+        fileName,
+        originalName: row.file.name,
+        fileSize: row.file.size,
+      },
+    });
+
+    uploadedTitles.push(row.title);
+
+    await logActivity({
+      action: "DOCUMENT_UPLOAD",
       userId,
-      title,
-      fileName,
-      originalName: file.name,
-      fileSize: file.size,
-    },
-  });
+      targetType: "Document",
+      targetId: doc.id,
+      targetLabel: row.title,
+    });
+  }
 
-  await logActivity({
-    action: "DOCUMENT_UPLOAD",
-    userId,
-    targetType: "Document",
-    targetId: doc.id,
-    targetLabel: title,
-  });
+  // Send ONE email to admins
+  if (uploadedTitles.length > 0) {
+    const adminEmails = getAdminEmails();
+    const studentName = profile?.name ?? "นักศึกษา";
+    const studentId = profile?.studentId ?? "—";
+    const bulletList = uploadedTitles.map((t) => `• ${t}`).join("\n");
+
+    sendEmail({
+      subject: "แจ้งเตือน: นักศึกษาอัปโหลดเอกสารเครื่องมือวิจัย",
+      sentTo: adminEmails.to,
+      ccTo: adminEmails.cc,
+      message: `นักศึกษาได้อัปโหลดเอกสารเครื่องมือวิจัย\n\nชื่อ: ${studentName}\nรหัสนักศึกษา: ${studentId}\n\nเอกสารที่อัปโหลด:\n${bulletList}\n\nกรุณาตรวจสอบ`,
+    }).catch(() => {});
+  }
 
   revalidatePath("/thesis");
   return { success: true };

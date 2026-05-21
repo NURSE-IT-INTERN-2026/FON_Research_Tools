@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -15,8 +14,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/status-badge";
-import { uploadDocument, removeDocument, type UploadDocumentState } from "@/actions/document-actions";
-import { Upload, Trash2, FileText, Download } from "lucide-react";
+import { uploadDocuments, removeDocument, type UploadDocumentState } from "@/actions/document-actions";
+import { Upload, Trash2, FileText, Download, Plus, X } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 type DocumentRow = {
@@ -32,8 +31,10 @@ type DocumentRow = {
 
 export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [rows, setRows] = useState([0]);
+  const [nextId, setNextId] = useState(1);
   const [state, formAction, pending] = useActionState(
-    uploadDocument,
+    uploadDocuments,
     {} as UploadDocumentState,
   );
 
@@ -42,6 +43,8 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
     if (state.success && !prevSuccessRef.current) {
       toast.success("อัปโหลดเอกสารสำเร็จ");
       formRef.current?.reset();
+      setRows([0]);
+      setNextId(1);
       prevSuccessRef.current = true;
     }
     if (!state.success) {
@@ -55,6 +58,15 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
     }
   }, [state.error]);
 
+  function addRow() {
+    setRows((r) => [...r, nextId]);
+    setNextId((n) => n + 1);
+  }
+
+  function removeRow(id: number) {
+    setRows((r) => r.filter((rowId) => rowId !== id));
+  }
+
   return (
     <>
       {/* Upload form */}
@@ -62,40 +74,45 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
         <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
           อัปโหลดเอกสาร
         </h2>
-        <form ref={formRef} action={formAction} className="space-y-4">
-          <div className="space-y-2">
-            <Label
-              htmlFor="title"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+        <form ref={formRef} action={formAction} className="space-y-3">
+          {rows.map((rowId) => (
+            <div key={rowId} className="flex items-center gap-2">
+              <Input
+                name={`title_${rowId}`}
+                placeholder="ชื่อเครื่องมือวิจัย"
+                className="rounded flex-1"
+              />
+              <Input
+                name={`file_${rowId}`}
+                type="file"
+                accept=".pdf"
+                className="rounded max-w-48"
+              />
+              {rows.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeRow(rowId)}
+                  className="shrink-0 text-muted-foreground hover:text-destructive h-9 w-9"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ))}
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={addRow}
+              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
             >
-              ชื่อเครื่องมือวิจัย *
-            </Label>
-            <Input
-              id="title"
-              name="title"
-              required
-              placeholder="เช่น แบบสอบถามความเครียด"
-              className="rounded"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label
-              htmlFor="file"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              ไฟล์ PDF *
-            </Label>
-            <Input
-              id="file"
-              name="file"
-              type="file"
-              accept=".pdf"
-              required
-              className="rounded"
-            />
-            <p className="text-xs text-muted-foreground">
+              <Plus className="h-3 w-3" />
+              เพิ่มเอกสาร
+            </button>
+            <span className="text-xs text-muted-foreground">
               PDF เท่านั้น ขนาดสูงสุด 100 MB
-            </p>
+            </span>
           </div>
           <Button
             type="submit"
