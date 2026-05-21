@@ -37,6 +37,7 @@ type DocumentRow = {
 
 export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const [rows, setRows] = useState([0]);
   const [nextId, setNextId] = useState(1);
   const [titles, setTitles] = useState<Record<number, string>>({ 0: "" });
@@ -55,11 +56,10 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   useEffect(() => {
     if (state.success && !prevSuccessRef.current) {
       toast.success("อัปโหลดเอกสารสำเร็จ");
-      formRef.current?.reset();
-      setRows([0]);
-      setNextId(1);
-      setTitles({ 0: "" });
-      setFiles({ 0: null });
+      const freshId = Date.now();
+      setRows([freshId]);
+      setTitles({ [freshId]: "" });
+      setFiles({ [freshId]: null });
       prevSuccessRef.current = true;
     }
     if (!state.success) {
@@ -89,6 +89,12 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
       ? ""
       : `เลือกแล้ว ${formatFileSize(totalSize)} / ${formatFileSize(maxTotal)}`;
 
+  function clearFile(rowId: number) {
+    const input = fileInputRefs.current[rowId];
+    if (input) input.value = "";
+    setFiles((f) => ({ ...f, [rowId]: null }));
+  }
+
   function removeRow(id: number) {
     setRows((r) => r.filter((rowId) => rowId !== id));
     setTitles((t) => {
@@ -114,25 +120,48 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
           <input type="hidden" name="rowIds" value={rows.join(",")} />
           {rows.map((rowId) => (
             <div key={rowId} className="flex items-center gap-2">
-              <Input
-                name={`title_${rowId}`}
-                placeholder="ชื่อเครื่องมือวิจัย"
-                value={titles[rowId] ?? ""}
-                onChange={(e) =>
-                  setTitles((t) => ({ ...t, [rowId]: e.target.value }))
-                }
-                className="rounded flex-1"
-              />
-              <Input
-                name={`file_${rowId}`}
-                type="file"
-                accept=".pdf"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
-                  setFiles((prev) => ({ ...prev, [rowId]: f }));
-                }}
-                className="rounded max-w-48"
-              />
+              <div className="relative flex-1">
+                <Input
+                  name={`title_${rowId}`}
+                  placeholder="ชื่อเครื่องมือวิจัย"
+                  value={titles[rowId] ?? ""}
+                  onChange={(e) =>
+                    setTitles((t) => ({ ...t, [rowId]: e.target.value }))
+                  }
+                  className="rounded pr-8"
+                />
+                {(titles[rowId] ?? "").length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setTitles((t) => ({ ...t, [rowId]: "" }))}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="relative max-w-48">
+                <Input
+                  ref={(el) => { fileInputRefs.current[rowId] = el; }}
+                  name={`file_${rowId}`}
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setFiles((prev) => ({ ...prev, [rowId]: f }));
+                  }}
+                  className="rounded pr-8"
+                />
+                {files[rowId] && (
+                  <button
+                    type="button"
+                    onClick={() => clearFile(rowId)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
               {rows.length > 1 && (
                 <Button
                   type="button"

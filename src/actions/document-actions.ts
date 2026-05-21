@@ -49,7 +49,7 @@ export async function uploadDocuments(
     if (!row.title) return { error: `แถวที่ ${rowNum}: กรุณากรอกชื่อเครื่องมือวิจัย` };
     if (!row.file) return { error: `แถวที่ ${rowNum}: กรุณาเลือกไฟล์ PDF` };
     if (row.file.type !== "application/pdf") return { error: `แถวที่ ${rowNum}: อัปโหลดไฟล์ PDF เท่านั้น` };
-    if (row.file.size > MAX_FILE_SIZE) return { error: `แถวที่ ${rowNum}: ไฟล์มีขนาดเกิน 100 MB` };
+    if (row.file.size > MAX_FILE_SIZE) return { error: `แถวที่ ${rowNum}: ไฟล์มีขนาดเกิน 10 MB` };
   }
 
   const profile = await db.profile.findUnique({
@@ -105,13 +105,12 @@ export async function uploadDocuments(
     const studentId = profile?.studentId ?? "—";
     const bulletList = uploadedTitles.map((t) => `• ${t}`).join("\n");
     const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
-    const detailUrl = `${appUrl}/admin/students/${encodeURIComponent(userId)}`;
 
     sendEmail({
       subject: "แจ้งเตือน: นักศึกษาอัปโหลดเอกสารเครื่องมือวิจัย",
       sentTo: adminEmails.to,
       ccTo: adminEmails.cc,
-      message: `นักศึกษาได้อัปโหลดเอกสารเครื่องมือวิจัย\n\nชื่อ: ${studentName}\nรหัสนักศึกษา: ${studentId}\n\nเอกสารที่อัปโหลด:\n${bulletList}\n\nตรวจสอบเอกสาร: ${detailUrl}`,
+      message: `นักศึกษาได้อัปโหลดเอกสารเครื่องมือวิจัย\n\nชื่อ: ${studentName}\nรหัสนักศึกษา: ${studentId}\n\nเอกสารที่อัปโหลด:\n${bulletList}\n\nตรวจสอบเอกสาร: ${appUrl}`,
     }).catch(() => {});
   }
 
