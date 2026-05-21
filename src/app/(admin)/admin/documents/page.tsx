@@ -8,11 +8,25 @@ const PAGE_SIZE = 10;
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; q?: string }>;
 }) {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const statusFilter = params.status;
+  const q = params.q?.trim();
+
+  const where = {
+    AND: [
+      statusFilter ? { status: statusFilter as "PENDING" | "APPROVED" | "REJECTED" } : {},
+      q ? {
+        OR: [
+          { title: { contains: q, mode: "insensitive" as const } },
+          { profile: { name: { contains: q, mode: "insensitive" as const } } },
+          { profile: { studentId: { contains: q, mode: "insensitive" as const } } },
+        ],
+      } : {},
+    ],
+  };
 
   const [pendingCount, approvedCount, totalDocuments, rows] =
     await Promise.all([
@@ -20,7 +34,7 @@ export default async function DocumentsPage({
       db.document.count({ where: { status: "APPROVED" } }),
       db.document.count(),
       db.document.findMany({
-        where: statusFilter ? { status: statusFilter as "PENDING" | "APPROVED" | "REJECTED" } : undefined,
+        where,
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE + 1,
         orderBy: { createdAt: "desc" },
@@ -64,6 +78,7 @@ export default async function DocumentsPage({
       <DocumentsClient
         documents={serialized}
         currentStatus={statusFilter ?? "ALL"}
+        currentQuery={q ?? ""}
         page={page}
         hasMore={hasMore}
       />

@@ -8,6 +8,7 @@ export type SearchResult = {
   id: string;
   label: string;
   sublabel: string | null;
+  ownerId: string;
 };
 
 export async function searchAll(query: string): Promise<SearchResult[]> {
@@ -37,6 +38,7 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
       select: {
         id: true,
         title: true,
+        userId: true,
         profile: { select: { name: true } },
       },
     }),
@@ -48,12 +50,14 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
       id: s.id,
       label: s.name,
       sublabel: s.studentId ?? null,
+      ownerId: s.id,
     })),
     ...documents.map((d) => ({
       type: "document" as const,
       id: d.id,
       label: d.title,
       sublabel: d.profile.name,
+      ownerId: d.userId,
     })),
   ];
 

@@ -82,7 +82,7 @@ src/app/
 | Route | Page | Data Source |
 |---|---|---|
 | `/admin/dashboard` | Stats + activity | Aggregate counts on Document; recent ActivityLog + Profile join |
-| `/admin/documents` | Document management | Document + Profile join, filtered by status via URL `searchParams`, backend pagination (`page`, `limit`) |
+| `/admin/documents` | Document management | Document + Profile join, filtered by status via URL `searchParams`, searchable by title/student name/student ID (`q` param), backend pagination (`page`, `limit`) |
 | `/admin/students` | Student list | Profile, Document count per student, search by name/studentId |
 | `/admin/students/[id]` | Student detail | Profile, Thesis API data, Documents with approve/reject/remove actions |
 | `/admin/activity-log` | Activity log | ActivityLog + Profile join, filtered/searched via URL `searchParams`, backend pagination, date filter (`from`, `to`) |

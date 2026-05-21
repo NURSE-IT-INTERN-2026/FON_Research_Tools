@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useActionState, useState, useEffect, useRef, useTransition } from "react";
+import { Suspense, useActionState, useState, useEffect, useRef, useTransition, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -23,7 +24,7 @@ import {
   removeDocument,
   type UploadDocumentState,
 } from "@/actions/document-actions";
-import { CheckCircle, XCircle, Trash2, FileText, Check } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, FileText, Check, Search, X } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 type DocumentRow = {
@@ -41,6 +42,7 @@ type DocumentRow = {
 type DocumentsClientProps = {
   documents: DocumentRow[];
   currentStatus: string;
+  currentQuery: string;
   page: number;
   hasMore: boolean;
 };
@@ -55,11 +57,41 @@ const STATUS_OPTIONS = [
 export function DocumentsClient({
   documents,
   currentStatus,
+  currentQuery,
   page,
   hasMore,
 }: DocumentsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [searchInput, setSearchInput] = useState(currentQuery);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setSearchInput(currentQuery);
+  }, [currentQuery]);
+
+  const updateSearch = useCallback((value: string) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set("q", value);
+      } else {
+        params.delete("q");
+      }
+      params.delete("page");
+      router.push(`/admin/documents?${params.toString()}`);
+    }, 300);
+  }, [searchParams, router]);
+
+  function clearSearch() {
+    setSearchInput("");
+    if (timerRef.current) clearTimeout(timerRef.current);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("q");
+    params.delete("page");
+    router.push(`/admin/documents?${params.toString()}`);
+  }
 
   function goToPage(p: number) {
     const params = new URLSearchParams(searchParams.toString());
@@ -73,17 +105,40 @@ export function DocumentsClient({
 
   return (
     <div className="space-y-4">
-      {/* Toolbar: filter */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Suspense>
-          <FilterPills
-            paramName="status"
-            options={STATUS_OPTIONS}
-            selected={currentStatus}
-            basePath="/admin/documents"
-            resetParams={["page"]}
+      {/* Toolbar: search + filter */}
+      <div className="space-y-3">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              updateSearch(e.target.value);
+            }}
+            placeholder="ค้นหาจากชื่อเครื่องมือ, ชื่อนักศึกษา, รหัสนักศึกษา..."
+            className="rounded pl-9 pr-8"
           />
-        </Suspense>
+          {searchInput && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Suspense>
+            <FilterPills
+              paramName="status"
+              options={STATUS_OPTIONS}
+              selected={currentStatus}
+              basePath="/admin/documents"
+              resetParams={["page"]}
+            />
+          </Suspense>
+        </div>
       </div>
 
       {/* Table */}

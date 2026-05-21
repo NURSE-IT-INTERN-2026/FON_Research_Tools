@@ -50,7 +50,7 @@ export function SearchButton() {
     if (result.type === "student") {
       router.push(`/admin/students/${result.id}`);
     } else {
-      router.push("/admin/documents");
+      router.push(`/admin/students/${result.ownerId}`);
     }
   }
 
