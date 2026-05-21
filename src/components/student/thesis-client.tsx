@@ -18,6 +18,12 @@ import { uploadDocuments, removeDocument, type UploadDocumentState } from "@/act
 import { Upload, Trash2, FileText, Download, Plus, X } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 type DocumentRow = {
   id: string;
   title: string;
@@ -74,6 +80,14 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
     setFiles((f) => ({ ...f, [id]: null }));
     setNextId((n) => n + 1);
   }
+
+  // Compute total size of selected files
+  const totalSize = rows.reduce((sum, id) => sum + (files[id]?.size ?? 0), 0);
+  const maxTotal = 10 * 1024 * 1024; // 10 MB
+  const sizeLabel =
+    totalSize === 0
+      ? ""
+      : `เลือกแล้ว ${formatFileSize(totalSize)} / ${formatFileSize(maxTotal)}`;
 
   function removeRow(id: number) {
     setRows((r) => r.filter((rowId) => rowId !== id));
@@ -142,7 +156,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
               เพิ่มเอกสาร
             </button>
             <span className="text-xs text-muted-foreground">
-              PDF เท่านั้น ขนาดสูงสุด 100 MB
+              PDF เท่านั้น ขนาดสูงสุด 10 MB{sizeLabel ? ` · ${sizeLabel}` : ""}
             </span>
           </div>
           <Button

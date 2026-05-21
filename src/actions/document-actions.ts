@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 
 const UPLOAD_DIR = join(process.cwd(), "uploads");
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export type UploadDocumentState = {
   success?: boolean;
@@ -104,12 +104,14 @@ export async function uploadDocuments(
     const studentName = profile?.name ?? "นักศึกษา";
     const studentId = profile?.studentId ?? "—";
     const bulletList = uploadedTitles.map((t) => `• ${t}`).join("\n");
+    const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
+    const detailUrl = `${appUrl}/admin/students/${encodeURIComponent(userId)}`;
 
     sendEmail({
       subject: "แจ้งเตือน: นักศึกษาอัปโหลดเอกสารเครื่องมือวิจัย",
       sentTo: adminEmails.to,
       ccTo: adminEmails.cc,
-      message: `นักศึกษาได้อัปโหลดเอกสารเครื่องมือวิจัย\n\nชื่อ: ${studentName}\nรหัสนักศึกษา: ${studentId}\n\nเอกสารที่อัปโหลด:\n${bulletList}\n\nกรุณาตรวจสอบ`,
+      message: `นักศึกษาได้อัปโหลดเอกสารเครื่องมือวิจัย\n\nชื่อ: ${studentName}\nรหัสนักศึกษา: ${studentId}\n\nเอกสารที่อัปโหลด:\n${bulletList}\n\nตรวจสอบเอกสาร: ${detailUrl}`,
     }).catch(() => {});
   }
 
