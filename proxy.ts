@@ -9,7 +9,7 @@ import {
 const BASE = "/researchtool";
 
 // Path matching uses paths WITHOUT basePath — Next.js proxy strips basePath from pathname
-const PUBLIC_ROUTES = ["/", "/login", "/unauthorized"];
+const PUBLIC_ROUTES = ["/", "/login", "/unauthorized", "/admin/login"];
 const API_PUBLIC_ROUTES = ["/api/auth/callback"];
 const ADMIN_PREFIX = "/admin";
 const STUDENT_PREFIXES = ["/thesis"];

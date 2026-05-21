@@ -29,9 +29,12 @@ export default function HomePage() {
           คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
         </p>
 
-        <div className="flex gap-3 animate-slide-up" style={{ animationDelay: "200ms" }}>
+        <div className="flex flex-col sm:flex-row gap-3 animate-slide-up" style={{ animationDelay: "200ms" }}>
           <Button asChild size="lg" className="font-heading font-semibold tracking-wide px-8">
             <Link href="/login">เข้าสู่ระบบด้วย CMU Account</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="font-heading font-semibold tracking-wide px-8">
+            <Link href="/admin/login">เข้าสู่ระบบเจ้าหน้าที่</Link>
           </Button>
         </div>
       </div>

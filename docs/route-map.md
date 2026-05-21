@@ -12,6 +12,9 @@ src/app/
 ├── page.tsx                      ← Landing page
 ├── login/
 │   └── page.tsx                  ← Redirect to CMU OAuth 2.0
+├── admin/
+│   └── login/
+│       └── page.tsx              ← Admin login (username/password)
 ├── api/
 │   └── auth/
 │       ├── cmu/
@@ -64,6 +67,7 @@ src/app/
 |---|---|---|---|
 | `/` | Landing | No auth required | None |
 | `/login` | Login page (link to `/api/auth/cmu`) | No auth required | None |
+| `/admin/login` | Admin login (username/password) | No auth required | Admin credentials from env |
 | `/api/auth/cmu` | Generate state cookie + redirect to Microsoft | No auth required | None |
 | `/api/auth/callback` | OAuth callback (validate state, exchange code) | Public (receives code) | CMU MIS API |
 
