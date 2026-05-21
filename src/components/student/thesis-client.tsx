@@ -33,6 +33,7 @@ type DocumentRow = {
   adminNotes: string | null;
   createdAt: string;
   approvedAt: string | null;
+  approvedBy: string | null;
 };
 
 export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
@@ -271,7 +272,13 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                     สถานะ
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    วันที่
+                    วันที่ยื่น
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    วันที่อนุมัติ
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ผู้อนุมัติ
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     การดำเนินการ
@@ -302,6 +309,12 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">
                       {formatDateTime(doc.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {doc.approvedBy ?? "—"}
                     </td>
                     <td className="px-4 py-3">
                       {doc.status === "PENDING" && (

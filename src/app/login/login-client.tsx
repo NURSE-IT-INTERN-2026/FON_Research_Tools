@@ -31,6 +31,7 @@ export function LoginClient({ loginHref }: { loginHref: string }) {
         <Image
           src={loginCmuImg}
           alt="เข้าสู่ระบบด้วย CMU Account"
+          priority
           className="cursor-pointer hover:opacity-90 transition-opacity h-auto"
         />
       </a>

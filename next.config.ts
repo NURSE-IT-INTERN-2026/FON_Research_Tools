@@ -1,14 +1,13 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig & { serverActions?: { bodySizeLimit?: string } } = {
+const nextConfig: NextConfig = {
   basePath: "/researchtool",
   serverExternalPackages: ["pdfkit"],
-  serverActions: {
-    bodySizeLimit: "10mb",
-  },
-  // reactCompiler: true, // disabled — causes OOM in dev mode
   experimental: {
     authInterrupts: true,
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
   },
   async redirects() {
     return [

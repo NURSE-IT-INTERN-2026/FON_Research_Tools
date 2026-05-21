@@ -29,6 +29,7 @@ export default async function ThesisPage() {
         adminNotes: true,
         createdAt: true,
         approvedAt: true,
+        approvedBy: true,
       },
     }),
   ]);
