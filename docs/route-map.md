@@ -90,6 +90,7 @@ src/app/
 | PATCH | `/api/documents/[id]/approve` | Admin | Approve document |
 | PATCH | `/api/documents/[id]/reject` | Admin | Reject document with notes |
 | GET | `/api/my/documents` | Student | Own documents with status + approval timestamps |
+| GET | `/api/documents/[id]/certificate` | Student (own) / Admin | Download PDF certificate (APPROVED only) |
 
 ---
 

@@ -30,8 +30,8 @@
 
 ## Phase 5 — Email + Download PDF
 
-- [ ] **F15** Email notifications: ส่งอีเมลแจ้งเตือนผ่าน CMU Email API (upload → แจ้งแอดมิน, approve/reject → แจ้งนักศึกษา)
-- [ ] **F16** Download PDF certificate: นักศึกษาดาวน์โหลดใบรับรองเมื่ออนุมัติแล้ว (ชื่อ, รหัส, รายการเครื่องมือ, วันที่)
+- [x] **F15** Email notifications: ส่งอีเมลแจ้งเตือนผ่าน CMU Email API (upload → แจ้งแอดมิน, approve/reject → แจ้งนักศึกษา)
+- [x] **F16** Download PDF certificate: นักศึกษาดาวน์โหลดใบรับรองเมื่ออนุมัติแล้ว (ชื่อ, รหัส, รายการเครื่องมือ, วันที่) — ใช้ Sarabun font สำหรับภาษาไทย
 
 ## Phase 6 — Post-MVP
 

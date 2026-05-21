@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
+import path from "path";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/session-token";
 import db from "@/lib/db";
+
+const FONT_REGULAR = path.join(process.cwd(), "src/fonts/Sarabun-Regular.ttf");
+const FONT_BOLD = path.join(process.cwd(), "src/fonts/Sarabun-Bold.ttf");
+const LOGO_PATH = path.join(process.cwd(), "public/nurseicon/nurse-en.png");
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  try {
   const { id } = await params;
 
   const token = _request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -31,7 +37,6 @@ export async function GET(
     select: { name: true, studentId: true },
   });
 
-  // Get all approved documents for this student
   const approvedDocs = await db.document.findMany({
     where: { userId: doc.userId, status: "APPROVED" },
     orderBy: { approvedAt: "asc" },
@@ -40,61 +45,52 @@ export async function GET(
 
   const latestApprovalDate = approvedDocs[approvedDocs.length - 1]?.approvedAt ?? doc.approvedAt!;
 
-  // Generate PDF
   const pdfDoc = new PDFDocument({ size: "A4", margin: 60 });
+  pdfDoc.registerFont("Sarabun", FONT_REGULAR);
+  pdfDoc.registerFont("SarabunBold", FONT_BOLD);
+
   const chunks: Buffer[] = [];
   pdfDoc.on("data", (chunk: Buffer) => chunks.push(chunk));
 
-  const fontRegular = "Helvetica";
-  const fontBold = "Helvetica-Bold";
+  // Logo
+  pdfDoc.image(LOGO_PATH, (595.28 - 80) / 2, 40, { width: 80 });
+  pdfDoc.y = 130;
 
   // Header
-  pdfDoc.font(fontBold).fontSize(18).text("Research Tool", { align: "center" });
-  pdfDoc.font(fontRegular).fontSize(12).text("Faculty of Nursing, Chiang Mai University", { align: "center" });
+  pdfDoc.font("SarabunBold").fontSize(18).text("Research Tool", { align: "center" });
+  pdfDoc.font("Sarabun").fontSize(12).text("Faculty of Nursing, Chiang Mai University", { align: "center" });
   pdfDoc.moveDown(0.5);
 
   // Divider
   pdfDoc.moveTo(60, pdfDoc.y).lineTo(535, pdfDoc.y).stroke();
-  pdfDoc.moveDown(1);
-
-  // Title
-  pdfDoc.font(fontBold).fontSize(14).text("Certificate of Research Tool Submission", { align: "center" });
   pdfDoc.moveDown(1.5);
 
   // Student info
-  pdfDoc.font(fontBold).fontSize(11).text("Student Information", { underline: true });
-  pdfDoc.moveDown(0.5);
-  pdfDoc.font(fontRegular).fontSize(11);
-  pdfDoc.text(`Name: ${profile?.name ?? "—"}`);
-  pdfDoc.text(`Student ID: ${profile?.studentId ?? "—"}`);
-  pdfDoc.moveDown(1);
+  pdfDoc.font("SarabunBold").fontSize(13).text("ชื่อนักศึกษา", { continued: true });
+  pdfDoc.font("Sarabun").text(`  ${profile?.name ?? "—"}`, { continued: true });
+  pdfDoc.font("SarabunBold").text(`     รหัสนักศึกษา`, { continued: true });
+  pdfDoc.font("Sarabun").text(`  ${profile?.studentId ?? "—"}`);
+  pdfDoc.moveDown(1.5);
 
-  // Tool list
-  pdfDoc.font(fontBold).fontSize(11).text("Research Instruments", { underline: true });
-  pdfDoc.moveDown(0.5);
+  // Tool list header
+  pdfDoc.font("SarabunBold").fontSize(13).text("รายการเครื่องมือวิจัย");
+  pdfDoc.moveDown(0.3);
+
   approvedDocs.forEach((d, i) => {
-    pdfDoc.font(fontRegular).fontSize(11).text(`${i + 1}. ${d.title}`);
+    pdfDoc.font("Sarabun").fontSize(12).text(`${i + 1}. ${d.title}`);
   });
   pdfDoc.moveDown(1.5);
 
-  // Confirmation
+  // Confirmation with date
   const dateStr = latestApprovalDate.toLocaleDateString("th-TH", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  pdfDoc.font(fontRegular).fontSize(11).text(
-    `This is to certify that the above research instruments have been recorded\non ${dateStr}.`,
-  );
-  pdfDoc.moveDown(3);
 
-  // Signature area
-  pdfDoc.font(fontRegular).fontSize(10).text("Authorized by", { align: "center" });
-  pdfDoc.moveDown(2);
-  pdfDoc.moveTo(180, pdfDoc.y).lineTo(420, pdfDoc.y).stroke();
-  pdfDoc.moveDown(0.3);
-  pdfDoc.font(fontBold).fontSize(10).text("Faculty of Nursing", { align: "center" });
-  pdfDoc.text("Chiang Mai University", { align: "center" });
+  pdfDoc.font("Sarabun").fontSize(12).text(
+    `ได้บันทึกข้อมูลเครื่องมือวิจัยแล้วเมื่อวันที่ ${dateStr}`,
+  );
 
   pdfDoc.end();
 
@@ -102,10 +98,19 @@ export async function GET(
     pdfDoc.on("end", () => resolve(Buffer.concat(chunks)));
   });
 
+  // Filename: ชื่อเครื่องมือ_รหัสนศ.pdf
+  const safeTitle = doc.title.replace(/[/\\?%*:|"<>]/g, "-").substring(0, 60);
+  const studentId = profile?.studentId ?? id;
+  const filename = `${safeTitle}_${studentId}.pdf`;
+
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="certificate_${profile?.studentId ?? id}.pdf"`,
+      "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
     },
   });
+  } catch (err) {
+    console.error("[certificate] Error:", err);
+    return NextResponse.json({ error: "Internal server error", detail: String(err) }, { status: 500 });
+  }
 }

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -152,7 +153,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                     <td className="px-4 py-3 font-medium">{doc.title}</td>
                     <td className="px-4 py-3">
                       <a
-                        href={`/api/documents/${doc.id}/file`}
+                        href={`${basePath}/api/documents/${doc.id}/file`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
@@ -173,7 +174,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                       )}
                       {doc.status === "APPROVED" && (
                         <a
-                          href={`/api/documents/${doc.id}/certificate`}
+                          href={`${basePath}/api/documents/${doc.id}/certificate`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
