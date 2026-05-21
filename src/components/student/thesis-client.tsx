@@ -42,6 +42,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   const [nextId, setNextId] = useState(1);
   const [titles, setTitles] = useState<Record<number, string>>({ 0: "" });
   const [files, setFiles] = useState<Record<number, File | null>>({ 0: null });
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     uploadDocuments,
     {} as UploadDocumentState,
@@ -175,28 +176,71 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
               )}
             </div>
           ))}
-          <div className="flex items-center gap-4">
-            <button
+          <span className="text-xs text-muted-foreground">
+            PDF เท่านั้น ขนาดสูงสุด 10 MB{sizeLabel ? ` · ${sizeLabel}` : ""}
+          </span>
+          <div className="flex items-center gap-2 pt-1">
+            <Button
               type="button"
-              onClick={addRow}
-              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+              disabled={!canSubmit || pending}
+              onClick={() => setConfirmOpen(true)}
+              className="rounded font-semibold"
             >
-              <Plus className="h-3 w-3" />
+              <Upload className="mr-1.5 h-4 w-4" />
+              {pending ? "กำลังอัปโหลด..." : "อัปโหลด"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addRow}
+              className="rounded"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
               เพิ่มเอกสาร
-            </button>
-            <span className="text-xs text-muted-foreground">
-              PDF เท่านั้น ขนาดสูงสุด 10 MB{sizeLabel ? ` · ${sizeLabel}` : ""}
-            </span>
+            </Button>
           </div>
-          <Button
-            type="submit"
-            disabled={!canSubmit || pending}
-            className="rounded font-semibold"
-          >
-            <Upload className="mr-1.5 h-4 w-4" />
-            {pending ? "กำลังอัปโหลด..." : "อัปโหลด"}
-          </Button>
         </form>
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent className="sm:max-w-md rounded">
+            <DialogHeader>
+              <DialogTitle className="font-heading font-bold tracking-tight">
+                ยืนยันการอัปโหลด
+              </DialogTitle>
+              <DialogDescription>
+                ต้องการอัปโหลดเอกสาร {rows.length} รายการหรือไม่?
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="text-sm space-y-1 py-2">
+              {rows.map((rowId) => (
+                <li key={rowId} className="text-muted-foreground">
+                  • {titles[rowId]}
+                </li>
+              ))}
+            </ul>
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmOpen(false)}
+                className="rounded"
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="button"
+                disabled={pending}
+                onClick={() => {
+                  setConfirmOpen(false);
+                  formRef.current?.requestSubmit();
+                }}
+                className="rounded font-semibold"
+              >
+                {pending ? "กำลังอัปโหลด..." : "ยืนยันอัปโหลด"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Document list */}
