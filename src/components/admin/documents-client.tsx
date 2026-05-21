@@ -2,6 +2,7 @@
 
 import { Suspense, useActionState, useState, useEffect, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -133,7 +134,14 @@ export function DocumentsClient({
                   <td className="px-4 py-3 text-muted-foreground">
                     {(page - 1) * 10 + i + 1}
                   </td>
-                  <td className="px-4 py-3 font-medium">{doc.studentName}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/admin/students/${doc.userId}`}
+                      className="text-primary hover:underline"
+                    >
+                      {doc.studentName}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                     {doc.studentId}
                   </td>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import db from "@/lib/db";
 
 export default async function StudentsPage() {
@@ -50,7 +51,14 @@ export default async function StudentsPage() {
                   className="border-t transition-colors hover:bg-muted/30"
                 >
                   <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
-                  <td className="px-4 py-3 font-medium">{student.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/admin/students/${student.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {student.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                     {student.studentId ?? "—"}
                   </td>

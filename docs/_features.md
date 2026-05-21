@@ -35,7 +35,7 @@
 
 ## Phase 6 — Post-MVP
 
-- [ ] **F17** Student detail page: `/admin/students/[id]`
+- [x] **F17** Student detail page: `/admin/students/[id]`
 - [ ] **F18** Export data (Excel/CSV)
 - [ ] **F19** OCR ช่วยเจ้าหน้าที่
 - [ ] **F20** Tool usage history feature

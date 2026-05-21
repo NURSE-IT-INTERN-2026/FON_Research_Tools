@@ -114,6 +114,7 @@ export async function removeDocument(
 
   revalidatePath("/thesis");
   revalidatePath("/admin/documents");
+  revalidatePath("/admin/students");
   return { success: true };
 }
 
@@ -163,6 +164,7 @@ export async function approveDocument(
   }
 
   revalidatePath("/admin/documents");
+  revalidatePath("/admin/students");
   return { success: true };
 }
 
@@ -209,6 +211,7 @@ export async function rejectDocument(
   }
 
   revalidatePath("/admin/documents");
+  revalidatePath("/admin/students");
   return { success: true };
 }
 
@@ -259,5 +262,6 @@ export async function approveAllStudentPending(
   }
 
   revalidatePath("/admin/documents");
+  revalidatePath("/admin/students");
   return { success: true, count: pending.length };
 }

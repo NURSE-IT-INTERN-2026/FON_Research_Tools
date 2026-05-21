@@ -48,7 +48,7 @@ export function SearchButton() {
     setQuery("");
     setResults([]);
     if (result.type === "student") {
-      router.push("/admin/students");
+      router.push(`/admin/students/${result.id}`);
     } else {
       router.push("/admin/documents");
     }

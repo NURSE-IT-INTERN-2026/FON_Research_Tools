@@ -47,7 +47,9 @@ src/app/
         ├── documents/
         │   └── page.tsx          ← Document list with filters + approve/reject/remove
         ├── students/
-        │   └── page.tsx          ← Student list with status + document counts
+        │   ├── page.tsx          ← Student list with status + document counts
+        │   └── [id]/
+        │       └── page.tsx      ← Student detail: profile + thesis + documents with actions
         └── activity-log/
             └── page.tsx          ← Full activity log with search + filters
 ```
@@ -78,6 +80,7 @@ src/app/
 | `/admin/dashboard` | Stats + activity | Aggregate counts on Document; recent ActivityLog + Profile join |
 | `/admin/documents` | Document management | Document + Profile join, filtered by status via URL `searchParams`, backend pagination (`page`, `limit`) |
 | `/admin/students` | Student list | Profile, Document count per student, search by name/studentId |
+| `/admin/students/[id]` | Student detail | Profile, Thesis API data, Documents with approve/reject/remove actions |
 | `/admin/activity-log` | Activity log | ActivityLog + Profile join, filtered/searched via URL `searchParams`, backend pagination, date filter (`from`, `to`) |
 
 ### API Routes
