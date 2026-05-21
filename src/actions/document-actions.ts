@@ -23,36 +23,34 @@ export async function uploadDocuments(
 ): Promise<UploadDocumentState> {
   const { userId } = await requireRole("STUDENT");
 
-  // Collect all rows: title_N / file_N
+  // Read row IDs from hidden field
+  const rowIdsRaw = formData.get("rowIds") as string | null;
+  if (!rowIdsRaw) return { error: "กรุณาเพิ่มเอกสารอย่างน้อย 1 รายการ" };
+  const rowIds = rowIdsRaw.split(",").map(Number);
+
+  // Collect rows by their IDs
   type Row = { index: number; title: string; file: File | null };
-  const rows: Row[] = [];
-  let i = 0;
-  while (true) {
-    const title = (formData.get(`title_${i}`) as string)?.trim();
-    const file = formData.get(`file_${i}`) as File | null;
-    if (title === null && file === null) break;
-    rows.push({ index: i, title: title ?? "", file });
-    i++;
-  }
+  const rows: Row[] = rowIds.map((id) => {
+    const raw = formData.get(`file_${id}`);
+    const file = raw instanceof File && raw.size > 0 ? raw : null;
+    return {
+      index: id,
+      title: (formData.get(`title_${id}`) as string)?.trim() ?? "",
+      file,
+    };
+  });
 
   if (rows.length === 0) return { error: "กรุณาเพิ่มเอกสารอย่างน้อย 1 รายการ" };
 
-  // Validate each row
+  // Validate every row
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
     const rowNum = r + 1;
-    if (!row.title && !row.file) continue;
     if (!row.title) return { error: `แถวที่ ${rowNum}: กรุณากรอกชื่อเครื่องมือวิจัย` };
-    if (!row.file || row.file.size === 0) return { error: `แถวที่ ${rowNum}: กรุณาเลือกไฟล์ PDF` };
+    if (!row.file) return { error: `แถวที่ ${rowNum}: กรุณาเลือกไฟล์ PDF` };
     if (row.file.type !== "application/pdf") return { error: `แถวที่ ${rowNum}: อัปโหลดไฟล์ PDF เท่านั้น` };
     if (row.file.size > MAX_FILE_SIZE) return { error: `แถวที่ ${rowNum}: ไฟล์มีขนาดเกิน 100 MB` };
   }
-
-  // Filter out fully empty rows — file is guaranteed non-null after filter
-  const validRows = rows.filter(
-    (r): r is Row & { file: File } => !!r.title && !!r.file && r.file.size > 0,
-  );
-  if (validRows.length === 0) return { error: "กรุณาเพิ่มเอกสารอย่างน้อย 1 รายการ" };
 
   const profile = await db.profile.findUnique({
     where: { id: userId },
@@ -64,6 +62,9 @@ export async function uploadDocuments(
   if (!existsSync(folderPath)) {
     await mkdir(folderPath, { recursive: true });
   }
+
+  // After validation, all rows are guaranteed to have title and file
+  const validRows = rows as (Row & { file: File })[];
 
   const timestamp = Date.now();
   const uploadedTitles: string[] = [];

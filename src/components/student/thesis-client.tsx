@@ -33,10 +33,17 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [rows, setRows] = useState([0]);
   const [nextId, setNextId] = useState(1);
+  const [titles, setTitles] = useState<Record<number, string>>({ 0: "" });
+  const [files, setFiles] = useState<Record<number, File | null>>({ 0: null });
   const [state, formAction, pending] = useActionState(
     uploadDocuments,
     {} as UploadDocumentState,
   );
+
+  // Submit is enabled only when every row has both title and file
+  const canSubmit =
+    rows.length > 0 &&
+    rows.every((id) => (titles[id] ?? "").trim() !== "" && files[id] != null);
 
   const prevSuccessRef = useRef(false);
   useEffect(() => {
@@ -45,6 +52,8 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
       formRef.current?.reset();
       setRows([0]);
       setNextId(1);
+      setTitles({ 0: "" });
+      setFiles({ 0: null });
       prevSuccessRef.current = true;
     }
     if (!state.success) {
@@ -59,12 +68,25 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   }, [state.error]);
 
   function addRow() {
-    setRows((r) => [...r, nextId]);
+    const id = nextId;
+    setRows((r) => [...r, id]);
+    setTitles((t) => ({ ...t, [id]: "" }));
+    setFiles((f) => ({ ...f, [id]: null }));
     setNextId((n) => n + 1);
   }
 
   function removeRow(id: number) {
     setRows((r) => r.filter((rowId) => rowId !== id));
+    setTitles((t) => {
+      const next = { ...t };
+      delete next[id];
+      return next;
+    });
+    setFiles((f) => {
+      const next = { ...f };
+      delete next[id];
+      return next;
+    });
   }
 
   return (
@@ -75,17 +97,26 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
           อัปโหลดเอกสาร
         </h2>
         <form ref={formRef} action={formAction} className="space-y-3">
+          <input type="hidden" name="rowIds" value={rows.join(",")} />
           {rows.map((rowId) => (
             <div key={rowId} className="flex items-center gap-2">
               <Input
                 name={`title_${rowId}`}
                 placeholder="ชื่อเครื่องมือวิจัย"
+                value={titles[rowId] ?? ""}
+                onChange={(e) =>
+                  setTitles((t) => ({ ...t, [rowId]: e.target.value }))
+                }
                 className="rounded flex-1"
               />
               <Input
                 name={`file_${rowId}`}
                 type="file"
                 accept=".pdf"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setFiles((prev) => ({ ...prev, [rowId]: f }));
+                }}
                 className="rounded max-w-48"
               />
               {rows.length > 1 && (
@@ -116,7 +147,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
           </div>
           <Button
             type="submit"
-            disabled={pending}
+            disabled={!canSubmit || pending}
             className="rounded font-semibold"
           >
             <Upload className="mr-1.5 h-4 w-4" />
