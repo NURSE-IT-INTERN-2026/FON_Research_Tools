@@ -42,6 +42,8 @@ model Profile {
   studentId    String?   @unique
   accountType  String?   // StdAcc, MISEmpAcc
   cmuItAccount String?
+  thesisTitleTh String?  // cache from Thesis API (for search only)
+  thesisTitleEn String?  // cache from Thesis API (for search only)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -53,7 +55,7 @@ model Profile {
 
 ข้อมูลที่ดึงจาก CMU Login อัตโนมัติเมื่อล็อกอิน: name, email, studentId, accountType, cmuItAccount
 
-**ข้อมูลวิทยานิพนธ์ไม่เก็บใน DB** — ดึงจาก Thesis API ทุกครั้งที่แสดงผล (title_th, title_en, major_th, level_name_th, curriculum)
+**Cache fields:** `thesisTitleTh`, `thesisTitleEn` — เก็บจาก Thesis API ตอน student login เพื่อใช้ search เท่านั้น ข้อมูลแสดงผลยัง fetch จาก API ตามปกติ
 
 ### UserRole
 

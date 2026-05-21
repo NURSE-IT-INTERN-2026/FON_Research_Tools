@@ -145,6 +145,16 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
       : `${userInfo.cmuitaccount}@cmu.ac.th`);
   const studentId = userInfo.student_id || null;
 
+  let thesisTitleTh: string | null = null;
+  let thesisTitleEn: string | null = null;
+  if (role === "STUDENT" && studentId) {
+    const thesis = await getThesisData(studentId);
+    if (thesis) {
+      thesisTitleTh = thesis.title_th;
+      thesisTitleEn = thesis.title_en;
+    }
+  }
+
   const profile = await prisma.profile.upsert({
     where: { id: userInfo.cmuitaccount },
     create: {
@@ -154,6 +164,8 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
       studentId,
       accountType: userInfo.itaccount_type_id,
       cmuItAccount: userInfo.cmuitaccount,
+      thesisTitleTh,
+      thesisTitleEn,
       userRole: { create: { role } },
     },
     update: {
@@ -162,6 +174,8 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
       studentId,
       accountType: userInfo.itaccount_type_id,
       cmuItAccount: userInfo.cmuitaccount,
+      thesisTitleTh,
+      thesisTitleEn,
     },
   });
 

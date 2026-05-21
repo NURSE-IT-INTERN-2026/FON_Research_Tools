@@ -17,7 +17,7 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
   const q = query.trim();
   if (!q) return [];
 
-  const [students, documents] = await Promise.all([
+  const [students, thesisStudents, documents] = await Promise.all([
     db.profile.findMany({
       where: {
         userRole: { role: "STUDENT" },
@@ -28,6 +28,17 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
       },
       take: 5,
       select: { id: true, name: true, studentId: true },
+    }),
+    db.profile.findMany({
+      where: {
+        userRole: { role: "STUDENT" },
+        OR: [
+          { thesisTitleTh: { contains: q, mode: "insensitive" } },
+          { thesisTitleEn: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      take: 5,
+      select: { id: true, name: true, thesisTitleTh: true },
     }),
     db.document.findMany({
       where: {
@@ -44,22 +55,42 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
     }),
   ]);
 
-  const results: SearchResult[] = [
-    ...students.map((s) => ({
-      type: "student" as const,
+  const seenIds = new Set<string>();
+
+  const results: SearchResult[] = [];
+
+  for (const s of students) {
+    seenIds.add(s.id);
+    results.push({
+      type: "student",
       id: s.id,
       label: s.name,
       sublabel: s.studentId ?? null,
       ownerId: s.id,
-    })),
-    ...documents.map((d) => ({
-      type: "document" as const,
+    });
+  }
+
+  for (const t of thesisStudents) {
+    if (seenIds.has(t.id)) continue;
+    seenIds.add(t.id);
+    results.push({
+      type: "student",
+      id: t.id,
+      label: t.name,
+      sublabel: t.thesisTitleTh ?? null,
+      ownerId: t.id,
+    });
+  }
+
+  for (const d of documents) {
+    results.push({
+      type: "document",
       id: d.id,
       label: d.title,
       sublabel: d.profile.name,
       ownerId: d.userId,
-    })),
-  ];
+    });
+  }
 
   return results;
 }
