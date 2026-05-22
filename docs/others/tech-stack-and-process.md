@@ -6,31 +6,46 @@
 
 ## Programming Language
 
-- TypeScript
+| Language | การใช้งาน |
+|---|---|
+| TypeScript 5+ | ภาษาหลักของโปรเจค ให้ type safety ช่วยลดบั๊ก |
+| Node.js | Runtime สำหรับรัน Next.js ฝั่ง server |
 
 ## Framework
 
-- Next.js (App Router)
-- React
+| Framework | Version | การใช้งาน |
+|---|---|---|
+| Next.js (App Router) | 16.2.6 | Full-stack framework — SSR, routing, Server Components, Server Actions |
+| React | 19.2.4 | UI library สำหรับสร้าง component |
+| Tailwind CSS | v4 | Utility-first CSS framework สำหรับจัด layout และ styling |
+| shadcn/ui | — | Component library สร้างบน Radix UI + Tailwind ใช้แบบ copy-paste |
 
 ## Library & Package
 
 | Library | การใช้งาน |
 |---|---|
-| Prisma | จัดการฐานข้อมูล |
-| Tailwind CSS | Styling + theme 2 สี (orange นักศึกษา / purple เจ้าหน้าที่) |
-| shadcn/ui | Component library |
-| Lucide React | Icons |
-| sonner | Toast notifications |
+| Prisma 7.8.0 | ORM สำหรับจัดการ PostgreSQL — query, migration, schema |
+| bcryptjs | เข้ารหัส password ด้วย bcrypt hash |
 | PDFKit | สร้าง PDF ใบรับรอง (Sarabun font ภาษาไทย) |
-| bcryptjs | Hash password |
+| sonner | Toast notification สำหรับแสดงข้อความแจ้งเตือน |
+| Lucide React | Icon library สำหรับ UI |
+| Radix UI | Headless UI primitive — ใช้เป็น base ของ shadcn/ui |
+| class-variance-authority (cva) | จัดการ variant ของ component styling |
+| clsx + tailwind-merge | รวมเป็น cn() utility สำหรับจัดการ className |
+| tw-animate-css | CSS animation utilities สำหรับ Tailwind |
+| next-themes | จัดการ dark/light mode theme |
 
 ## Tools
 
 | Tool | การใช้งาน |
 |---|---|
-| PostgreSQL | ฐานข้อมูลหลัก |
-| Docker Compose | รันฐานข้อมูลสำหรับ development |
+| PostgreSQL | ฐานข้อมูลหลัก — เก็บ profiles, documents, activity logs |
+| Docker Compose | รัน PostgreSQL สำหรับ local development |
+| Git & GitHub | Version control และ code hosting |
+| ESLint | ตรวจสอบ code quality และ style |
+| Figma | ออกแบบ UI/UX reference |
+| Notion | จัดการเอกสารโปรเจคและ task tracking |
+| MS Teams / Line / Telegram | ช่องทางสื่อสารทีม |
 
 ## External APIs
 
