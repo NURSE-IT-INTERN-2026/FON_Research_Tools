@@ -24,7 +24,7 @@ import {
   removeDocument,
   type UploadDocumentState,
 } from "@/actions/document-actions";
-import { CheckCircle, XCircle, Trash2, FileText, Check, Search, X } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, Check, Search, X } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 type DocumentRow = {
@@ -164,9 +164,6 @@ export function DocumentsClient({
                   ชื่อเครื่องมือวิจัย
                 </th>
                 <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  ไฟล์
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                   สถานะ
                 </th>
                 <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
@@ -201,17 +198,6 @@ export function DocumentsClient({
                     {doc.studentId}
                   </td>
                   <td className="px-4 py-3">{doc.title}</td>
-                  <td className="px-4 py-3">
-                    <a
-                      href={`/api/documents/${doc.id}/file`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      PDF
-                    </a>
-                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={doc.status} />
                   </td>
