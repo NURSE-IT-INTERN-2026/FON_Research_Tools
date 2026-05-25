@@ -101,7 +101,7 @@ export async function getThesisData(studentId: string): Promise<ThesisData> {
   if (!thesisUrl || !thesisToken) return null;
 
   try {
-    const res = await fetch(`${thesisUrl}?student_id=${studentId}`, {
+    const res = await fetch(`${thesisUrl}?student_id=${process.env.DEV_TEST_STUDENT_ID || studentId}`, {
       method: "POST",
       headers: { Authorization: thesisToken },
     });
@@ -127,12 +127,20 @@ export async function getThesisData(studentId: string): Promise<ThesisData> {
 
 export function determineRole(
   accountType: string,
+  cmuitaccount?: string,
+  studentId?: string,
 ): "ADMIN" | "STUDENT" | null {
   if (process.env.DEV_FORCE_ROLE === "ADMIN") return "ADMIN";
   if (process.env.DEV_FORCE_ROLE === "STUDENT") return "STUDENT";
 
-  if (accountType === "MISEmpAcc") return "ADMIN";
+  if (cmuitaccount && process.env.ADMIN_EMAILS) {
+    const adminEmails = process.env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase());
+    if (adminEmails.includes(cmuitaccount.toLowerCase())) return "ADMIN";
+  }
+
   if (accountType === "StdAcc") return "STUDENT";
+  if (!accountType && studentId) return "STUDENT";
+
   return null;
 }
 

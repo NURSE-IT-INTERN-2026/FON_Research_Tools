@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const role = determineRole(userInfo.itaccount_type_id);
+  const role = determineRole(userInfo.itaccount_type_id, userInfo.cmuitaccount, userInfo.student_id);
   if (!role) {
     return redirectWithClearedState(request, `${BASE}/unauthorized`);
   }
