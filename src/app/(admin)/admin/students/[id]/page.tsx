@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
-import { getThesisData, type ThesisData } from "@/lib/auth/cmu-oauth";
+import { getThesisDataAndCache, type ThesisData } from "@/lib/auth/cmu-oauth";
 import { StudentDetailClient } from "@/components/admin/student-detail-client";
 
 export default async function StudentDetailPage({
@@ -41,7 +41,7 @@ export default async function StudentDetailPage({
   }
 
   const thesis: ThesisData = student.studentId
-    ? await getThesisData(student.studentId)
+    ? await getThesisDataAndCache(student.id)
     : null;
 
   const serialized = student.documents.map((d) => ({

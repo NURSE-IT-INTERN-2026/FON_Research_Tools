@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import db from "@/lib/db";
-import { getThesisData, type ThesisData } from "@/lib/auth/cmu-oauth";
+import { getThesisDataAndCache } from "@/lib/auth/cmu-oauth";
 import { ThesisClient } from "@/components/student/thesis-client";
 
 export default async function ThesisPage() {
@@ -16,7 +16,7 @@ export default async function ThesisPage() {
         accountType: true,
       },
     }),
-    getThesisDataForUser(userId),
+    getThesisDataAndCache(userId),
     db.document.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
@@ -111,13 +111,4 @@ export default async function ThesisPage() {
       <ThesisClient documents={serialized} />
     </div>
   );
-}
-
-async function getThesisDataForUser(userId: string): Promise<ThesisData> {
-  const profile = await db.profile.findUnique({
-    where: { id: userId },
-    select: { studentId: true },
-  });
-  if (!profile?.studentId) return null;
-  return getThesisData(profile.studentId);
 }

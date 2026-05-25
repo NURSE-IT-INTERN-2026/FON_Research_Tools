@@ -151,7 +151,8 @@ Admin navbar search: ค้นหาจากรหัสนักศึกษ�
 ### Thesis API (Display-only data)
 - URL: `POST https://mis.nurse.cmu.ac.th/thesis/student/GetDataThesis?student_id={id}`
 - Static Bearer token from env (`THESIS_API_TOKEN`)
-- **Never store** thesis data in DB — fetch on every display
+- Thesis display data fetched from API on every page view (title_th, title_en, major_th, level_name_th, curriculum)
+- `thesisTitleTh` and `thesisTitleEn` are cached in Profile table for search functionality — updated on every fetch
 - When `MOCK_THESIS=true` → return mock data for dev testing
 - When API returns `count: 0` → show "ยังไม่พบข้อมูลวิทยานิพนธ์" (graceful empty state)
 

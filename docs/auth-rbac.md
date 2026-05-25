@@ -34,11 +34,14 @@ Server-side first. Auth state is resolved in `proxy.ts` and Server Components �
 
 ### Role Determination
 
-| `itaccount_type_id` | Role | Redirect |
-|---|---|---|
-| `StdAcc` (นักศึกษา) | STUDENT | `/dashboard` |
-| `MISEmpAcc` (เจ้าหน้าที่) | ADMIN | `/admin/dashboard` |
-| `AlumAcc` (ศิษย์เก่า) | — | `/unauthorized` |
+Priority order:
+
+| Priority | Condition | Role | Redirect |
+|---|---|---|---|
+| 1 | `ADMIN_EMAILS` env contains user's cmuitaccount | ADMIN | `/admin/dashboard` |
+| 2 | `itaccount_type_id` = `StdAcc` | STUDENT | `/dashboard` |
+| 3 | No `itaccount_type_id` but has `student_id` | STUDENT | `/dashboard` |
+| 4 | None of the above | — | `/unauthorized` |
 
 ### Data from CMU MIS API
 

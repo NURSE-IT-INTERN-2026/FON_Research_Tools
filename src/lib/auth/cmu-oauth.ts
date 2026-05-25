@@ -92,7 +92,7 @@ export async function getUserBasicInfo(accessToken: string) {
 
 export async function getThesisData(studentId: string): Promise<ThesisData> {
   if (process.env.MOCK_THESIS === "true") {
-    const mockId = process.env.DEV_TEST_STUDENT_ID || studentId;
+    const mockId = process.env.DEV_TEST_STUDENT_ID || studentId; // dev only
     return { ...MOCK_THESIS, student_id: mockId };
   }
 
@@ -101,7 +101,7 @@ export async function getThesisData(studentId: string): Promise<ThesisData> {
   if (!thesisUrl || !thesisToken) return null;
 
   try {
-    const res = await fetch(`${thesisUrl}?student_id=${process.env.DEV_TEST_STUDENT_ID || studentId}`, {
+    const res = await fetch(`${thesisUrl}?student_id=${studentId}`, {
       method: "POST",
       headers: { Authorization: thesisToken },
     });
@@ -123,6 +123,23 @@ export async function getThesisData(studentId: string): Promise<ThesisData> {
   } catch {
     return null;
   }
+}
+
+export async function getThesisDataAndCache(userId: string): Promise<ThesisData> {
+  const profile = await prisma.profile.findUnique({
+    where: { id: userId },
+    select: { studentId: true },
+  });
+  if (!profile?.studentId) return null;
+
+  const thesis = await getThesisData(profile.studentId);
+  if (thesis) {
+    await prisma.profile.update({
+      where: { id: userId },
+      data: { thesisTitleTh: thesis.title_th, thesisTitleEn: thesis.title_en },
+    });
+  }
+  return thesis;
 }
 
 export function determineRole(
