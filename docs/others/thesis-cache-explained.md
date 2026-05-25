@@ -11,12 +11,15 @@
 
 ## ทำไมต้องมี Cache
 
-Requirement (F12): Admin ต้องค้นหาจาก **ชื่อวิทยานิพนธ์** ได้
+Requirement: Admin ต้องค้นหาจาก **ชื่อวิทยานิพนธ์** ได้
 
 ปัญหาคือ Thesis API รับแค่ `?student_id=xxx` — ไม่มี search endpoint ดังนั้นไม่สามารถ search ด้วย keyword ได้โดยไม่เก็บข้อมูล
 
-## Cache ทำงานยังไง
+## Cache อัปเดตเมื่อไหร่
 
+Cache ถูกอัปเดต 2 ช่องทาง:
+
+### 1. ตอน login (`upsertUser`)
 ```
 Student login (CMU OAuth)
   → upsertUser()
@@ -24,7 +27,14 @@ Student login (CMU OAuth)
     → เก็บ title_th, title_en ลง Profile ใน DB
 ```
 
-- Cache อัปเดตอัตโนมัติทุกครั้งที่ student login
+### 2. ทุกครั้งที่ดูหน้า thesis (`getThesisDataAndCache`)
+```
+Student เปิดหน้า /thesis หรือ Admin เปิดหน้า student detail
+  → getThesisDataAndCache(userId)
+    → getThesisData(studentId)  ← fetch จาก Thesis API
+    → update thesisTitleTh, thesisTitleEn ใน DB (ถ้าเจอข้อมูล)
+```
+
 - ถ้า Thesis API ไม่ตอบหรือไม่มีข้อมูล → cache เป็น `null` (ไม่ break อะไร)
 - มีผลกับ STUDENT เท่านั้น (ADMIN ไม่มี thesis)
 
@@ -39,4 +49,4 @@ Student login (CMU OAuth)
 
 ## สรุป
 
-Cache fields เป็นเพียงสำเนาข้อมูลสำหรับ search ข้อมูลต้นฉบับยังมาจาก Thesis API ทั้งหมด ถ้า thesis title เปลี่ยน cache จะอัปเดตใน login ครั้งถัดไปของ student คนนั้น
+Cache fields เป็นเพียงสำเนาข้อมูลสำหรับ search ข้อมูลต้นฉบับยังมาจาก Thesis API ทั้งหมด ถ้า thesis title เปลี่ยน cache จะอัปเดตอัตโนมัติเมื่อมีคนเปิดดูหน้า thesis หรือ login ใหม่
