@@ -1,5 +1,5 @@
 import db from "@/lib/db";
-import { timeAgo, formatDateTime } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import { ACTION_LABELS } from "@/lib/activity-meta";
 import { StatCard } from "@/components/stat-card";
 import {

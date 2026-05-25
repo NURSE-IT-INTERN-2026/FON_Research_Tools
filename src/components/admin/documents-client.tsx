@@ -66,10 +66,6 @@ export function DocumentsClient({
   const [searchInput, setSearchInput] = useState(currentQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    setSearchInput(currentQuery);
-  }, [currentQuery]);
-
   const updateSearch = useCallback((value: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
