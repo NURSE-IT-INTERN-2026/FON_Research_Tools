@@ -49,7 +49,6 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
     {} as UploadDocumentState,
   );
 
-  // Submit is enabled only when every row has both title and file
   const canSubmit =
     rows.length > 0 &&
     rows.every((id) => (titles[id] ?? "").trim() !== "" && files[id] != null);
@@ -58,6 +57,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   useEffect(() => {
     if (state.success && !prevSuccessRef.current) {
       toast.success("อัปโหลดเอกสารสำเร็จ");
+      formRef.current?.reset();
       const freshId = Date.now();
       setRows([freshId]);
       setTitles({ [freshId]: "" });
@@ -83,9 +83,8 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
     setNextId((n) => n + 1);
   }
 
-  // Compute total size of selected files
   const totalSize = rows.reduce((sum, id) => sum + (files[id]?.size ?? 0), 0);
-  const maxTotal = 10 * 1024 * 1024; // 10 MB
+  const maxTotal = 10 * 1024 * 1024;
   const sizeLabel =
     totalSize === 0
       ? ""
@@ -114,14 +113,17 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   return (
     <>
       {/* Upload form */}
-      <div className="rounded border bg-card p-5 space-y-4">
+      <div className="rounded border bg-card p-4 md:p-5 space-y-4">
         <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
           อัปโหลดเอกสาร
         </h2>
         <form ref={formRef} action={formAction} className="space-y-3">
           <input type="hidden" name="rowIds" value={rows.join(",")} />
           {rows.map((rowId) => (
-            <div key={rowId} className="flex items-center gap-2">
+            <div
+              key={rowId}
+              className="flex flex-col sm:flex-row sm:items-center gap-2"
+            >
               <div className="relative flex-1">
                 <Input
                   name={`title_${rowId}`}
@@ -142,7 +144,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                   </button>
                 )}
               </div>
-              <div className="relative max-w-48">
+              <div className="relative sm:max-w-48">
                 <Input
                   ref={(el) => { fileInputRefs.current[rowId] = el; }}
                   name={`file_${rowId}`}
@@ -152,7 +154,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                     const f = e.target.files?.[0] ?? null;
                     setFiles((prev) => ({ ...prev, [rowId]: f }));
                   }}
-                  className="rounded pr-8"
+                  className="rounded"
                 />
                 {files[rowId] && (
                   <button
@@ -170,7 +172,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                   variant="ghost"
                   size="icon"
                   onClick={() => removeRow(rowId)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive h-9 w-9"
+                  className="shrink-0 text-muted-foreground hover:text-destructive h-9 w-9 self-end sm:self-auto"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -180,12 +182,12 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
           <span className="text-xs text-muted-foreground">
             PDF เท่านั้น ขนาดสูงสุด 10 MB{sizeLabel ? ` · ${sizeLabel}` : ""}
           </span>
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
             <Button
               type="button"
               disabled={!canSubmit || pending}
               onClick={() => setConfirmOpen(true)}
-              className="rounded font-semibold"
+              className="rounded font-semibold w-full sm:w-auto"
             >
               <Upload className="mr-1.5 h-4 w-4" />
               {pending ? "กำลังอัปโหลด..." : "อัปโหลด"}
@@ -194,7 +196,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
               type="button"
               variant="outline"
               onClick={addRow}
-              className="rounded"
+              className="rounded w-full sm:w-auto"
             >
               <Plus className="mr-1.5 h-4 w-4" />
               เพิ่มเอกสาร
@@ -245,7 +247,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
       </div>
 
       {/* Document list */}
-      <div className="rounded border bg-card p-5 space-y-4">
+      <div className="rounded border bg-card p-4 md:p-5 space-y-4">
         <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
           รายการเอกสาร
         </h2>
@@ -255,99 +257,164 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
             ยังไม่มีเอกสาร
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-100 text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    ลำดับ
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    ชื่อเครื่องมือวิจัย
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    ไฟล์
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    สถานะ
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    วันที่ยื่น
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    วันที่อนุมัติ
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    ผู้อนุมัติ
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    การดำเนินการ
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {documents.map((doc, i) => (
-                  <tr
-                    key={doc.id}
-                    className="border-t transition-colors hover:bg-muted/30"
-                  >
-                    <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium">{doc.title}</td>
-                    <td className="px-4 py-3">
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-100 text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                      ลำดับ
+                    </th>
+                    <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                      ชื่อเครื่องมือวิจัย
+                    </th>
+                    <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                      ไฟล์
+                    </th>
+                    <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                      สถานะ
+                    </th>
+                    <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                      วันที่ยื่น
+                    </th>
+                    <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                      วันที่อนุมัติ
+                    </th>
+                    <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                      ผู้อนุมัติ
+                    </th>
+                    <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                      การดำเนินการ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((doc, i) => (
+                    <tr
+                      key={doc.id}
+                      className="border-t transition-colors hover:bg-muted/30"
+                    >
+                      <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
+                      <td className="px-4 py-3 font-medium">{doc.title}</td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={`${basePath}/api/documents/${doc.id}/file`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          {doc.originalName}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={doc.status} />
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">
+                        {formatDateTime(doc.createdAt)}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">
+                        {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">
+                        {doc.approvedBy ?? "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {doc.status === "PENDING" && (
+                          <RemoveButton documentId={doc.id} />
+                        )}
+                        {doc.status === "APPROVED" && (
+                          <a
+                            href={`${basePath}/api/documents/${doc.id}/certificate`}
+                            download
+                            className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            ใบรับรอง
+                          </a>
+                        )}
+                        {doc.status === "REJECTED" && (
+                          <div className="flex items-start justify-between gap-2">
+                            {doc.adminNotes ? (
+                              <span className="text-xs text-destructive line-clamp-2" title={doc.adminNotes}>
+                                เหตุผล: {doc.adminNotes}
+                              </span>
+                            ) : (
+                              <span />
+                            )}
+                            <RemoveButton documentId={doc.id} />
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {documents.map((doc) => (
+                <div key={doc.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">{doc.title}</p>
                       <a
                         href={`${basePath}/api/documents/${doc.id}/file`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-primary hover:underline text-xs mt-1"
+                      >
+                        <FileText className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{doc.originalName}</span>
+                      </a>
+                    </div>
+                    <StatusBadge status={doc.status} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">วันที่ยื่น</span>
+                      <p>{formatDateTime(doc.createdAt)}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">วันที่อนุมัติ</span>
+                      <p>{doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}</p>
+                    </div>
+                    {doc.approvedBy && (
+                      <div>
+                        <span className="text-muted-foreground">ผู้อนุมัติ</span>
+                        <p>{doc.approvedBy}</p>
+                      </div>
+                    )}
+                  </div>
+                  {doc.status === "REJECTED" && doc.adminNotes && (
+                    <p className="text-xs text-destructive">
+                      เหตุผล: {doc.adminNotes}
+                    </p>
+                  )}
+                  <div className="flex justify-end pt-1">
+                    {doc.status === "PENDING" && (
+                      <RemoveButton documentId={doc.id} />
+                    )}
+                    {doc.status === "APPROVED" && (
+                      <a
+                        href={`${basePath}/api/documents/${doc.id}/certificate`}
+                        download
                         className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
                       >
-                        <FileText className="h-3.5 w-3.5" />
-                        {doc.originalName}
+                        <Download className="h-3.5 w-3.5" />
+                        ใบรับรอง
                       </a>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={doc.status} />
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {formatDateTime(doc.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {doc.approvedBy ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {doc.status === "PENDING" && (
-                        <RemoveButton documentId={doc.id} />
-                      )}
-                      {doc.status === "APPROVED" && (
-                        <a
-                          href={`${basePath}/api/documents/${doc.id}/certificate`}
-                          download
-                          className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                          ใบรับรอง
-                        </a>
-                      )}
-                      {doc.status === "REJECTED" && (
-                        <div className="flex items-start justify-between gap-2">
-                          {doc.adminNotes ? (
-                            <span className="text-xs text-destructive line-clamp-2" title={doc.adminNotes}>
-                              เหตุผล: {doc.adminNotes}
-                            </span>
-                          ) : (
-                            <span />
-                          )}
-                          <RemoveButton documentId={doc.id} />
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    )}
+                    {doc.status === "REJECTED" && (
+                      <RemoveButton documentId={doc.id} />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </>
