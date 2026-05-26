@@ -28,11 +28,12 @@ export default async function DocumentsPage({
     ],
   };
 
-  const [pendingCount, approvedCount, totalDocuments, rows] =
+  const [pendingCount, approvedCount, totalDocuments, filteredCount, rows] =
     await Promise.all([
       db.document.count({ where: { status: "PENDING" } }),
       db.document.count({ where: { status: "APPROVED" } }),
       db.document.count(),
+      db.document.count({ where }),
       db.document.findMany({
         where,
         skip: (page - 1) * PAGE_SIZE,
@@ -48,6 +49,7 @@ export default async function DocumentsPage({
 
   const hasMore = rows.length > PAGE_SIZE;
   const documents = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
 
   const serialized = documents.map((doc) => ({
     id: doc.id,
@@ -82,6 +84,7 @@ export default async function DocumentsPage({
         currentQuery={q ?? ""}
         page={page}
         hasMore={hasMore}
+        totalPages={totalPages}
       />
     </div>
   );

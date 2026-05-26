@@ -27,16 +27,20 @@ export default async function UsersPage({
     ],
   };
 
-  const rows = await db.profile.findMany({
-    where,
-    include: { userRole: true },
-    orderBy: { createdAt: "asc" },
-    skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE + 1,
-  });
+  const [rows, filteredCount] = await Promise.all([
+    db.profile.findMany({
+      where,
+      include: { userRole: true },
+      orderBy: { createdAt: "asc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE + 1,
+    }),
+    db.profile.count({ where }),
+  ]);
 
   const hasMore = rows.length > PAGE_SIZE;
   const users = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
 
   const serialized = users.map((u) => ({
     id: u.id,
@@ -59,6 +63,7 @@ export default async function UsersPage({
         currentRole={roleFilter ?? "ALL"}
         page={page}
         hasMore={hasMore}
+        totalPages={totalPages}
       />
     </div>
   );

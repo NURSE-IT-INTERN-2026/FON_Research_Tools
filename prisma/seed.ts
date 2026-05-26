@@ -113,7 +113,7 @@ async function main() {
         status,
         approvedBy: status === "APPROVED" ? admins[s % 2].email : undefined,
         approvedAt: status === "APPROVED" ? daysAgo(10 - d) : undefined,
-        adminNotes: status === "REJECTEDED" ? "ไฟล์ไม่ชัดเจน" : undefined,
+        adminNotes: status === "REJECTED" ? "ไฟล์ไม่ชัดเจน" : undefined,
         createdAt: daysAgo(15 - s + d),
       });
     }

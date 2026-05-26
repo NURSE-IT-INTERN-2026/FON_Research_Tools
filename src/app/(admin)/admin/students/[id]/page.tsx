@@ -43,7 +43,7 @@ export default async function StudentDetailPage({
     ...(statusFilter ? { status: statusFilter as "PENDING" | "APPROVED" | "REJECTED" } : {}),
   };
 
-  const [rows, totalDocs, totalPending, totalApproved, totalRejected] =
+  const [rows, filteredCount, totalDocs, totalPending, totalApproved, totalRejected] =
     await Promise.all([
       db.document.findMany({
         where: docWhere,
@@ -61,6 +61,7 @@ export default async function StudentDetailPage({
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE + 1,
       }),
+      db.document.count({ where: docWhere }),
       db.document.count({ where: { userId: id } }),
       db.document.count({ where: { userId: id, status: "PENDING" } }),
       db.document.count({ where: { userId: id, status: "APPROVED" } }),
@@ -69,6 +70,7 @@ export default async function StudentDetailPage({
 
   const hasMore = rows.length > PAGE_SIZE;
   const documents = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
 
   const serialized = documents.map((d) => ({
     id: d.id,
@@ -93,6 +95,7 @@ export default async function StudentDetailPage({
       documents={serialized}
       page={page}
       hasMore={hasMore}
+      totalPages={totalPages}
       currentStatus={statusFilter ?? "ALL"}
       totalDocs={totalDocs}
       totalPending={totalPending}

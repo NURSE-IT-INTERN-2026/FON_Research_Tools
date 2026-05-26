@@ -45,6 +45,7 @@ type DocumentsClientProps = {
   currentQuery: string;
   page: number;
   hasMore: boolean;
+  totalPages: number;
 };
 
 const STATUS_OPTIONS = [
@@ -60,6 +61,7 @@ export function DocumentsClient({
   currentQuery,
   page,
   hasMore,
+  totalPages,
 }: DocumentsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -315,7 +317,7 @@ export function DocumentsClient({
       {(page > 1 || hasMore) && (
         <Pagination
           page={page}
-          hasMore={hasMore}
+          totalPages={totalPages}
           onPageChange={goToPage}
         />
       )}
@@ -574,11 +576,11 @@ function DocumentCard({ doc, documents }: { doc: DocumentRow; documents: Documen
 
 function Pagination({
   page,
-  hasMore,
+  totalPages,
   onPageChange,
 }: {
   page: number;
-  hasMore: boolean;
+  totalPages: number;
   onPageChange: (p: number) => void;
 }) {
   return (
@@ -594,13 +596,13 @@ function Pagination({
         ก่อนหน้า
       </Button>
       <span className="text-xs text-muted-foreground px-2">
-        หน้า {page} / {hasMore ? "…" : page}
+        หน้า {page} / {totalPages}
       </span>
       <Button
         type="button"
         variant="outline"
         size="sm"
-        disabled={!hasMore}
+        disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
         className="rounded text-xs"
       >

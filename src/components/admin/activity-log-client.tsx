@@ -134,11 +134,11 @@ function DateRangeFilter({
 
 function Pagination({
   page,
-  hasMore,
+  totalPages,
   onPageChange,
 }: {
   page: number;
-  hasMore: boolean;
+  totalPages: number;
   onPageChange: (p: number) => void;
 }) {
   return (
@@ -155,13 +155,13 @@ function Pagination({
         ก่อนหน้า
       </Button>
       <span className="text-xs text-muted-foreground px-2">
-        หน้า {page} / {hasMore ? "…" : page}
+        หน้า {page} / {totalPages}
       </span>
       <Button
         type="button"
         variant="outline"
         size="sm"
-        disabled={!hasMore}
+        disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
         className="rounded text-xs"
       >
@@ -172,7 +172,7 @@ function Pagination({
   );
 }
 
-export function ActivityLogClient({ logs, users, page, hasMore, currentFilters }: ActivityLogClientProps) {
+export function ActivityLogClient({ logs, users, page, hasMore, totalPages, currentFilters }: ActivityLogClientProps & { totalPages: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -287,7 +287,7 @@ export function ActivityLogClient({ logs, users, page, hasMore, currentFilters }
 
       {/* Pagination */}
       {(page > 1 || hasMore) && (
-        <Pagination page={page} hasMore={hasMore} onPageChange={goToPage} />
+        <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
       )}
     </div>
   );

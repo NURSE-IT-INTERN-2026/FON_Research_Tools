@@ -26,21 +26,25 @@ export default async function StudentsPage({
     ],
   };
 
-  const rows = await db.profile.findMany({
-    where,
-    select: {
-      id: true,
-      name: true,
-      studentId: true,
-      _count: { select: { documents: true } },
-    },
-    orderBy: { studentId: "asc" },
-    skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE + 1,
-  });
+  const [rows, filteredCount] = await Promise.all([
+    db.profile.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        studentId: true,
+        _count: { select: { documents: true } },
+      },
+      orderBy: { studentId: "asc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE + 1,
+    }),
+    db.profile.count({ where }),
+  ]);
 
   const hasMore = rows.length > PAGE_SIZE;
   const students = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
 
   const serialized = students.map((s) => ({
     id: s.id,
@@ -63,6 +67,7 @@ export default async function StudentsPage({
         currentQuery={q ?? ""}
         page={page}
         hasMore={hasMore}
+        totalPages={totalPages}
       />
     </div>
   );

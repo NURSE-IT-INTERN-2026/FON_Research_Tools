@@ -42,7 +42,7 @@ export default async function ActivityLogPage({
     }
   }
 
-  const [rows, users] = await Promise.all([
+  const [rows, filteredCount, users] = await Promise.all([
     db.activityLog.findMany({
       where,
       skip: (page - 1) * PAGE_SIZE,
@@ -50,6 +50,7 @@ export default async function ActivityLogPage({
       orderBy: { createdAt: "desc" },
       include: { profile: { select: { name: true, email: true } } },
     }),
+    db.activityLog.count({ where }),
     db.profile.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
@@ -58,6 +59,7 @@ export default async function ActivityLogPage({
 
   const hasMore = rows.length > PAGE_SIZE;
   const logs = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
 
   const serialized = logs.map((log) => ({
     id: log.id,
@@ -87,6 +89,7 @@ export default async function ActivityLogPage({
         users={serializedUsers}
         page={page}
         hasMore={hasMore}
+        totalPages={totalPages}
         currentFilters={params}
       />
     </div>

@@ -31,6 +31,7 @@ type UsersClientProps = {
   currentRole: string;
   page: number;
   hasMore: boolean;
+  totalPages: number;
 };
 
 export function UsersClient({
@@ -39,6 +40,7 @@ export function UsersClient({
   currentRole,
   page,
   hasMore,
+  totalPages,
 }: UsersClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -172,7 +174,7 @@ export function UsersClient({
       )}
 
       {(page > 1 || hasMore) && (
-        <Pagination page={page} hasMore={hasMore} onPageChange={goToPage} />
+        <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
       )}
     </div>
   );
@@ -180,11 +182,11 @@ export function UsersClient({
 
 function Pagination({
   page,
-  hasMore,
+  totalPages,
   onPageChange,
 }: {
   page: number;
-  hasMore: boolean;
+  totalPages: number;
   onPageChange: (p: number) => void;
 }) {
   return (
@@ -200,13 +202,13 @@ function Pagination({
         ก่อนหน้า
       </Button>
       <span className="text-xs text-muted-foreground px-2">
-        หน้า {page} / {hasMore ? "…" : page}
+        หน้า {page} / {totalPages}
       </span>
       <Button
         type="button"
         variant="outline"
         size="sm"
-        disabled={!hasMore}
+        disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
         className="rounded text-xs"
       >
