@@ -72,12 +72,13 @@ function AddAdminModal({
             >
               อีเมล *
             </Label>
-            <Input
+            <input
               id="admin-email"
               name="email"
               type="email"
               required
-              className="rounded"
+              style={{ fontFamily: "system-ui, sans-serif" }}
+              className="flex h-10 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </div>
           <DialogFooter>

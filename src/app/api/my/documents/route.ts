@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = await db.userRole.findUnique({ where: { userId: session.userId } });
-  if (userRole?.role !== "ADMIN") {
+  const profile = await db.profile.findUnique({ where: { id: session.userId }, select: { role: true } });
+  if (profile?.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

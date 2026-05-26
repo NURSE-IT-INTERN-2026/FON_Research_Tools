@@ -15,7 +15,7 @@ export default async function UsersPage({
 
   const where = {
     AND: [
-      roleFilter ? { userRole: { role: roleFilter as "ADMIN" | "STUDENT" } } : {},
+      roleFilter ? { role: roleFilter as "ADMIN" | "STUDENT" } : {},
       q
         ? {
             OR: [
@@ -30,7 +30,12 @@ export default async function UsersPage({
   const [rows, filteredCount] = await Promise.all([
     db.profile.findMany({
       where,
-      include: { userRole: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+      },
       orderBy: { createdAt: "asc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE + 1,
@@ -47,7 +52,7 @@ export default async function UsersPage({
     id: u.id,
     name: u.name,
     email: u.email,
-    role: u.userRole?.role ?? "",
+    role: u.role,
   }));
 
   return (

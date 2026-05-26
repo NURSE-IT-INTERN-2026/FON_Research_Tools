@@ -3,7 +3,7 @@ import { AdminsClient } from "@/components/admin/admins-client";
 
 export default async function AdminsPage() {
   const rows = await db.profile.findMany({
-    where: { userRole: { role: "ADMIN" } },
+    where: { role: "ADMIN" },
     select: {
       id: true,
       name: true,

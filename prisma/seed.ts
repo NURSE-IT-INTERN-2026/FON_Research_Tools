@@ -38,10 +38,10 @@ async function main() {
   // Admins
   const admins = await Promise.all([
     prisma.profile.create({
-      data: { id: "admin-001", name: "สุภาพร เจริญสุข", email: "supapan.ch@cmu.ac.th", accountType: "MISEmpAcc", cmuItAccount: "supapan_ch" },
+      data: { id: "admin-001", name: "สุภาพร เจริญสุข", email: "supapan.ch@cmu.ac.th", cmuItAccount: "supapan_ch", role: "ADMIN" },
     }),
     prisma.profile.create({
-      data: { id: "admin-002", name: "วิริยา พงษ์ประเสริฐ", email: "wirinya.p@cmu.ac.th", accountType: "MISEmpAcc", cmuItAccount: "wirinya_p" },
+      data: { id: "admin-002", name: "วิริยา พงษ์ประเสริฐ", email: "wirinya.p@cmu.ac.th", cmuItAccount: "wirinya_p", role: "ADMIN" },
     }),
   ]);
 
@@ -59,20 +59,12 @@ async function main() {
           name,
           email: `${first.toLowerCase()}_${last.toLowerCase()}@cmu.ac.th`,
           studentId,
-          accountType: "StdAcc",
           cmuItAccount: `${first.toLowerCase()}_${last.toLowerCase()}`,
+          role: "STUDENT",
         },
       }),
     );
   }
-
-  // Roles
-  await prisma.userRole.createMany({
-    data: [
-      ...admins.map((a) => ({ userId: a.id, role: "ADMIN" as const })),
-      ...students.map((s) => ({ userId: s.id, role: "STUDENT" as const })),
-    ],
-  });
 
   // Documents
   const now = new Date();

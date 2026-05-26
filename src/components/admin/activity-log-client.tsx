@@ -40,6 +40,7 @@ type ActivityLogClientProps = {
     action?: string;
     targetType?: string;
     userId?: string;
+    userRole?: string;
     q?: string;
     page?: string;
     from?: string;

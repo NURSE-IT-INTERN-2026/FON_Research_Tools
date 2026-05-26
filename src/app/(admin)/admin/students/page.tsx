@@ -14,7 +14,7 @@ export default async function StudentsPage({
 
   const where = {
     AND: [
-      { userRole: { role: "STUDENT" as const } },
+      { role: "STUDENT" as const },
       q
         ? {
             OR: [

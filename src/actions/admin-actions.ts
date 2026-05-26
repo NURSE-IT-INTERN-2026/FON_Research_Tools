@@ -30,14 +30,9 @@ export async function createAdmin(
 
   const userId = crypto.randomUUID();
 
-  await db.$transaction([
-    db.profile.create({
-      data: { id: userId, name, email },
-    }),
-    db.userRole.create({
-      data: { userId, role: "ADMIN" },
-    }),
-  ]);
+  await db.profile.create({
+    data: { id: userId, name, email, role: "ADMIN" },
+  });
 
   await logActivity({
     action: "ADMIN_CREATED",

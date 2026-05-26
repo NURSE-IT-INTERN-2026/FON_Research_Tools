@@ -143,9 +143,7 @@ export async function getThesisDataAndCache(userId: string): Promise<ThesisData>
 }
 
 export async function determineRole(
-  accountType: string,
   cmuitaccount?: string,
-  studentId?: string,
 ): Promise<"ADMIN" | "STUDENT" | null> {
   if (process.env.DEV_FORCE_ROLE === "ADMIN") return "ADMIN";
   if (process.env.DEV_FORCE_ROLE === "STUDENT") return "STUDENT";
@@ -155,17 +153,14 @@ export async function determineRole(
       ? cmuitaccount.toLowerCase()
       : `${cmuitaccount.toLowerCase()}@cmu.ac.th`;
 
-    const existing = await prisma.userRole.findFirst({
-      where: { role: "ADMIN", profile: { email } },
+    const existing = await prisma.profile.findFirst({
+      where: { role: "ADMIN", email },
     });
 
     if (existing) return "ADMIN";
   }
 
-  if (accountType === "StdAcc") return "STUDENT";
-  if (!accountType && studentId) return "STUDENT";
-
-  return null;
+  return "STUDENT";
 }
 
 export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT") {
@@ -187,35 +182,25 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
     }
   }
 
-  const profile = await prisma.profile.upsert({
+  const data = {
+    name,
+    email,
+    studentId,
+    cmuItAccount: userInfo.cmuitaccount,
+    role,
+    thesisTitleTh,
+    thesisTitleEn,
+  };
+
+  // Profile may already exist (created via admin panel with different id)
+  const existing = await prisma.profile.findUnique({ where: { email } });
+  if (existing) {
+    return prisma.profile.update({ where: { id: existing.id }, data });
+  }
+
+  return prisma.profile.upsert({
     where: { id: userInfo.cmuitaccount },
-    create: {
-      id: userInfo.cmuitaccount,
-      name,
-      email,
-      studentId,
-      accountType: userInfo.itaccount_type_id,
-      cmuItAccount: userInfo.cmuitaccount,
-      thesisTitleTh,
-      thesisTitleEn,
-      userRole: { create: { role } },
-    },
-    update: {
-      name,
-      email,
-      studentId,
-      accountType: userInfo.itaccount_type_id,
-      cmuItAccount: userInfo.cmuitaccount,
-      thesisTitleTh,
-      thesisTitleEn,
-    },
+    create: { id: userInfo.cmuitaccount, ...data },
+    update: data,
   });
-
-  await prisma.userRole.upsert({
-    where: { userId: profile.id },
-    create: { userId: profile.id, role },
-    update: { role },
-  });
-
-  return profile;
 }

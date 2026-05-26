@@ -130,8 +130,8 @@ export async function removeDocument(
   const doc = await db.document.findUnique({ where: { id: documentId } });
   if (!doc) return { error: "ไม่พบเอกสาร" };
 
-  const userRole = await db.userRole.findUnique({ where: { userId } });
-  const isAdmin = userRole?.role === "ADMIN";
+  const actor = await db.profile.findUnique({ where: { id: userId }, select: { role: true } });
+  const isAdmin = actor?.role === "ADMIN";
   const isOwner = doc.userId === userId;
 
   if (!isAdmin && !isOwner) return { error: "ไม่มีสิทธิ์ลบเอกสารนี้" };

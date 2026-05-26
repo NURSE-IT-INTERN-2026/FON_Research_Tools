@@ -13,7 +13,6 @@ export default async function ThesisPage() {
         name: true,
         email: true,
         studentId: true,
-        accountType: true,
       },
     }),
     getThesisDataAndCache(userId),

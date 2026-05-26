@@ -40,35 +40,23 @@ model Profile {
   name         String
   email        String    @unique
   studentId    String?   @unique
-  accountType  String?   // StdAcc, MISEmpAcc
   cmuItAccount String?
-  thesisTitleTh String?  // cache from Thesis API (for search only)
-  thesisTitleEn String?  // cache from Thesis API (for search only)
+  role         AppRole   @default(STUDENT)
+  thesisTitleTh String?
+  thesisTitleEn String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  userRole      UserRole?
   documents     Document[]
   activityLogs  ActivityLog[]
 }
 ```
 
-ข้อมูลที่ดึงจาก CMU Login อัตโนมัติเมื่อล็อกอิน: name, email, studentId, accountType, cmuItAccount
+ข้อมูลที่ดึงจาก CMU Login อัตโนมัติเมื่อล็อกอิน: name, email, studentId, cmuItAccount
+
+Role กำหนดจาก DB: ถ้าอีเมลมีอยู่ในระบบเป็น ADMIN → ได้ ADMIN, อื่นๆ → ได้ STUDENT
 
 **Cache fields:** `thesisTitleTh`, `thesisTitleEn` — เก็บจาก Thesis API ตอน student login เพื่อใช้ search เท่านั้น ข้อมูลแสดงผลยัง fetch จาก API ตามปกติ
-
-### UserRole
-
-```prisma
-model UserRole {
-  id      String  @id @default(cuid())
-  userId  String  @unique
-  role    AppRole
-  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-```
-
-`userId` is `@unique` — one role per user. Role determined by `accountType`: `StdAcc` → STUDENT, `MISEmpAcc` → ADMIN.
 
 ### Document
 
@@ -123,7 +111,6 @@ model ActivityLog {
 ## Relations
 
 ```
-Profile 1──1 UserRole
 Profile 1──N Document
 Profile 1──N ActivityLog
 ```
@@ -152,7 +139,7 @@ uploads/
 
 ## Seed Data (Dev)
 
-- 1 admin profile + role
-- 4 student profiles + roles (Thai names, CMU-style student IDs)
-- 8-10 documents across PENDING/APPROVED/REJECTED statuses
-- Matching activity log entries
+- 2 admin profiles
+- 30 student profiles (Thai names, CMU-style student IDs)
+- 15 documents for student 1, 1-3 docs for students 2-30
+- 30 activity log entries

@@ -18,7 +18,7 @@ Server-side first. Auth state is resolved in `proxy.ts` and Server Components �
 3. Microsoft ส่ง Authorization Code กลับมาที่ /api/auth/callback
 4. แลก Code เป็น Access Token (POST to token endpoint)
 5. เรียก CMU MIS API (/v3/me/basicinfo) ดึงข้อมูลผู้ใช้
-6. สร้าง/อัปเดต Profile + UserRole ในฐานข้อมูล
+6. สร้าง/อัปเดต Profile ในฐานข้อมูล (รวม role)
 7. สร้าง session (HttpOnly cookie) → redirect ตามบทบาท
 ```
 
@@ -34,14 +34,15 @@ Server-side first. Auth state is resolved in `proxy.ts` and Server Components �
 
 ### Role Determination
 
-Priority order:
+Role กำหนดจากฐานข้อมูล — ไม่ใช้ env variable:
 
 | Priority | Condition | Role | Redirect |
 |---|---|---|---|
-| 1 | `ADMIN_EMAILS` env contains user's cmuitaccount | ADMIN | `/admin/dashboard` |
-| 2 | `itaccount_type_id` = `StdAcc` | STUDENT | `/dashboard` |
-| 3 | No `itaccount_type_id` but has `student_id` | STUDENT | `/dashboard` |
-| 4 | None of the above | — | `/unauthorized` |
+| 1 | `DEV_FORCE_ROLE` env set (dev only) | As specified | — |
+| 2 | อีเมลมีอยู่ใน DB เป็น ADMIN | ADMIN | `/admin/dashboard` |
+| 3 | อื่นๆ | STUDENT | `/dashboard` |
+
+แอดมินคนแรกสร้างผ่าน `/admin/login` (env credentials: `ADMIN_USERNAME` + `ADMIN_PASSWORD_HASH`) แล้วสร้างแอดมินเพิ่มได้ใน `/admin/admins`
 
 ### Data from CMU MIS API
 
@@ -49,7 +50,6 @@ Priority order:
 |---|---|---|
 | ชื่อ-นามสกุล | `name` | Profile.name |
 | อีเมล | `email` | Profile.email |
-| ประเภทบัญชี | `itaccount_type_id` | Profile.accountType |
 | CMU IT Account | `cmuitaccount_name` | Profile.cmuItAccount |
 | รหัสนักศึกษา | `student_id` | Profile.studentId |
 
@@ -97,6 +97,7 @@ Runs on every matched request. Responsibilities:
 | Remove any document | — | Yes | Redirect to `/` |
 | View student list | — | Yes | Redirect to `/` |
 | Search students | — | Yes | Redirect to `/` |
+| Manage admins | — | Yes | Redirect to `/` |
 | View activity log | — | Yes | Redirect to `/` |
 | Access admin routes | Redirect to `/dashboard` | Yes | Redirect to `/` |
 | API `/api/my/documents` | Yes | — | 401 |
@@ -105,7 +106,6 @@ Runs on every matched request. Responsibilities:
 
 | Scenario | Behavior |
 |---|---|
-| AlumAcc login | Redirect to `/unauthorized` — ระบบไม่รองรับศิษย์เก่า |
 | Session expired | Proxy redirects to `/` |
 | `AUTH_SECRET` rotated | Set `AUTH_SESSION_VERSION` to invalidate all sessions |
 
@@ -126,9 +126,8 @@ export type AuthContext = {
 | Function | Returns | Purpose |
 |---|---|---|
 | `getSession()` | `AuthSession \| null` | Read session from cookie |
-| `getUserRole(userId)` | `AppRole \| null` | Query UserRole via Prisma |
 | `requireAuth()` | `{ userId: string, email: string }` | Get authenticated user or `unauthorized()` |
-| `requireRole(role)` | `AuthContext` | Verify role or `forbidden()` |
+| `requireRole(role)` | `AuthContext` | Verify role from Profile or `forbidden()` |
 
 ---
 
@@ -138,9 +137,11 @@ export type AuthContext = {
 src/lib/
 ├── auth.ts                ← getSession, requireAuth, requireRole helpers
 ├── auth/
-│   ├── session-token.ts   ← HMAC-SHA256 token create/verify
-│   ├── session.ts         ← Cookie management
-│   └── roles.ts           ← Role redirect paths
+│   ├── admin-credentials.ts ← Admin login (username/password from env)
+│   ├── cmu-oauth.ts        ← CMU OAuth + determineRole (DB-based)
+│   ├── session-token.ts    ← HMAC-SHA256 token create/verify
+│   ├── session.ts          ← Cookie management
+│   └── roles.ts            ← Role redirect paths
 └── db.ts                  ← Prisma client singleton
 src/proxy.ts               ← Next.js 16 proxy (route protection)
 src/app/

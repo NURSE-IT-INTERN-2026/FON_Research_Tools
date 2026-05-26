@@ -33,23 +33,15 @@ model Profile {
   name         String
   email        String    @unique
   studentId    String?   @unique
-  accountType  String?
-  cmuItAccount   String?
-  thesisTitleTh  String?   // cache from Thesis API for search
-  thesisTitleEn  String?   // cache from Thesis API for search
-  createdAt      DateTime  @default(now())
+  cmuItAccount String?
+  role         AppRole   @default(STUDENT)
+  thesisTitleTh String?
+  thesisTitleEn String?
+  createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  userRole      UserRole?
   documents     Document[]
   activityLogs  ActivityLog[]
-}
-
-model UserRole {
-  id      String  @id @default(cuid())
-  userId  String  @unique
-  role    AppRole
-  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Document {

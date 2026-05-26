@@ -13,7 +13,7 @@ import { Users, FileText, Clock, CheckCircle } from "lucide-react";
 export default async function AdminDashboardPage() {
   const [totalStudents, totalDocuments, pendingDocuments, approvedDocuments, recentActivity] =
     await Promise.all([
-      db.profile.count({ where: { userRole: { role: "STUDENT" } } }),
+      db.profile.count({ where: { role: "STUDENT" } }),
       db.document.count(),
       db.document.count({ where: { status: "PENDING" } }),
       db.document.count({ where: { status: "APPROVED" } }),

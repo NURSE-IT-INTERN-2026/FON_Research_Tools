@@ -20,7 +20,7 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
   const [students, thesisStudents, documents] = await Promise.all([
     db.profile.findMany({
       where: {
-        userRole: { role: "STUDENT" },
+        role: "STUDENT",
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { studentId: { contains: q, mode: "insensitive" } },
@@ -31,7 +31,7 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
     }),
     db.profile.findMany({
       where: {
-        userRole: { role: "STUDENT" },
+        role: "STUDENT",
         OR: [
           { thesisTitleTh: { contains: q, mode: "insensitive" } },
           { thesisTitleEn: { contains: q, mode: "insensitive" } },

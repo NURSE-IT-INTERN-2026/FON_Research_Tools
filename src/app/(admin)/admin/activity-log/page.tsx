@@ -29,7 +29,7 @@ export default async function ActivityLogPage({
   if (params.userId) {
     where.userId = params.userId;
   } else if (params.userRole && params.userRole !== "ALL") {
-    where.profile = { userRole: { role: params.userRole as "ADMIN" | "STUDENT" } };
+    where.profile = { role: params.userRole as "ADMIN" | "STUDENT" };
   }
   if (params.q) {
     where.targetLabel = { contains: params.q, mode: "insensitive" };
@@ -57,12 +57,12 @@ export default async function ActivityLogPage({
     }),
     db.activityLog.count({ where }),
     db.profile.findMany({
-      where: { userRole: { role: "ADMIN" } },
+      where: { role: "ADMIN" },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     db.profile.findMany({
-      where: { userRole: { role: "STUDENT" } },
+      where: { role: "STUDENT" },
       select: { id: true, name: true },
       orderBy: { studentId: "asc" },
     }),

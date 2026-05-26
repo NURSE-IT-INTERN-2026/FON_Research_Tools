@@ -27,17 +27,17 @@ export async function verifyAdminCredentials(
     return null;
   }
 
-  const admin = await db.userRole.findFirst({
+  const admin = await db.profile.findFirst({
     where: { role: "ADMIN" },
-    include: { profile: { select: { id: true, email: true, name: true } } },
+    select: { id: true, email: true, name: true },
   });
 
-  if (!admin?.profile) return null;
+  if (!admin) return null;
 
   return {
-    userId: admin.profile.id,
-    email: admin.profile.email,
+    userId: admin.id,
+    email: admin.email,
     role: "ADMIN" as const,
-    name: admin.profile.name,
+    name: admin.name,
   };
 }

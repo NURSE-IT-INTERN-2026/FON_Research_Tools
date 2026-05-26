@@ -25,12 +25,11 @@ export default async function StudentDetailPage({
       name: true,
       email: true,
       studentId: true,
-      accountType: true,
-      userRole: { select: { role: true } },
+      role: true,
     },
   });
 
-  if (!student || student.userRole?.role !== "STUDENT") {
+  if (!student || student.role !== "STUDENT") {
     notFound();
   }
 

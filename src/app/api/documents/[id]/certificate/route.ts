@@ -25,8 +25,8 @@ export async function GET(
     return NextResponse.json({ error: "Document not approved" }, { status: 400 });
   }
 
-  const userRole = await db.userRole.findUnique({ where: { userId: session.userId } });
-  const isAdmin = userRole?.role === "ADMIN";
+  const userProfile = await db.profile.findUnique({ where: { id: session.userId }, select: { role: true } });
+  const isAdmin = userProfile?.role === "ADMIN";
   const isOwner = doc.userId === session.userId;
   if (!isAdmin && !isOwner) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
