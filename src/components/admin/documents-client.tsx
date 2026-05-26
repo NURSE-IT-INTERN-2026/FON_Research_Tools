@@ -66,6 +66,7 @@ export function DocumentsClient({
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
 
   const studentGroups = useMemo(() => {
@@ -100,8 +101,14 @@ export function DocumentsClient({
       }
       params.delete("page");
       router.push(`/admin/documents?${params.toString()}`);
-    }, 300);
+    }, 500);
   }, [searchParams, router]);
+
+  useEffect(() => {
+    if (document.activeElement !== searchInputRef.current) {
+      setSearchInput(currentQuery);
+    }
+  }, [currentQuery]);
 
   function clearSearch() {
     setSearchInput("");
@@ -146,6 +153,7 @@ export function DocumentsClient({
       <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
+          ref={searchInputRef}
           value={searchInput}
           onChange={(e) => {
             setSearchInput(e.target.value);

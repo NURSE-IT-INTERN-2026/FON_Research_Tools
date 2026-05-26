@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export function StudentsClient({
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const updateSearch = useCallback((value: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -45,8 +46,14 @@ export function StudentsClient({
       }
       params.delete("page");
       router.push(`/admin/students?${params.toString()}`);
-    }, 300);
+    }, 500);
   }, [searchParams, router]);
+
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setSearchInput(currentQuery);
+    }
+  }, [currentQuery]);
 
   function clearSearch() {
     setSearchInput("");
@@ -72,12 +79,13 @@ export function StudentsClient({
       <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
+          ref={inputRef}
           value={searchInput}
           onChange={(e) => {
             setSearchInput(e.target.value);
             updateSearch(e.target.value);
           }}
-          placeholder="ค้นหาจากชื่อ, รหัสนักศึกษา..."
+          placeholder="ค้นหาจากชื่อ, รหัสนักศึกษา, ชื่อวิทยานิพนธ์..."
           className="rounded pl-9 pr-8"
         />
         {searchInput && (

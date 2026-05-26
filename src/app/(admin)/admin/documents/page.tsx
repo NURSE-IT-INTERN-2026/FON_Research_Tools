@@ -75,7 +75,6 @@ export default async function DocumentsPage({
       </div>
 
       <DocumentsClient
-        key={q ?? ""}
         documents={serialized}
         currentStatus={statusFilter ?? "ALL"}
         currentQuery={q ?? ""}

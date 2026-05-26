@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useRef, useCallback } from "react";
+import { Suspense, useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,7 @@ export function UsersClient({
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const updateSearch = useCallback((value: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -58,8 +59,14 @@ export function UsersClient({
       }
       params.delete("page");
       router.push(`/admin/users?${params.toString()}`);
-    }, 300);
+    }, 500);
   }, [searchParams, router]);
+
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setSearchInput(currentQuery);
+    }
+  }, [currentQuery]);
 
   function clearSearch() {
     setSearchInput("");
@@ -86,6 +93,7 @@ export function UsersClient({
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            ref={inputRef}
             value={searchInput}
             onChange={(e) => {
               setSearchInput(e.target.value);

@@ -58,7 +58,6 @@ export default async function UsersPage({
       </div>
 
       <UsersClient
-        key={(q ?? "") + (roleFilter ?? "")}
         users={serialized}
         currentQuery={q ?? ""}
         currentRole={roleFilter ?? "ALL"}

@@ -20,6 +20,8 @@ export default async function StudentsPage({
             OR: [
               { name: { contains: q, mode: "insensitive" as const } },
               { studentId: { contains: q, mode: "insensitive" as const } },
+              { thesisTitleTh: { contains: q, mode: "insensitive" as const } },
+              { thesisTitleEn: { contains: q, mode: "insensitive" as const } },
             ],
           }
         : {},
@@ -63,7 +65,6 @@ export default async function StudentsPage({
       </div>
 
       <StudentsClient
-        key={q ?? ""}
         students={serialized}
         currentQuery={q ?? ""}
         page={safePage}
