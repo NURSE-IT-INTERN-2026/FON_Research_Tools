@@ -200,10 +200,10 @@ export function DocumentsClient({
                     วันที่อัปโหลด
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    วันที่อนุมัติ
+                    วันที่ดำเนินการ
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    ผู้อนุมัติ
+                    ผู้ดำเนินการ
                   </th>
                   <th className="px-3 py-3 text-center font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     ดำเนินการ
