@@ -80,7 +80,9 @@ export function DocumentsClient({
       arr.push(doc);
       map.set(doc.userId, arr);
     }
-    return Array.from(map.entries()).map(([userId, docs]) => ({ userId, docs }));
+    return Array.from(map.entries())
+      .map(([userId, docs]) => ({ userId, docs }))
+      .sort((a, b) => new Date(b.docs[0].createdAt).getTime() - new Date(a.docs[0].createdAt).getTime());
   }, [documents]);
 
   function toggleStudent(userId: string) {
