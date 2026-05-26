@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, Fragment, useActionState, useState, useEffect, useRef, useTransition, useCallback, useMemo } from "react";
+import { Fragment, useActionState, useState, useEffect, useRef, useTransition, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { FilterPills } from "@/components/filter-pills";
 import { StatusBadge } from "@/components/status-badge";
 import {
   approveDocument,
@@ -24,7 +23,7 @@ import {
   removeDocument,
   type UploadDocumentState,
 } from "@/actions/document-actions";
-import { CheckCircle, XCircle, Trash2, Check, Search, X, ChevronDown, ChevronUp, BookOpen, Download } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, Check, Search, X, ChevronDown, ChevronUp, BookOpen, Download, FileText, Clock, AlertTriangle } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -51,14 +50,8 @@ type DocumentsClientProps = {
   page: number;
   hasMore: boolean;
   totalPages: number;
+  counts: { all: number; pending: number; approved: number; rejected: number };
 };
-
-const STATUS_OPTIONS = [
-  { label: "ทั้งหมด", value: "ALL" },
-  { label: "รอตรวจสอบ", value: "PENDING" },
-  { label: "อนุมัติแล้ว", value: "APPROVED" },
-  { label: "ปฏิเสธแล้ว", value: "REJECTED" },
-];
 
 export function DocumentsClient({
   documents,
@@ -67,6 +60,7 @@ export function DocumentsClient({
   page,
   hasMore,
   totalPages,
+  counts,
 }: DocumentsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -128,42 +122,65 @@ export function DocumentsClient({
     router.push(`/admin/documents?${params.toString()}`);
   }
 
+  function setStatusFilter(status: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (status === "ALL") {
+      params.delete("status");
+    } else {
+      params.set("status", status);
+    }
+    params.delete("page");
+    router.push(`/admin/documents?${params.toString()}`);
+  }
+
+  const STATUS_CARDS = [
+    { value: "ALL", label: "ทั้งหมด", count: counts.all, icon: <FileText className="h-4 w-4" />, color: "text-blue-600 bg-blue-50" },
+    { value: "PENDING", label: "รอตรวจสอบ", count: counts.pending, icon: <Clock className="h-4 w-4" />, color: "text-amber-600 bg-amber-50" },
+    { value: "APPROVED", label: "อนุมัติแล้ว", count: counts.approved, icon: <CheckCircle className="h-4 w-4" />, color: "text-green-600 bg-green-50" },
+    { value: "REJECTED", label: "ปฏิเสธแล้ว", count: counts.rejected, icon: <AlertTriangle className="h-4 w-4" />, color: "text-red-600 bg-red-50" },
+  ];
+
   return (
     <div className="space-y-4">
-      {/* Toolbar: search + filter */}
-      <div className="space-y-3">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value);
-              updateSearch(e.target.value);
-            }}
-            placeholder="ค้นหาจากชื่อเครื่องมือ, ชื่อนักศึกษา, รหัสนักศึกษา..."
-            className="rounded pl-9 pr-8"
-          />
-          {searchInput && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Suspense>
-            <FilterPills
-              paramName="status"
-              options={STATUS_OPTIONS}
-              selected={currentStatus}
-              basePath="/admin/documents"
-              resetParams={["page"]}
-            />
-          </Suspense>
-        </div>
+      {/* Search */}
+      <div className="relative w-full max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            updateSearch(e.target.value);
+          }}
+          placeholder="ค้นหาจากชื่อเครื่องมือ, ชื่อนักศึกษา, รหัสนักศึกษา..."
+          className="rounded pl-9 pr-8"
+        />
+        {searchInput && (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Status filter cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {STATUS_CARDS.map((card) => (
+          <button
+            key={card.value}
+            type="button"
+            onClick={() => setStatusFilter(card.value)}
+            className={`rounded-lg border p-3 flex items-center gap-3 transition-colors ${card.color} ${currentStatus === card.value ? "ring-2 ring-primary ring-offset-1" : "opacity-70 hover:opacity-100"}`}
+          >
+            <div className="shrink-0">{card.icon}</div>
+            <div className="text-left">
+              <p className="text-xl font-bold leading-none">{card.count}</p>
+              <p className="text-xs mt-0.5 opacity-80">{card.label}</p>
+            </div>
+          </button>
+        ))}
       </div>
 
       {/* Table */}

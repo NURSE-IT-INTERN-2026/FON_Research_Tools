@@ -1,7 +1,5 @@
 import db from "@/lib/db";
-import { StatCard } from "@/components/stat-card";
 import { DocumentsClient } from "@/components/admin/documents-client";
-import { Clock, CheckCircle, FileText } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -28,10 +26,11 @@ export default async function DocumentsPage({
     ],
   };
 
-  const [pendingCount, approvedCount, totalDocuments, filteredCount, rows] =
+  const [pendingCount, approvedCount, rejectedCount, totalDocuments, filteredCount, rows] =
     await Promise.all([
       db.document.count({ where: { status: "PENDING" } }),
       db.document.count({ where: { status: "APPROVED" } }),
+      db.document.count({ where: { status: "REJECTED" } }),
       db.document.count(),
       db.document.count({ where }),
       db.document.findMany({
@@ -75,12 +74,6 @@ export default async function DocumentsPage({
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 stagger">
-        <StatCard icon={Clock} value={pendingCount} label="รอตรวจสอบ" />
-        <StatCard icon={CheckCircle} value={approvedCount} label="อนุมัติแล้ว" />
-        <StatCard icon={FileText} value={totalDocuments} label="เครื่องมือทั้งหมด" />
-      </div>
-
       <DocumentsClient
         key={q ?? ""}
         documents={serialized}
@@ -89,6 +82,7 @@ export default async function DocumentsPage({
         page={safePage}
         hasMore={hasMore}
         totalPages={totalPages}
+        counts={{ all: totalDocuments, pending: pendingCount, approved: approvedCount, rejected: rejectedCount }}
       />
     </div>
   );
