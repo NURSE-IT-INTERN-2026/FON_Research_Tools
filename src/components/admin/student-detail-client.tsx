@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -15,7 +15,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/status-badge";
-import { FilterPills } from "@/components/filter-pills";
 import {
   approveDocument,
   rejectDocument,
@@ -98,11 +97,22 @@ export function StudentDetailClient({
     }
   }
 
-  const STATUS_OPTIONS = [
-    { label: "ทั้งหมด", value: "ALL" },
-    { label: "รอตรวจสอบ", value: "PENDING" },
-    { label: "อนุมัติแล้ว", value: "APPROVED" },
-    { label: "ปฏิเสธแล้ว", value: "REJECTED" },
+  function setStatusFilter(status: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (status === "ALL") {
+      params.delete("status");
+    } else {
+      params.set("status", status);
+    }
+    params.delete("page");
+    router.push(`${basePath}?${params.toString()}`);
+  }
+
+  const STATUS_CARDS = [
+    { value: "ALL", label: "ทั้งหมด", count: totalDocs, icon: <FileText className="h-4 w-4" />, color: "text-blue-600 bg-blue-50" },
+    { value: "PENDING", label: "รอตรวจสอบ", count: totalPending, icon: <Clock className="h-4 w-4" />, color: "text-amber-600 bg-amber-50" },
+    { value: "APPROVED", label: "อนุมัติแล้ว", count: totalApproved, icon: <ShieldCheck className="h-4 w-4" />, color: "text-green-600 bg-green-50" },
+    { value: "REJECTED", label: "ปฏิเสธแล้ว", count: totalRejected, icon: <AlertTriangle className="h-4 w-4" />, color: "text-red-600 bg-red-50" },
   ];
 
   function goToPage(p: number) {
@@ -200,24 +210,22 @@ export function StudentDetailClient({
           เอกสารเครื่องมือวิจัย
         </h2>
 
-        {/* Status summary */}
+        {/* Status filter cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatusCard icon={<FileText className="h-4 w-4" />} label="ทั้งหมด" value={totalDocs} color="text-blue-600 bg-blue-50" />
-          <StatusCard icon={<Clock className="h-4 w-4" />} label="รอตรวจสอบ" value={totalPending} color="text-amber-600 bg-amber-50" />
-          <StatusCard icon={<ShieldCheck className="h-4 w-4" />} label="อนุมัติแล้ว" value={totalApproved} color="text-green-600 bg-green-50" />
-          <StatusCard icon={<AlertTriangle className="h-4 w-4" />} label="ปฏิเสธแล้ว" value={totalRejected} color="text-red-600 bg-red-50" />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Suspense>
-            <FilterPills
-              paramName="status"
-              options={STATUS_OPTIONS}
-              selected={currentStatus}
-              basePath={basePath}
-              resetParams={["page"]}
-            />
-          </Suspense>
+          {STATUS_CARDS.map((card) => (
+            <button
+              key={card.value}
+              type="button"
+              onClick={() => setStatusFilter(card.value)}
+              className={`rounded-lg border p-3 flex items-center gap-3 transition-colors ${card.color} ${currentStatus === card.value ? "ring-2 ring-primary ring-offset-1" : "opacity-70 hover:opacity-100"}`}
+            >
+              <div className="shrink-0">{card.icon}</div>
+              <div className="text-left">
+                <p className="text-xl font-bold leading-none">{card.count}</p>
+                <p className="text-xs mt-0.5 opacity-80">{card.label}</p>
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* Select all */}
@@ -391,20 +399,6 @@ function Pagination({
       >
         ถัดไป
       </Button>
-    </div>
-  );
-}
-
-/* ---------- Status card ---------- */
-
-function StatusCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
-  return (
-    <div className={`rounded-lg border p-3 flex items-center gap-3 ${color}`}>
-      <div className="shrink-0">{icon}</div>
-      <div>
-        <p className="text-xl font-bold leading-none">{value}</p>
-        <p className="text-xs mt-0.5 opacity-80">{label}</p>
-      </div>
     </div>
   );
 }
