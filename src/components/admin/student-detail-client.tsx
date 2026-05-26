@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { Suspense, useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -18,13 +18,12 @@ import { StatusBadge } from "@/components/status-badge";
 import { FilterPills } from "@/components/filter-pills";
 import {
   approveDocument,
-  approveAllStudentPending,
   rejectDocument,
   removeDocument,
   type UploadDocumentState,
 } from "@/actions/document-actions";
 import type { ThesisData } from "@/lib/auth/cmu-oauth";
-import { ArrowLeft, Check, CheckCircle, XCircle, Trash2, FileText, Clock, ShieldCheck, AlertTriangle, Download } from "lucide-react";
+import { ArrowLeft, Check, XCircle, Trash2, FileText, Clock, ShieldCheck, AlertTriangle, Download } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -78,6 +77,27 @@ export function StudentDetailClient({
   const searchParams = useSearchParams();
   const basePath = `/admin/students/${encodeURIComponent(student.id)}`;
 
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const pendingDocs = useMemo(() => documents.filter((d) => d.status === "PENDING"), [documents]);
+
+  function toggleDoc(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === pendingDocs.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(pendingDocs.map((d) => d.id)));
+    }
+  }
+
   const STATUS_OPTIONS = [
     { label: "ทั้งหมด", value: "ALL" },
     { label: "รอตรวจสอบ", value: "PENDING" },
@@ -95,6 +115,8 @@ export function StudentDetailClient({
     router.push(`${basePath}?${params.toString()}`);
   }
 
+  const allChecked = pendingDocs.length > 0 && selected.size === pendingDocs.length;
+
   return (
     <div className="space-y-6">
       {/* Back link */}
@@ -107,18 +129,13 @@ export function StudentDetailClient({
       </Link>
 
       {/* Student header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">
-            {student.name}
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            รหัสนักศึกษา <span className="font-mono font-medium">{student.studentId}</span>
-          </p>
-        </div>
-        {totalPending > 0 && (
-          <ApproveAllButton userId={student.id} studentName={student.name} count={totalPending} />
-        )}
+      <div>
+        <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">
+          {student.name}
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          รหัสนักศึกษา <span className="font-mono font-medium">{student.studentId}</span>
+        </p>
       </div>
 
       {/* Profile card */}
@@ -179,11 +196,9 @@ export function StudentDetailClient({
 
       {/* Documents section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
-            เอกสารเครื่องมือวิจัย
-          </h2>
-        </div>
+        <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
+          เอกสารเครื่องมือวิจัย
+        </h2>
 
         {/* Status summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -205,6 +220,26 @@ export function StudentDetailClient({
           </Suspense>
         </div>
 
+        {/* Select all */}
+        {pendingDocs.length > 0 && (
+          <div className="flex items-center gap-3 px-1">
+            <label className="inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allChecked}
+                onChange={toggleAll}
+                className="rounded border-muted-foreground/40 accent-primary"
+              />
+              เลือกทั้งหมดที่รอตรวจ ({pendingDocs.length})
+            </label>
+            {selected.size > 0 && (
+              <span className="text-xs font-medium text-primary">
+                เลือกแล้ว {selected.size} รายการ
+              </span>
+            )}
+          </div>
+        )}
+
         {documents.length === 0 ? (
           <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
             ยังไม่มีเอกสาร
@@ -212,7 +247,12 @@ export function StudentDetailClient({
         ) : (
           <div className="space-y-3">
             {documents.map((doc) => (
-              <DocumentCard key={doc.id} doc={doc} />
+              <DocumentCard
+                key={doc.id}
+                doc={doc}
+                selected={selected.has(doc.id)}
+                onToggle={() => toggleDoc(doc.id)}
+              />
             ))}
           </div>
         )}
@@ -221,9 +261,101 @@ export function StudentDetailClient({
           <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
         )}
       </div>
+
+      {/* Sticky bottom action bar */}
+      {selected.size > 0 && (
+        <BulkApproveBar selected={selected} onClear={() => setSelected(new Set())} />
+      )}
     </div>
   );
 }
+
+/* ---------- Bulk approve bar + confirm ---------- */
+
+function BulkApproveBar({ selected, onClear }: { selected: Set<string>; onClear: () => void }) {
+  const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+
+  function handleApprove() {
+    startTransition(async () => {
+      let ok = 0;
+      let fail = 0;
+      for (const id of selected) {
+        const r = await approveDocument(id);
+        if (r.error) fail++;
+        else ok++;
+      }
+      if (fail > 0) toast.error(`อนุมัติไม่สำเร็จ ${fail} รายการ`);
+      if (ok > 0) toast.success(`อนุมัติสำเร็จ ${ok} รายการ`);
+      setOpen(false);
+      onClear();
+    });
+  }
+
+  return (
+    <>
+      <div className="fixed bottom-0 inset-x-0 z-50 border-t bg-background/95 backdrop-blur shadow-lg">
+        <div className="max-w-3xl mx-auto flex items-center justify-between px-4 py-4">
+          <span className="text-sm font-medium">
+            เลือก <span className="text-primary">{selected.size}</span> รายการ
+          </span>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClear}
+              className="rounded"
+            >
+              ยกเลิกเลือก
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="rounded-lg h-11 px-6 text-sm font-semibold"
+            >
+              <Check className="h-5 w-5 mr-2" />
+              อนุมัติที่เลือก ({selected.size})
+            </Button>
+          </div>
+        </div>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-bold tracking-tight">
+              ยืนยันการอนุมัติ
+            </DialogTitle>
+            <DialogDescription>
+              ต้องการอนุมัติเอกสาร {selected.size} รายการที่เลือกหรือไม่? นักศึกษาจะได้รับแจ้งทางอีเมล
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={pending}
+              className="rounded"
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              onClick={handleApprove}
+              disabled={pending}
+              className="rounded font-semibold"
+            >
+              {pending ? "กำลังอนุมัติ..." : `อนุมัติ ${selected.size} รายการ`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/* ---------- Pagination ---------- */
 
 function Pagination({
   page,
@@ -263,6 +395,8 @@ function Pagination({
   );
 }
 
+/* ---------- Status card ---------- */
+
 function StatusCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   return (
     <div className={`rounded-lg border p-3 flex items-center gap-3 ${color}`}>
@@ -275,7 +409,9 @@ function StatusCard({ icon, label, value, color }: { icon: React.ReactNode; labe
   );
 }
 
-function DocumentCard({ doc }: { doc: DocumentRow }) {
+/* ---------- Document card ---------- */
+
+function DocumentCard({ doc, selected, onToggle }: { doc: DocumentRow; selected: boolean; onToggle: () => void }) {
   const borderColor =
     doc.status === "PENDING"
       ? "border-l-amber-400"
@@ -284,22 +420,32 @@ function DocumentCard({ doc }: { doc: DocumentRow }) {
       : "border-l-red-400";
 
   return (
-    <div className={`rounded-lg border bg-card border-l-4 ${borderColor} overflow-hidden`}>
+    <div className={`rounded-lg border bg-card border-l-4 ${borderColor} ${selected ? "bg-primary/5" : ""} overflow-hidden`}>
       <div className="p-4 sm:p-5">
-        {/* Top row: title + status */}
+        {/* Top row: checkbox + title + status */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h3 className="font-medium text-sm sm:text-base wrap-break-word">{doc.title}</h3>
-            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
-              <a
-                href={`${BASE_PATH}/api/documents/${doc.id}/file`}
-                download
-                className="inline-flex items-center gap-1 text-primary hover:underline"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                {doc.originalName}
-              </a>
-              <span>ยื่นเมื่อ {formatDateTime(doc.createdAt)}</span>
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            {doc.status === "PENDING" && (
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={onToggle}
+                className="rounded border-muted-foreground/40 accent-primary mt-1"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <h3 className="font-medium text-sm sm:text-base wrap-break-word">{doc.title}</h3>
+              <div className="flex flex-wrap items-center gap-3 mt-2 text-muted-foreground">
+                <a
+                  href={`${BASE_PATH}/api/documents/${doc.id}/file`}
+                  download
+                  className="inline-flex items-center gap-1.5 text-primary hover:underline rounded-md border border-primary/20 hover:bg-primary/5 px-3 py-1.5 text-sm font-medium transition-colors"
+                >
+                  <FileText className="h-4 w-4" />
+                  {doc.originalName}
+                </a>
+                <span>ยื่นเมื่อ {formatDateTime(doc.createdAt)}</span>
+              </div>
             </div>
           </div>
           <div className="shrink-0">
@@ -330,7 +476,6 @@ function DocumentCard({ doc }: { doc: DocumentRow }) {
         <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t">
           {doc.status === "PENDING" && (
             <>
-              <ApproveButton documentId={doc.id} />
               <RejectButton documentId={doc.id} />
               <div className="flex-1" />
               <RemoveButton documentId={doc.id} />
@@ -362,30 +507,7 @@ function DocumentCard({ doc }: { doc: DocumentRow }) {
   );
 }
 
-function ApproveButton({ documentId }: { documentId: string }) {
-  const [pending, startTransition] = useTransition();
-
-  function handleApprove() {
-    startTransition(async () => {
-      const result = await approveDocument(documentId);
-      if (result.error) toast.error(result.error);
-      else toast.success("อนุมัติเอกสารสำเร็จ");
-    });
-  }
-
-  return (
-    <Button
-      type="button"
-      size="sm"
-      onClick={handleApprove}
-      disabled={pending}
-      className="rounded-md h-8 text-xs"
-    >
-      <Check className="h-3.5 w-3.5 mr-1" />
-      {pending ? "กำลังอนุมัติ..." : "อนุมัติ"}
-    </Button>
-  );
-}
+/* ---------- Reject ---------- */
 
 function RejectButton({ documentId }: { documentId: string }) {
   const [open, setOpen] = useState(false);
@@ -462,6 +584,8 @@ function RejectButton({ documentId }: { documentId: string }) {
   );
 }
 
+/* ---------- Remove ---------- */
+
 function RemoveButton({ documentId }: { documentId: string }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -526,78 +650,6 @@ function RemoveButton({ documentId }: { documentId: string }) {
                 {pending ? "กำลังลบ..." : "ลบ"}
               </Button>
             </form>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function ApproveAllButton({
-  userId,
-  studentName,
-  count,
-}: {
-  userId: string;
-  studentName: string;
-  count: number;
-}) {
-  const [open, setOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
-
-  function handleApproveAll() {
-    startTransition(async () => {
-      const result = await approveAllStudentPending(userId);
-      if (result.error) toast.error(result.error);
-      else {
-        toast.success(
-          `อนุมัติเอกสาร ${studentName} ทั้งหมดสำเร็จ (${result.count} รายการ)`,
-        );
-        setOpen(false);
-      }
-    });
-  }
-
-  return (
-    <>
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={() => setOpen(true)}
-        className="rounded-md"
-      >
-        <CheckCircle className="h-3.5 w-3.5 mr-1" />
-        อนุมัติทั้งหมด ({count})
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md rounded-lg">
-          <DialogHeader>
-            <DialogTitle className="font-heading font-bold tracking-tight">
-              อนุมัติเอกสารทั้งหมด
-            </DialogTitle>
-            <DialogDescription>
-              ต้องการอนุมัติเอกสารของ {studentName} ทั้งหมด {count} รายการหรือไม่? นักศึกษาจะได้รับแจ้งทางอีเมล
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={pending}
-              className="rounded-md"
-            >
-              ยกเลิก
-            </Button>
-            <Button
-              type="button"
-              onClick={handleApproveAll}
-              disabled={pending}
-              className="rounded-md font-semibold"
-            >
-              {pending ? "กำลังอนุมัติ..." : `อนุมัติ ${count} รายการ`}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

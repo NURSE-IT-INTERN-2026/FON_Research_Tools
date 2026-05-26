@@ -230,8 +230,8 @@ export function DocumentsClient({
                         </td>
                         <td className="px-4 py-3">{first.title}</td>
                         <td className="px-3 py-3 text-center">
-                          <a href={`${BASE_PATH}/api/documents/${first.id}/file`} download title={first.originalName}>
-                            <Download className="h-4 w-4 text-muted-foreground hover:text-primary mx-auto" />
+                          <a href={`${BASE_PATH}/api/documents/${first.id}/file`} download title={first.originalName} className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-muted transition-colors">
+                            <Download className="h-4 w-4 text-muted-foreground hover:text-primary" />
                           </a>
                         </td>
                         <td className="px-4 py-3">
@@ -273,8 +273,8 @@ export function DocumentsClient({
                           <td className="px-4 py-3" />
                           <td className="px-4 py-3">{doc.title}</td>
                           <td className="px-3 py-3 text-center">
-                            <a href={`${BASE_PATH}/api/documents/${doc.id}/file`} download title={doc.originalName}>
-                              <Download className="h-4 w-4 text-muted-foreground hover:text-primary mx-auto" />
+                            <a href={`${BASE_PATH}/api/documents/${doc.id}/file`} download title={doc.originalName} className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-muted transition-colors">
+                              <Download className="h-4 w-4 text-muted-foreground hover:text-primary" />
                             </a>
                           </td>
                           <td className="px-4 py-3">
@@ -376,26 +376,62 @@ function ActionButtons({ doc, documents }: { doc: DocumentRow; documents: Docume
 }
 
 function ApproveButton({ documentId }: { documentId: string }) {
+  const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function handleApprove() {
     startTransition(async () => {
       const result = await approveDocument(documentId);
       if (result.error) toast.error(result.error);
-      else toast.success("อนุมัติเอกสารสำเร็จ");
+      else {
+        toast.success("อนุมัติเอกสารสำเร็จ");
+        setOpen(false);
+      }
     });
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleApprove}
-      disabled={pending}
-      title="อนุมัติ"
-      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
-    >
-      <Check className="h-4 w-4" />
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        title="อนุมัติ"
+        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-green-600 hover:bg-green-50 transition-colors"
+      >
+        <Check className="h-4 w-4" />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-bold tracking-tight">
+              ยืนยันการอนุมัติ
+            </DialogTitle>
+            <DialogDescription>
+              ต้องการอนุมัติเอกสารนี้หรือไม่? นักศึกษาจะได้รับแจ้งทางอีเมล
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={pending}
+              className="rounded"
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              onClick={handleApprove}
+              disabled={pending}
+              className="rounded font-semibold"
+            >
+              {pending ? "กำลังอนุมัติ..." : "อนุมัติ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -542,26 +578,62 @@ function RemoveButton({ documentId }: { documentId: string }) {
 }
 
 function ApproveAllStudentButton({ userId, studentName }: { userId: string; studentName: string }) {
+  const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function handleApproveAll() {
     startTransition(async () => {
       const result = await approveAllStudentPending(userId);
       if (result.error) toast.error(result.error);
-      else toast.success(`อนุมัติเอกสาร ${studentName} ทั้งหมดสำเร็จ (${result.count} รายการ)`);
+      else {
+        toast.success(`อนุมัติเอกสาร ${studentName} ทั้งหมดสำเร็จ (${result.count} รายการ)`);
+        setOpen(false);
+      }
     });
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleApproveAll}
-      disabled={pending}
-      title={`อนุมัติ ${studentName} ทั้งหมด`}
-      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
-    >
-      <CheckCircle className="h-4 w-4" />
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        title={`อนุมัติ ${studentName} ทั้งหมด`}
+        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-green-600 hover:bg-green-50 transition-colors"
+      >
+        <CheckCircle className="h-4 w-4" />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-bold tracking-tight">
+              อนุมัติเอกสารทั้งหมด
+            </DialogTitle>
+            <DialogDescription>
+              ต้องการอนุมัติเอกสารของ {studentName} ทั้งหมดหรือไม่? นักศึกษาจะได้รับแจ้งทางอีเมล
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={pending}
+              className="rounded"
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              onClick={handleApproveAll}
+              disabled={pending}
+              className="rounded font-semibold"
+            >
+              {pending ? "กำลังอนุมัติ..." : "อนุมัติทั้งหมด"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -653,9 +725,9 @@ function DocumentCard({ doc, documents }: { doc: DocumentRow; documents: Documen
           href={`${BASE_PATH}/api/documents/${doc.id}/file`}
           download
           title={doc.originalName}
-          className="inline-flex items-center gap-1 text-primary hover:underline ml-auto"
+          className="inline-flex items-center gap-1.5 text-primary hover:underline ml-auto rounded-md border border-primary/20 hover:bg-primary/5 px-2.5 py-1 text-sm font-medium transition-colors"
         >
-          <Download className="h-3.5 w-3.5" />
+          <Download className="h-4 w-4" />
           ไฟล์
         </a>
       </div>
