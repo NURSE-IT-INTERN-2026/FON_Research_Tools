@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { Suspense, useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/status-badge";
+import { FilterPills } from "@/components/filter-pills";
 import {
   approveDocument,
   approveAllStudentPending,
@@ -47,16 +49,47 @@ type StudentDetailClientProps = {
   student: StudentInfo;
   thesis: ThesisData;
   documents: DocumentRow[];
+  page: number;
+  hasMore: boolean;
+  currentStatus: string;
+  totalDocs: number;
+  totalPending: number;
+  totalApproved: number;
+  totalRejected: number;
 };
 
 export function StudentDetailClient({
   student,
   thesis,
   documents,
+  page,
+  hasMore,
+  currentStatus,
+  totalDocs,
+  totalPending,
+  totalApproved,
+  totalRejected,
 }: StudentDetailClientProps) {
-  const pendingCount = documents.filter((d) => d.status === "PENDING").length;
-  const approvedCount = documents.filter((d) => d.status === "APPROVED").length;
-  const rejectedCount = documents.filter((d) => d.status === "REJECTED").length;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const basePath = `/admin/students/${encodeURIComponent(student.id)}`;
+
+  const STATUS_OPTIONS = [
+    { label: "ทั้งหมด", value: "ALL" },
+    { label: "รอตรวจสอบ", value: "PENDING" },
+    { label: "อนุมัติแล้ว", value: "APPROVED" },
+    { label: "ปฏิเสธแล้ว", value: "REJECTED" },
+  ];
+
+  function goToPage(p: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (p <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(p));
+    }
+    router.push(`${basePath}?${params.toString()}`);
+  }
 
   return (
     <div className="space-y-6">
@@ -79,8 +112,8 @@ export function StudentDetailClient({
             รหัสนักศึกษา <span className="font-mono font-medium">{student.studentId}</span>
           </p>
         </div>
-        {pendingCount > 0 && (
-          <ApproveAllButton userId={student.id} studentName={student.name} count={pendingCount} />
+        {totalPending > 0 && (
+          <ApproveAllButton userId={student.id} studentName={student.name} count={totalPending} />
         )}
       </div>
 
@@ -150,10 +183,22 @@ export function StudentDetailClient({
 
         {/* Status summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatusCard icon={<FileText className="h-4 w-4" />} label="ทั้งหมด" value={documents.length} color="text-blue-600 bg-blue-50" />
-          <StatusCard icon={<Clock className="h-4 w-4" />} label="รอตรวจสอบ" value={pendingCount} color="text-amber-600 bg-amber-50" />
-          <StatusCard icon={<ShieldCheck className="h-4 w-4" />} label="อนุมัติแล้ว" value={approvedCount} color="text-green-600 bg-green-50" />
-          <StatusCard icon={<AlertTriangle className="h-4 w-4" />} label="ปฏิเสธแล้ว" value={rejectedCount} color="text-red-600 bg-red-50" />
+          <StatusCard icon={<FileText className="h-4 w-4" />} label="ทั้งหมด" value={totalDocs} color="text-blue-600 bg-blue-50" />
+          <StatusCard icon={<Clock className="h-4 w-4" />} label="รอตรวจสอบ" value={totalPending} color="text-amber-600 bg-amber-50" />
+          <StatusCard icon={<ShieldCheck className="h-4 w-4" />} label="อนุมัติแล้ว" value={totalApproved} color="text-green-600 bg-green-50" />
+          <StatusCard icon={<AlertTriangle className="h-4 w-4" />} label="ปฏิเสธแล้ว" value={totalRejected} color="text-red-600 bg-red-50" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Suspense>
+            <FilterPills
+              paramName="status"
+              options={STATUS_OPTIONS}
+              selected={currentStatus}
+              basePath={basePath}
+              resetParams={["page"]}
+            />
+          </Suspense>
         </div>
 
         {documents.length === 0 ? (
@@ -167,7 +212,49 @@ export function StudentDetailClient({
             ))}
           </div>
         )}
+
+        {(page > 1 || hasMore) && (
+          <Pagination page={page} hasMore={hasMore} onPageChange={goToPage} />
+        )}
       </div>
+    </div>
+  );
+}
+
+function Pagination({
+  page,
+  hasMore,
+  onPageChange,
+}: {
+  page: number;
+  hasMore: boolean;
+  onPageChange: (p: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={page <= 1}
+        onClick={() => onPageChange(page - 1)}
+        className="rounded text-xs"
+      >
+        ก่อนหน้า
+      </Button>
+      <span className="text-xs text-muted-foreground px-2">
+        หน้า {page} / {hasMore ? "…" : page}
+      </span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={!hasMore}
+        onClick={() => onPageChange(page + 1)}
+        className="rounded text-xs"
+      >
+        ถัดไป
+      </Button>
     </div>
   );
 }

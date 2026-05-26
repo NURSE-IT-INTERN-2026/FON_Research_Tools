@@ -1,15 +1,49 @@
 import db from "@/lib/db";
+import { UsersClient } from "@/components/admin/users-client";
 
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: "เจ้าหน้าที่",
-  STUDENT: "นักศึกษา",
-};
+const PAGE_SIZE = 20;
 
-export default async function UsersPage() {
-  const users = await db.profile.findMany({
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; q?: string; role?: string }>;
+}) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
+  const q = params.q?.trim();
+  const roleFilter = params.role;
+
+  const where = {
+    AND: [
+      roleFilter ? { userRole: { role: roleFilter as "ADMIN" | "STUDENT" } } : {},
+      q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" as const } },
+              { email: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {},
+    ],
+  };
+
+  const rows = await db.profile.findMany({
+    where,
     include: { userRole: true },
     orderBy: { createdAt: "asc" },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE + 1,
   });
+
+  const hasMore = rows.length > PAGE_SIZE;
+  const users = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+
+  const serialized = users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.userRole?.role ?? "",
+  }));
 
   return (
     <div className="space-y-6">
@@ -18,59 +52,14 @@ export default async function UsersPage() {
         <p className="text-muted-foreground mt-3">บัญชีที่ลงทะเบียนทั้งหมด</p>
       </div>
 
-      {users.length === 0 ? (
-        <div className="rounded border border-dashed p-10 text-center text-muted-foreground">
-          ยังไม่มีผู้ใช้งานในระบบ
-        </div>
-      ) : (
-        <>
-          {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto rounded border bg-card">
-            <table className="w-full min-w-135 text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">ชื่อ</th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">อีเมล</th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">บทบาท</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-t transition-colors hover:bg-muted/30"
-                  >
-                    <td className="px-4 py-3 font-medium">{user.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {user.email}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded bg-muted px-2 py-0.5 text-xs font-semibold">
-                        {ROLE_LABELS[user.userRole?.role ?? ""] ?? "—"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <div className="md:hidden space-y-3">
-            {users.map((user) => (
-              <div key={user.id} className="rounded border bg-card p-4">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-sm">{user.name}</p>
-                  <span className="rounded bg-muted px-2 py-0.5 text-xs font-semibold">
-                    {ROLE_LABELS[user.userRole?.role ?? ""] ?? "—"}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 truncate">{user.email}</p>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+      <UsersClient
+        key={(q ?? "") + (roleFilter ?? "")}
+        users={serialized}
+        currentQuery={q ?? ""}
+        currentRole={roleFilter ?? "ALL"}
+        page={page}
+        hasMore={hasMore}
+      />
     </div>
   );
 }
