@@ -319,19 +319,13 @@ export function DocumentsClient({
 
               return (
                 <Fragment key={userId}>
-                  <DocumentCard doc={first} documents={documents} />
-                  {rest.length > 0 && (
-                    <div className="flex justify-center">
-                      <button
-                        type="button"
-                        onClick={() => toggleStudent(userId)}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline py-1"
-                      >
-                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                        มีอีก {rest.length} ไฟล์
-                      </button>
-                    </div>
-                  )}
+                  <DocumentCard
+                    doc={first}
+                    documents={documents}
+                    extraFiles={rest.length}
+                    isExpanded={isExpanded}
+                    onToggleExpand={() => toggleStudent(userId)}
+                  />
                   {isExpanded && rest.map((doc) => (
                     <DocumentCard key={doc.id} doc={doc} documents={documents} />
                   ))}
@@ -712,7 +706,19 @@ const STATUS_BORDER: Record<string, string> = {
   REJECTED: "border-l-red-500",
 };
 
-function DocumentCard({ doc, documents }: { doc: DocumentRow; documents: DocumentRow[] }) {
+function DocumentCard({
+  doc,
+  documents,
+  extraFiles,
+  isExpanded,
+  onToggleExpand,
+}: {
+  doc: DocumentRow;
+  documents: DocumentRow[];
+  extraFiles?: number;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+}) {
   return (
     <div className={`rounded border bg-card border-l-4 ${STATUS_BORDER[doc.status] ?? ""} p-4 space-y-3`}>
       <div className="flex items-start justify-between gap-2">
@@ -744,6 +750,16 @@ function DocumentCard({ doc, documents }: { doc: DocumentRow; documents: Documen
         </a>
       </div>
       <ActionButtons doc={doc} documents={documents} />
+      {extraFiles != null && extraFiles > 0 && (
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+        >
+          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          มีอีก {extraFiles} ไฟล์
+        </button>
+      )}
     </div>
   );
 }
