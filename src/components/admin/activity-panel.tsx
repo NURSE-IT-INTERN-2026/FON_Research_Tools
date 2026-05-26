@@ -56,7 +56,7 @@ function ActivityPanel({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-96 sm:max-w-md p-0 flex flex-col">
+      <SheetContent className="w-full sm:w-96 sm:max-w-md p-0 flex flex-col">
         <SheetHeader className="px-5 pt-5 pb-3 border-b">
           <SheetTitle className="font-heading font-bold tracking-tight text-left">
             กิจกรรมล่าสุด

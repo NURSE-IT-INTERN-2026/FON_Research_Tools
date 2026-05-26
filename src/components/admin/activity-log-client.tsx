@@ -108,14 +108,14 @@ function DateRangeFilter({
         type="date"
         value={from}
         onChange={(e) => updateDate("from", e.target.value)}
-        className="h-8 rounded text-xs w-auto"
+        className="h-8 rounded text-xs w-full sm:w-auto"
       />
       <span className="text-xs text-muted-foreground">ถึง</span>
       <Input
         type="date"
         value={to}
         onChange={(e) => updateDate("to", e.target.value)}
-        className="h-8 rounded text-xs w-auto"
+        className="h-8 rounded text-xs w-full sm:w-auto"
       />
       {(from || to) && (
         <Button
@@ -204,7 +204,7 @@ export function ActivityLogClient({ logs, users, page, hasMore, currentFilters }
         <Suspense>
           <SearchBar initialQuery={currentFilters.q ?? ""} />
         </Suspense>
-        <div className="flex flex-wrap items-start gap-6">
+        <div className="flex flex-wrap items-start gap-4 sm:gap-6">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">การดำเนินการ</p>
             <FilterPills
@@ -265,18 +265,20 @@ export function ActivityLogClient({ logs, users, page, hasMore, currentFilters }
                 <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded ${colorClass}`}>
                   <Icon className="h-4 w-4" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm">
-                    <span className="font-semibold">{log.userName}</span>{" "}
-                    <span className="text-muted-foreground">{ACTION_LABELS[log.action] ?? log.action}</span>
-                  </p>
-                  {log.targetLabel && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{log.targetLabel}</p>
-                  )}
+                <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm">
+                      <span className="font-semibold">{log.userName}</span>{" "}
+                      <span className="text-muted-foreground">{ACTION_LABELS[log.action] ?? log.action}</span>
+                    </p>
+                    {log.targetLabel && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{log.targetLabel}</p>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground font-mono">
+                    {formatDateTime(log.createdAt)}
+                  </span>
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground font-mono pt-0.5">
-                  {formatDateTime(log.createdAt)}
-                </span>
               </div>
             );
           })}

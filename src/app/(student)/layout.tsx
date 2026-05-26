@@ -20,7 +20,7 @@ export default async function StudentLayout({
         navItems={STUDENT_NAV}
         userEmail={email}
       />
-      <main className="flex-1 pt-14 p-4 lg:p-6">{children}</main>
+      <main className="flex-1 pt-14 px-4 pb-4 lg:px-6 lg:pb-6">{children}</main>
     </div>
   );
 }

@@ -103,7 +103,7 @@ export function DocumentsClient({
     <div className="space-y-4">
       {/* Toolbar: search + filter */}
       <div className="space-y-3">
-        <div className="relative max-w-md">
+        <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchInput}
@@ -143,74 +143,84 @@ export function DocumentsClient({
           ไม่พบเอกสาร
         </div>
       ) : (
-        <div className="overflow-x-auto rounded border bg-card">
-          <table className="w-full min-w-140 text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  ลำดับ
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  ชื่อนักศึกษา
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  รหัสนักศึกษา
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  ชื่อเครื่องมือวิจัย
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  สถานะ
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  วันที่อัปโหลด
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  วันที่อนุมัติ
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  การดำเนินการ
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((doc, i) => (
-                <tr
-                  key={doc.id}
-                  className="border-t transition-colors hover:bg-muted/30"
-                >
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {(page - 1) * 10 + i + 1}
-                  </td>
-                  <td className="px-4 py-3 font-medium">
-                    <Link
-                      href={`/admin/students/${doc.userId}`}
-                      className="text-primary hover:underline"
-                    >
-                      {doc.studentName}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
-                    {doc.studentId}
-                  </td>
-                  <td className="px-4 py-3">{doc.title}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={doc.status} />
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
-                    {formatDateTime(doc.createdAt)}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
-                    {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <ActionButtons doc={doc} documents={documents} />
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto rounded border bg-card">
+            <table className="w-full min-w-140 text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ชื่อนักศึกษา
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    รหัสนักศึกษา
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ชื่อเครื่องมือวิจัย
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    สถานะ
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    วันที่อัปโหลด
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    วันที่อนุมัติ
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    การดำเนินการ
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {documents.map((doc, i) => (
+                  <tr
+                    key={doc.id}
+                    className="border-t transition-colors hover:bg-muted/30"
+                  >
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {(page - 1) * 10 + i + 1}
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      <Link
+                        href={`/admin/students/${doc.userId}`}
+                        className="text-primary hover:underline"
+                      >
+                        {doc.studentName}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
+                      {doc.studentId}
+                    </td>
+                    <td className="px-4 py-3">{doc.title}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={doc.status} />
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {formatDateTime(doc.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <ActionButtons doc={doc} documents={documents} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {documents.map((doc) => (
+              <DocumentCard key={doc.id} doc={doc} documents={documents} />
+            ))}
+          </div>
+        </>
       )}
 
       {/* Pagination */}
@@ -438,6 +448,39 @@ function ApproveAllStudentButton({ userId, studentName }: { userId: string; stud
       <CheckCircle className="h-3.5 w-3.5 mr-1" />
       {pending ? "..." : "อนุมัติทั้งหมด"}
     </Button>
+  );
+}
+
+const STATUS_BORDER: Record<string, string> = {
+  PENDING: "border-l-amber-500",
+  APPROVED: "border-l-green-500",
+  REJECTED: "border-l-red-500",
+};
+
+function DocumentCard({ doc, documents }: { doc: DocumentRow; documents: DocumentRow[] }) {
+  return (
+    <div className={`rounded border bg-card border-l-4 ${STATUS_BORDER[doc.status] ?? ""} p-4 space-y-3`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-medium text-sm leading-snug">{doc.title}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <Link
+              href={`/admin/students/${doc.userId}`}
+              className="text-xs text-primary hover:underline"
+            >
+              {doc.studentName}
+            </Link>
+            <span className="text-xs text-muted-foreground font-mono">{doc.studentId}</span>
+          </div>
+        </div>
+        <StatusBadge status={doc.status} />
+      </div>
+      <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+        <span>อัปโหลด: {formatDateTime(doc.createdAt)}</span>
+        {doc.approvedAt && <span>อนุมัติ: {formatDateTime(doc.approvedAt)}</span>}
+      </div>
+      <ActionButtons doc={doc} documents={documents} />
+    </div>
   );
 }
 

@@ -111,7 +111,7 @@ export function AdminsClient({ admins }: { admins: AdminRow[] }) {
       <div className="flex justify-end">
         <Button
           onClick={() => setModalOpen(true)}
-          className="rounded font-semibold"
+          className="rounded font-semibold w-full sm:w-auto"
         >
           <Plus className="mr-1.5 h-4 w-4" />
           เพิ่มผู้ดูแลระบบ
@@ -129,33 +129,46 @@ export function AdminsClient({ admins }: { admins: AdminRow[] }) {
           ยังไม่มีผู้ดูแลระบบ
         </div>
       ) : (
-        <div className="overflow-x-auto rounded border bg-card">
-          <table className="w-full min-w-135 text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  ชื่อ
-                </th>
-                <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  อีเมล
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {admins.map((admin) => (
-                <tr
-                  key={admin.id}
-                  className="border-t transition-colors hover:bg-muted/30"
-                >
-                  <td className="px-4 py-3 font-medium">{admin.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {admin.email}
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto rounded border bg-card">
+            <table className="w-full min-w-135 text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ชื่อ
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    อีเมล
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {admins.map((admin) => (
+                  <tr
+                    key={admin.id}
+                    className="border-t transition-colors hover:bg-muted/30"
+                  >
+                    <td className="px-4 py-3 font-medium">{admin.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {admin.email}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {admins.map((admin) => (
+              <div key={admin.id} className="rounded border bg-card p-4">
+                <p className="font-medium text-sm">{admin.name}</p>
+                <p className="text-xs text-muted-foreground mt-1 truncate">{admin.email}</p>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

@@ -9,7 +9,7 @@ type StatCardProps = {
 };
 
 export function StatCard({ icon: Icon, value, label, href }: StatCardProps) {
-  const className = "group relative overflow-hidden rounded border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-md";
+  const className = "group relative overflow-hidden rounded border bg-card p-4 sm:p-5 transition-all hover:border-primary/30 hover:shadow-md";
 
   const inner = (
     <>

@@ -74,7 +74,7 @@ export default async function AdminDashboardPage() {
               {recentActivity.map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between py-3 first:pt-0 last:pb-0 gap-1 sm:gap-0"
                 >
                   <p className="text-sm">
                     <span className="font-semibold">
