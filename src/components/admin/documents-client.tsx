@@ -41,6 +41,7 @@ type DocumentRow = {
   status: string;
   createdAt: string;
   approvedAt: string | null;
+  approvedBy: string | null;
 };
 
 type DocumentsClientProps = {
@@ -201,6 +202,9 @@ export function DocumentsClient({
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     วันที่อนุมัติ
                   </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ผู้อนุมัติ
+                  </th>
                   <th className="px-3 py-3 text-center font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     ดำเนินการ
                   </th>
@@ -245,13 +249,16 @@ export function DocumentsClient({
                         <td className="px-4 py-3 text-muted-foreground text-xs">
                           {first.approvedAt ? formatDateTime(first.approvedAt) : "—"}
                         </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {first.approvedBy ?? "—"}
+                        </td>
                         <td className="px-3 py-3">
                           <ActionButtons doc={first} documents={documents} />
                         </td>
                       </tr>
                       {rest.length > 0 && (
                         <tr className="border-t bg-muted/20">
-                          <td colSpan={9} className="px-4 py-1.5">
+                          <td colSpan={10} className="px-4 py-1.5">
                             <button
                               type="button"
                               onClick={() => toggleStudent(userId)}
@@ -287,6 +294,9 @@ export function DocumentsClient({
                           </td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">
                             {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">
+                            {doc.approvedBy ?? "—"}
                           </td>
                           <td className="px-3 py-3">
                             <ActionButtons doc={doc} documents={documents} />
@@ -722,7 +732,7 @@ function DocumentCard({ doc, documents }: { doc: DocumentRow; documents: Documen
       </div>
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span>อัปโหลด: {formatDateTime(doc.createdAt)}</span>
-        {doc.approvedAt && <span>อนุมัติ: {formatDateTime(doc.approvedAt)}</span>}
+        {doc.approvedAt && <span>อนุมัติ: {formatDateTime(doc.approvedAt)}{doc.approvedBy ? ` (${doc.approvedBy})` : ""}</span>}
         <a
           href={`${BASE_PATH}/api/documents/${doc.id}/file`}
           download

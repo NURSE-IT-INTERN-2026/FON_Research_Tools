@@ -64,6 +64,7 @@ export default async function DocumentsPage({
     status: doc.status,
     createdAt: doc.createdAt.toISOString(),
     approvedAt: doc.approvedAt?.toISOString() ?? null,
+    approvedBy: doc.approvedBy,
   }));
 
   return (
