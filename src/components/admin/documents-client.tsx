@@ -24,8 +24,10 @@ import {
   removeDocument,
   type UploadDocumentState,
 } from "@/actions/document-actions";
-import { CheckCircle, XCircle, Trash2, Check, Search, X, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, Check, Search, X, ChevronDown, ChevronUp, BookOpen, Download } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 type DocumentRow = {
   id: string;
@@ -34,6 +36,8 @@ type DocumentRow = {
   originalName: string;
   studentName: string;
   studentId: string;
+  thesisTitleTh: string | null;
+  thesisTitleEn: string | null;
   status: string;
   createdAt: string;
   approvedAt: string | null;
@@ -183,6 +187,9 @@ export function DocumentsClient({
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     ชื่อเครื่องมือวิจัย
                   </th>
+                  <th className="px-3 py-3 text-center font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ไฟล์
+                  </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     สถานะ
                   </th>
@@ -192,8 +199,8 @@ export function DocumentsClient({
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     วันที่อนุมัติ
                   </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    การดำเนินการ
+                  <th className="px-3 py-3 text-center font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ดำเนินการ
                   </th>
                 </tr>
               </thead>
@@ -222,6 +229,11 @@ export function DocumentsClient({
                           {first.studentId}
                         </td>
                         <td className="px-4 py-3">{first.title}</td>
+                        <td className="px-3 py-3 text-center">
+                          <a href={`${BASE_PATH}/api/documents/${first.id}/file`} download title={first.originalName}>
+                            <Download className="h-4 w-4 text-muted-foreground hover:text-primary mx-auto" />
+                          </a>
+                        </td>
                         <td className="px-4 py-3">
                           <StatusBadge status={first.status} />
                         </td>
@@ -231,13 +243,13 @@ export function DocumentsClient({
                         <td className="px-4 py-3 text-muted-foreground text-xs">
                           {first.approvedAt ? formatDateTime(first.approvedAt) : "—"}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <ActionButtons doc={first} documents={documents} />
                         </td>
                       </tr>
                       {rest.length > 0 && (
                         <tr className="border-t bg-muted/20">
-                          <td colSpan={8} className="px-4 py-1.5">
+                          <td colSpan={9} className="px-4 py-1.5">
                             <button
                               type="button"
                               onClick={() => toggleStudent(userId)}
@@ -260,6 +272,11 @@ export function DocumentsClient({
                           <td className="px-4 py-3" />
                           <td className="px-4 py-3" />
                           <td className="px-4 py-3">{doc.title}</td>
+                          <td className="px-3 py-3 text-center">
+                            <a href={`${BASE_PATH}/api/documents/${doc.id}/file`} download title={doc.originalName}>
+                              <Download className="h-4 w-4 text-muted-foreground hover:text-primary mx-auto" />
+                            </a>
+                          </td>
                           <td className="px-4 py-3">
                             <StatusBadge status={doc.status} />
                           </td>
@@ -269,7 +286,7 @@ export function DocumentsClient({
                           <td className="px-4 py-3 text-muted-foreground text-xs">
                             {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3">
                             <ActionButtons doc={doc} documents={documents} />
                           </td>
                         </tr>
@@ -331,7 +348,12 @@ function ActionButtons({ doc, documents }: { doc: DocumentRow; documents: Docume
       (d) => d.userId === doc.userId && d.status === "PENDING",
     ).length;
     return (
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-center gap-1">
+        <ThesisDialog
+          thesisTitleTh={doc.thesisTitleTh}
+          thesisTitleEn={doc.thesisTitleEn}
+          studentName={doc.studentName}
+        />
         <ApproveButton documentId={doc.id} />
         {studentPendingCount > 1 && (
           <ApproveAllStudentButton userId={doc.userId} studentName={doc.studentName} />
@@ -341,7 +363,16 @@ function ActionButtons({ doc, documents }: { doc: DocumentRow; documents: Docume
       </div>
     );
   }
-  return <RemoveButton documentId={doc.id} />;
+  return (
+    <div className="flex items-center justify-center gap-1">
+      <ThesisDialog
+        thesisTitleTh={doc.thesisTitleTh}
+        thesisTitleEn={doc.thesisTitleEn}
+        studentName={doc.studentName}
+      />
+      <RemoveButton documentId={doc.id} />
+    </div>
+  );
 }
 
 function ApproveButton({ documentId }: { documentId: string }) {
@@ -356,16 +387,15 @@ function ApproveButton({ documentId }: { documentId: string }) {
   }
 
   return (
-    <Button
+    <button
       type="button"
-      size="sm"
       onClick={handleApprove}
       disabled={pending}
-      className="rounded h-8 text-xs"
+      title="อนุมัติ"
+      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
     >
-      <Check className="h-3.5 w-3.5 mr-1" />
-      {pending ? "..." : "อนุมัติ"}
-    </Button>
+      <Check className="h-4 w-4" />
+    </button>
   );
 }
 
@@ -392,16 +422,14 @@ function RejectButton({ documentId }: { documentId: string }) {
 
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="outline"
-        size="sm"
         onClick={() => setOpen(true)}
-        className="rounded h-8 text-xs"
+        title="ปฏิเสธ"
+        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-amber-600 hover:bg-amber-50 transition-colors"
       >
-        <XCircle className="h-3.5 w-3.5 mr-1" />
-        ปฏิเสธ
-      </Button>
+        <XCircle className="h-4 w-4" />
+      </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md rounded">
           <DialogHeader>
@@ -468,16 +496,14 @@ function RemoveButton({ documentId }: { documentId: string }) {
 
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="sm"
         onClick={() => setOpen(true)}
-        className="text-destructive hover:text-destructive rounded h-8 text-xs"
+        title="ลบ"
+        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-destructive hover:bg-red-50 transition-colors"
       >
-        <Trash2 className="h-3.5 w-3.5 mr-1" />
-        ลบ
-      </Button>
+        <Trash2 className="h-4 w-4" />
+      </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md rounded">
           <DialogHeader>
@@ -527,17 +553,72 @@ function ApproveAllStudentButton({ userId, studentName }: { userId: string; stud
   }
 
   return (
-    <Button
+    <button
       type="button"
-      variant="secondary"
-      size="sm"
       onClick={handleApproveAll}
       disabled={pending}
-      className="rounded h-8 text-xs"
+      title={`อนุมัติ ${studentName} ทั้งหมด`}
+      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
     >
-      <CheckCircle className="h-3.5 w-3.5 mr-1" />
-      {pending ? "..." : "อนุมัติทั้งหมด"}
-    </Button>
+      <CheckCircle className="h-4 w-4" />
+    </button>
+  );
+}
+
+function ThesisDialog({
+  thesisTitleTh,
+  thesisTitleEn,
+  studentName,
+}: {
+  thesisTitleTh: string | null;
+  thesisTitleEn: string | null;
+  studentName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const hasThesis = thesisTitleTh || thesisTitleEn;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        title="ดูวิทยานิพนธ์"
+        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-primary hover:bg-primary/10 transition-colors"
+      >
+        <BookOpen className="h-4 w-4" />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-bold tracking-tight">
+              วิทยานิพนธ์ — {studentName}
+            </DialogTitle>
+          </DialogHeader>
+          {hasThesis ? (
+            <div className="space-y-3 text-sm">
+              {thesisTitleTh && (
+                <div>
+                  <span className="text-muted-foreground text-xs">ชื่อไทย</span>
+                  <p className="font-medium mt-0.5">{thesisTitleTh}</p>
+                </div>
+              )}
+              {thesisTitleEn && (
+                <div>
+                  <span className="text-muted-foreground text-xs">ชื่ออังกฤษ</span>
+                  <p className="font-medium mt-0.5">{thesisTitleEn}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">ยังไม่มีข้อมูลวิทยานิพนธ์</p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -565,9 +646,18 @@ function DocumentCard({ doc, documents }: { doc: DocumentRow; documents: Documen
         </div>
         <StatusBadge status={doc.status} />
       </div>
-      <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span>อัปโหลด: {formatDateTime(doc.createdAt)}</span>
         {doc.approvedAt && <span>อนุมัติ: {formatDateTime(doc.approvedAt)}</span>}
+        <a
+          href={`${BASE_PATH}/api/documents/${doc.id}/file`}
+          download
+          title={doc.originalName}
+          className="inline-flex items-center gap-1 text-primary hover:underline ml-auto"
+        >
+          <Download className="h-3.5 w-3.5" />
+          ไฟล์
+        </a>
       </div>
       <ActionButtons doc={doc} documents={documents} />
     </div>

@@ -41,7 +41,7 @@ export default async function DocumentsPage({
         orderBy: { createdAt: "desc" },
         include: {
           profile: {
-            select: { name: true, studentId: true },
+            select: { name: true, studentId: true, thesisTitleTh: true, thesisTitleEn: true },
           },
         },
       }),
@@ -59,6 +59,8 @@ export default async function DocumentsPage({
     originalName: doc.originalName,
     studentName: doc.profile.name,
     studentId: doc.profile.studentId ?? "—",
+    thesisTitleTh: doc.profile.thesisTitleTh,
+    thesisTitleEn: doc.profile.thesisTitleEn,
     status: doc.status,
     createdAt: doc.createdAt.toISOString(),
     approvedAt: doc.approvedAt?.toISOString() ?? null,

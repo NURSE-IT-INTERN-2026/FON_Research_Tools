@@ -27,6 +27,8 @@ import type { ThesisData } from "@/lib/auth/cmu-oauth";
 import { ArrowLeft, Check, CheckCircle, XCircle, Trash2, FileText, Clock, ShieldCheck, AlertTriangle, Download } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 type StudentInfo = {
   id: string;
   name: string;
@@ -290,9 +292,8 @@ function DocumentCard({ doc }: { doc: DocumentRow }) {
             <h3 className="font-medium text-sm sm:text-base wrap-break-word">{doc.title}</h3>
             <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
               <a
-                href={`/api/documents/${doc.id}/file`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`${BASE_PATH}/api/documents/${doc.id}/file`}
+                download
                 className="inline-flex items-center gap-1 text-primary hover:underline"
               >
                 <FileText className="h-3.5 w-3.5" />
@@ -338,7 +339,7 @@ function DocumentCard({ doc }: { doc: DocumentRow }) {
           {doc.status === "APPROVED" && (
             <>
               <a
-                href={`/api/documents/${doc.id}/certificate`}
+                href={`${BASE_PATH}/api/documents/${doc.id}/certificate`}
                 download
                 className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline h-8 px-3 rounded-md border border-primary/20 hover:bg-primary/5 transition-colors"
               >
