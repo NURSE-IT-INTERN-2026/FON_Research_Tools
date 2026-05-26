@@ -45,6 +45,7 @@ export default async function StudentsPage({
   const hasMore = rows.length > PAGE_SIZE;
   const students = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
   const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
+  const safePage = Math.min(page, totalPages);
 
   const serialized = students.map((s) => ({
     id: s.id,
@@ -65,7 +66,7 @@ export default async function StudentsPage({
         key={q ?? ""}
         students={serialized}
         currentQuery={q ?? ""}
-        page={page}
+        page={safePage}
         hasMore={hasMore}
         totalPages={totalPages}
       />

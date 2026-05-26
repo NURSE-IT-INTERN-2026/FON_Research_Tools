@@ -41,6 +41,7 @@ export default async function UsersPage({
   const hasMore = rows.length > PAGE_SIZE;
   const users = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
   const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
+  const safePage = Math.min(page, totalPages);
 
   const serialized = users.map((u) => ({
     id: u.id,
@@ -61,7 +62,7 @@ export default async function UsersPage({
         users={serialized}
         currentQuery={q ?? ""}
         currentRole={roleFilter ?? "ALL"}
-        page={page}
+        page={safePage}
         hasMore={hasMore}
         totalPages={totalPages}
       />

@@ -50,6 +50,7 @@ export default async function DocumentsPage({
   const hasMore = rows.length > PAGE_SIZE;
   const documents = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
   const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
+  const safePage = Math.min(page, totalPages);
 
   const serialized = documents.map((doc) => ({
     id: doc.id,
@@ -82,7 +83,7 @@ export default async function DocumentsPage({
         documents={serialized}
         currentStatus={statusFilter ?? "ALL"}
         currentQuery={q ?? ""}
-        page={page}
+        page={safePage}
         hasMore={hasMore}
         totalPages={totalPages}
       />

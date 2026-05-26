@@ -66,6 +66,7 @@ export default async function ActivityLogPage({
   const hasMore = rows.length > PAGE_SIZE;
   const logs = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
   const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
+  const safePage = Math.min(page, totalPages);
 
   const serialized = logs.map((log) => ({
     id: log.id,
@@ -93,7 +94,7 @@ export default async function ActivityLogPage({
       <ActivityLogClient
         logs={serialized}
         users={serializedUsers}
-        page={page}
+        page={safePage}
         hasMore={hasMore}
         totalPages={totalPages}
         currentFilters={params}

@@ -71,6 +71,7 @@ export default async function StudentDetailPage({
   const hasMore = rows.length > PAGE_SIZE;
   const documents = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
   const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
+  const safePage = Math.min(page, totalPages);
 
   const serialized = documents.map((d) => ({
     id: d.id,
@@ -93,7 +94,7 @@ export default async function StudentDetailPage({
       }}
       thesis={thesis}
       documents={serialized}
-      page={page}
+      page={safePage}
       hasMore={hasMore}
       totalPages={totalPages}
       currentStatus={statusFilter ?? "ALL"}
