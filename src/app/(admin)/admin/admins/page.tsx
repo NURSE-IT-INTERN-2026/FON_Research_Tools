@@ -21,9 +21,7 @@ export default async function AdminsPage() {
         <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">
           จัดการผู้ดูแลระบบ
         </h1>
-        <p className="text-muted-foreground mt-3">
-          เพิ่มและจัดการบัญชีผู้ดูแลระบบ
-        </p>
+        
       </div>
       <AdminsClient admins={admins} />
     </div>

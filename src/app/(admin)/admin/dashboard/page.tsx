@@ -30,7 +30,6 @@ export default async function AdminDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">แดชบอร์ด</h1>
-        <p className="text-muted-foreground mt-3">ภาพรวมระบบจัดการเอกสารเครื่องมือวิจัย</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 stagger">

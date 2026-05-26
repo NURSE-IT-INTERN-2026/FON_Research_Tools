@@ -80,7 +80,6 @@ export default async function ActivityLogPage({
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">บันทึกกิจกรรม</h1>
-        <p className="text-muted-foreground mt-3">ติดตามกิจกรรมทั้งหมดในระบบ</p>
       </div>
 
       <ActivityLogClient

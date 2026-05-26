@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useActionState, useState, useEffect, useRef, useTransition, useCallback } from "react";
+import { Suspense, Fragment, useActionState, useState, useEffect, useRef, useTransition, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ import {
   removeDocument,
   type UploadDocumentState,
 } from "@/actions/document-actions";
-import { CheckCircle, XCircle, Trash2, Check, Search, X } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, Check, Search, X, ChevronDown, ChevronUp } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 type DocumentRow = {
@@ -65,6 +65,26 @@ export function DocumentsClient({
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
+
+  const studentGroups = useMemo(() => {
+    const map = new Map<string, DocumentRow[]>();
+    for (const doc of documents) {
+      const arr = map.get(doc.userId) ?? [];
+      arr.push(doc);
+      map.set(doc.userId, arr);
+    }
+    return Array.from(map.entries()).map(([userId, docs]) => ({ userId, docs }));
+  }, [documents]);
+
+  function toggleStudent(userId: string) {
+    setExpandedStudents((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }
 
   const updateSearch = useCallback((value: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -176,49 +196,117 @@ export function DocumentsClient({
                 </tr>
               </thead>
               <tbody>
-                {documents.map((doc, i) => (
-                  <tr
-                    key={doc.id}
-                    className="border-t transition-colors hover:bg-muted/30"
-                  >
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {(page - 1) * 10 + i + 1}
-                    </td>
-                    <td className="px-4 py-3 font-medium">
-                      <Link
-                        href={`/admin/students/${doc.userId}`}
-                        className="text-primary hover:underline"
-                      >
-                        {doc.studentName}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
-                      {doc.studentId}
-                    </td>
-                    <td className="px-4 py-3">{doc.title}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={doc.status} />
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {formatDateTime(doc.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <ActionButtons doc={doc} documents={documents} />
-                    </td>
-                  </tr>
-                ))}
+                {studentGroups.map(({ userId, docs }) => {
+                  const first = docs[0];
+                  const rest = docs.slice(1);
+                  const isExpanded = expandedStudents.has(userId);
+                  const firstIdx = documents.indexOf(first);
+
+                  return (
+                    <Fragment key={userId}>
+                      <tr className="border-t transition-colors hover:bg-muted/30">
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {(page - 1) * 10 + firstIdx + 1}
+                        </td>
+                        <td className="px-4 py-3 font-medium">
+                          <Link
+                            href={`/admin/students/${userId}`}
+                            className="text-primary hover:underline"
+                          >
+                            {first.studentName}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
+                          {first.studentId}
+                        </td>
+                        <td className="px-4 py-3">{first.title}</td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={first.status} />
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {formatDateTime(first.createdAt)}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {first.approvedAt ? formatDateTime(first.approvedAt) : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <ActionButtons doc={first} documents={documents} />
+                        </td>
+                      </tr>
+                      {rest.length > 0 && (
+                        <tr className="border-t bg-muted/20">
+                          <td colSpan={8} className="px-4 py-1.5">
+                            <button
+                              type="button"
+                              onClick={() => toggleStudent(userId)}
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              มีอีก {rest.length} ไฟล์
+                            </button>
+                          </td>
+                        </tr>
+                      )}
+                      {isExpanded && rest.map((doc) => (
+                        <tr
+                          key={doc.id}
+                          className="border-t transition-colors hover:bg-muted/30 bg-muted/10"
+                        >
+                          <td className="px-4 py-3 text-muted-foreground text-xs pl-8">
+                            {(page - 1) * 10 + documents.indexOf(doc) + 1}
+                          </td>
+                          <td className="px-4 py-3" />
+                          <td className="px-4 py-3" />
+                          <td className="px-4 py-3">{doc.title}</td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={doc.status} />
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">
+                            {formatDateTime(doc.createdAt)}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">
+                            {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <ActionButtons doc={doc} documents={documents} />
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
-            {documents.map((doc) => (
-              <DocumentCard key={doc.id} doc={doc} documents={documents} />
-            ))}
+            {studentGroups.map(({ userId, docs }) => {
+              const first = docs[0];
+              const rest = docs.slice(1);
+              const isExpanded = expandedStudents.has(userId);
+
+              return (
+                <Fragment key={userId}>
+                  <DocumentCard doc={first} documents={documents} />
+                  {rest.length > 0 && (
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => toggleStudent(userId)}
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline py-1"
+                      >
+                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        มีอีก {rest.length} ไฟล์
+                      </button>
+                    </div>
+                  )}
+                  {isExpanded && rest.map((doc) => (
+                    <DocumentCard key={doc.id} doc={doc} documents={documents} />
+                  ))}
+                </Fragment>
+              );
+            })}
           </div>
         </>
       )}
