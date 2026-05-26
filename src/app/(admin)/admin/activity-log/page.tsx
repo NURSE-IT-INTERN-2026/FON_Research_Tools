@@ -42,7 +42,7 @@ export default async function ActivityLogPage({
     }
   }
 
-  const [rows, filteredCount, users] = await Promise.all([
+  const [rows, filteredCount, admins, students] = await Promise.all([
     db.activityLog.findMany({
       where,
       skip: (page - 1) * PAGE_SIZE,
@@ -52,8 +52,14 @@ export default async function ActivityLogPage({
     }),
     db.activityLog.count({ where }),
     db.profile.findMany({
+      where: { userRole: { role: "ADMIN" } },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
+    }),
+    db.profile.findMany({
+      where: { userRole: { role: "STUDENT" } },
+      select: { id: true, name: true },
+      orderBy: { studentId: "asc" },
     }),
   ]);
 
@@ -73,10 +79,10 @@ export default async function ActivityLogPage({
     createdAt: log.createdAt.toISOString(),
   }));
 
-  const serializedUsers = users.map((u) => ({
-    id: u.id,
-    name: u.name,
-  }));
+  const serializedUsers = {
+    admins: admins.map((u) => ({ id: u.id, name: u.name })),
+    students: students.map((u) => ({ id: u.id, name: u.name })),
+  };
 
   return (
     <div className="space-y-6">

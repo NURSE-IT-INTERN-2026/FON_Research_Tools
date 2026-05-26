@@ -26,9 +26,14 @@ type UserOption = {
   name: string;
 };
 
+type UserGroups = {
+  admins: UserOption[];
+  students: UserOption[];
+};
+
 type ActivityLogClientProps = {
   logs: LogEntry[];
-  users: UserOption[];
+  users: UserGroups;
   page: number;
   hasMore: boolean;
   currentFilters: {
@@ -172,7 +177,7 @@ function Pagination({
   );
 }
 
-export function ActivityLogClient({ logs, users, page, hasMore, totalPages, currentFilters }: ActivityLogClientProps & { totalPages: number }) {
+export function ActivityLogClient({ logs, users, page, hasMore, totalPages, currentFilters }: ActivityLogClientProps & { hasMore: boolean; totalPages: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -233,9 +238,20 @@ export function ActivityLogClient({ logs, users, page, hasMore, totalPages, curr
               className="flex h-8 rounded border border-input bg-background px-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="ALL">ทั้งหมด</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
+              {users.admins.length > 0 && (
+                <optgroup label="เจ้าหน้าที่">
+                  {users.admins.map((u) => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </optgroup>
+              )}
+              {users.students.length > 0 && (
+                <optgroup label="นักศึกษา">
+                  {users.students.map((u) => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
           <div className="space-y-1">
