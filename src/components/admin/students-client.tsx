@@ -11,6 +11,8 @@ type StudentRow = {
   id: string;
   name: string;
   studentId: string;
+  thesisTitleTh: string | null;
+  thesisTitleEn: string | null;
   docCount: number;
 };
 
@@ -120,6 +122,9 @@ export function StudentsClient({
                     รหัสนักศึกษา
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ชื่อวิทยานิพนธ์
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     จำนวนเอกสาร
                   </th>
                 </tr>
@@ -141,6 +146,9 @@ export function StudentsClient({
                     </td>
                     <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                       {student.studentId}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs max-w-64 truncate">
+                      {student.thesisTitleTh || student.thesisTitleEn || "—"}
                     </td>
                     <td className="px-4 py-3">
                       {student.docCount}
@@ -168,6 +176,11 @@ export function StudentsClient({
                 <p className="text-xs text-muted-foreground font-mono mt-1">
                   {student.studentId}
                 </p>
+                {(student.thesisTitleTh || student.thesisTitleEn) && (
+                  <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+                    {student.thesisTitleTh || student.thesisTitleEn}
+                  </p>
+                )}
               </Link>
             ))}
           </div>

@@ -35,6 +35,8 @@ export default async function StudentsPage({
         id: true,
         name: true,
         studentId: true,
+        thesisTitleTh: true,
+        thesisTitleEn: true,
         _count: { select: { documents: true } },
       },
       orderBy: { studentId: "asc" },
@@ -53,6 +55,8 @@ export default async function StudentsPage({
     id: s.id,
     name: s.name,
     studentId: s.studentId ?? "—",
+    thesisTitleTh: s.thesisTitleTh,
+    thesisTitleEn: s.thesisTitleEn,
     docCount: s._count.documents,
   }));
 
