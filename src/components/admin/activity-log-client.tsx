@@ -181,7 +181,26 @@ export function ActivityLogClient({ logs, users, page, hasMore, totalPages, curr
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  function updateUserFilter(userId: string) {
+  const currentRole = currentFilters.userRole || "ALL";
+  const roleUsers = currentRole === "ADMIN"
+    ? users.admins
+    : currentRole === "STUDENT"
+    ? users.students
+    : [...users.admins, ...users.students];
+
+  function updateUserRole(role: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (role === "ALL") {
+      params.delete("userRole");
+    } else {
+      params.set("userRole", role);
+    }
+    params.delete("userId");
+    params.delete("page");
+    router.push(`/admin/activity-log?${params.toString()}`);
+  }
+
+  function updateUserId(userId: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (userId === "ALL") {
       params.delete("userId");
@@ -232,27 +251,38 @@ export function ActivityLogClient({ logs, users, page, hasMore, totalPages, curr
           </div>
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ผู้ใช้</p>
-            <select
-              value={currentFilters.userId || "ALL"}
-              onChange={(e) => updateUserFilter(e.target.value)}
-              className="flex h-8 rounded border border-input bg-background px-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="ALL">ทั้งหมด</option>
-              {users.admins.length > 0 && (
-                <optgroup label="เจ้าหน้าที่">
-                  {users.admins.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </optgroup>
-              )}
-              {users.students.length > 0 && (
-                <optgroup label="นักศึกษา">
-                  {users.students.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[
+                { value: "ALL", label: "ทั้งหมด" },
+                { value: "ADMIN", label: "เจ้าหน้าที่" },
+                { value: "STUDENT", label: "นักศึกษา" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => updateUserRole(opt.value)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    currentRole === opt.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-input hover:bg-muted"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {roleUsers.length > 0 && (
+              <select
+                value={currentFilters.userId || "ALL"}
+                onChange={(e) => updateUserId(e.target.value)}
+                className="flex h-8 rounded border border-input bg-background px-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1.5"
+              >
+                <option value="ALL">-- เลือกผู้ใช้ --</option>
+                {roleUsers.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ช่วงวันที่</p>

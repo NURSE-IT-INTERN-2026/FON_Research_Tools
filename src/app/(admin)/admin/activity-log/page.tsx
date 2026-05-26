@@ -12,6 +12,7 @@ export default async function ActivityLogPage({
     action?: string;
     targetType?: string;
     userId?: string;
+    userRole?: string;
     q?: string;
     page?: string;
     from?: string;
@@ -25,7 +26,11 @@ export default async function ActivityLogPage({
 
   if (params.action) where.action = params.action as ActivityAction;
   if (params.targetType) where.targetType = params.targetType;
-  if (params.userId) where.userId = params.userId;
+  if (params.userId) {
+    where.userId = params.userId;
+  } else if (params.userRole && params.userRole !== "ALL") {
+    where.profile = { userRole: { role: params.userRole as "ADMIN" | "STUDENT" } };
+  }
   if (params.q) {
     where.targetLabel = { contains: params.q, mode: "insensitive" };
   }
