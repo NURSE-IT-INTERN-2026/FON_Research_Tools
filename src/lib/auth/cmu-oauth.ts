@@ -142,17 +142,24 @@ export async function getThesisDataAndCache(userId: string): Promise<ThesisData>
   return thesis;
 }
 
-export function determineRole(
+export async function determineRole(
   accountType: string,
   cmuitaccount?: string,
   studentId?: string,
-): "ADMIN" | "STUDENT" | null {
+): Promise<"ADMIN" | "STUDENT" | null> {
   if (process.env.DEV_FORCE_ROLE === "ADMIN") return "ADMIN";
   if (process.env.DEV_FORCE_ROLE === "STUDENT") return "STUDENT";
 
-  if (cmuitaccount && process.env.ADMIN_EMAILS) {
-    const adminEmails = process.env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase());
-    if (adminEmails.includes(cmuitaccount.toLowerCase())) return "ADMIN";
+  if (cmuitaccount) {
+    const email = cmuitaccount.includes("@")
+      ? cmuitaccount.toLowerCase()
+      : `${cmuitaccount.toLowerCase()}@cmu.ac.th`;
+
+    const existing = await prisma.userRole.findFirst({
+      where: { role: "ADMIN", profile: { email } },
+    });
+
+    if (existing) return "ADMIN";
   }
 
   if (accountType === "StdAcc") return "STUDENT";
