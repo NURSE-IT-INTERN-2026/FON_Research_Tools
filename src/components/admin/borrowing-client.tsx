@@ -1,9 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -12,17 +15,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import {
   approveBorrowing,
   rejectBorrowing,
   type BorrowingActionState,
 } from "@/actions/borrowing-actions";
 import { StatusBadge } from "@/components/status-badge";
-import { Check, X, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle, XCircle, Check, Search, X, FileText, Clock, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 type BorrowRecord = {
   id: string;
@@ -37,18 +39,19 @@ type BorrowRecord = {
   adminNotes: string | null;
   createdAt: string;
   reviewedAt: string | null;
+  reviewedBy: string | null;
 };
 
-const STATUS_OPTIONS = [
-  { value: "ALL", label: "ทั้งหมด" },
-  { value: "PENDING", label: "รอตรวจสอบ" },
-  { value: "APPROVED", label: "อนุมัติแล้ว" },
-  { value: "REJECTED", label: "ปฏิเสธแล้ว" },
-];
+const STATUS_BORDER: Record<string, string> = {
+  PENDING: "border-l-amber-500",
+  APPROVED: "border-l-green-500",
+  REJECTED: "border-l-red-500",
+};
 
 export function BorrowingClient({
   records,
   currentStatus,
+  currentQuery,
   page,
   hasMore,
   totalPages,
@@ -56,6 +59,7 @@ export function BorrowingClient({
 }: {
   records: BorrowRecord[];
   currentStatus: string;
+  currentQuery: string;
   page: number;
   hasMore: boolean;
   totalPages: number;
@@ -63,8 +67,40 @@ export function BorrowingClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [searchInput, setSearchInput] = useState(currentQuery);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  function setFilter(status: string) {
+  const updateSearch = useCallback((value: string) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set("q", value);
+      } else {
+        params.delete("q");
+      }
+      params.delete("page");
+      router.push(`/admin/borrowing?${params.toString()}`);
+    }, 500);
+  }, [searchParams, router]);
+
+  useEffect(() => {
+    if (document.activeElement !== searchInputRef.current) {
+      setSearchInput(currentQuery);
+    }
+  }, [currentQuery]);
+
+  function clearSearch() {
+    setSearchInput("");
+    if (timerRef.current) clearTimeout(timerRef.current);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("q");
+    params.delete("page");
+    router.push(`/admin/borrowing?${params.toString()}`);
+  }
+
+  function setStatusFilter(status: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (status === "ALL") {
       params.delete("status");
@@ -77,60 +113,75 @@ export function BorrowingClient({
 
   function goToPage(p: number) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(p));
+    if (p <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(p));
+    }
     router.push(`/admin/borrowing?${params.toString()}`);
   }
 
+  const STATUS_CARDS = [
+    { value: "ALL", label: "ทั้งหมด", count: counts.all, icon: <FileText className="h-4 w-4" />, color: "text-blue-600 bg-blue-50" },
+    { value: "PENDING", label: "รอตรวจสอบ", count: counts.pending, icon: <Clock className="h-4 w-4" />, color: "text-amber-600 bg-amber-50" },
+    { value: "APPROVED", label: "อนุมัติแล้ว", count: counts.approved, icon: <CheckCircle className="h-4 w-4" />, color: "text-green-600 bg-green-50" },
+    { value: "REJECTED", label: "ปฏิเสธแล้ว", count: counts.rejected, icon: <AlertTriangle className="h-4 w-4" />, color: "text-red-600 bg-red-50" },
+  ];
+
   return (
     <div className="space-y-4">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "รอตรวจสอบ", count: counts.pending, value: "PENDING", color: "text-amber-600" },
-          { label: "อนุมัติแล้ว", count: counts.approved, value: "APPROVED", color: "text-green-600" },
-          { label: "ปฏิเสธแล้ว", count: counts.rejected, value: "REJECTED", color: "text-red-600" },
-          { label: "ทั้งหมด", count: counts.all, value: "ALL", color: "text-blue-600" },
-        ].map((card) => (
+      {/* Search */}
+      <div className="relative w-full max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          ref={searchInputRef}
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            updateSearch(e.target.value);
+          }}
+          placeholder="ค้นหาจากชื่อเครื่องมือ, ชื่อนักศึกษา, รหัสนักศึกษา..."
+          className="rounded pl-9 pr-8"
+        />
+        {searchInput && (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Status filter cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {STATUS_CARDS.map((card) => (
           <button
             key={card.value}
-            onClick={() => setFilter(card.value)}
-            className={`rounded-xl border bg-card p-4 text-left hover:shadow-md transition-shadow ${
-              currentStatus === card.value ? "ring-2 ring-primary" : ""
-            }`}
+            type="button"
+            onClick={() => setStatusFilter(card.value)}
+            className={`rounded-lg border p-3 flex items-center gap-3 transition-colors ${card.color} ${currentStatus === card.value ? "ring-2 ring-primary ring-offset-1" : "opacity-70 hover:opacity-100"}`}
           >
-            <p className={`text-2xl font-bold ${card.color}`}>{card.count}</p>
-            <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
+            <div className="shrink-0">{card.icon}</div>
+            <div className="text-left">
+              <p className="text-xl font-bold leading-none">{card.count}</p>
+              <p className="text-xs mt-0.5 opacity-80">{card.label}</p>
+            </div>
           </button>
         ))}
       </div>
 
-      {/* Status filter pills */}
-      <div className="flex flex-wrap gap-2">
-        {STATUS_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setFilter(opt.value)}
-            className={`rounded-full px-3 py-1 text-xs border transition-colors ${
-              currentStatus === opt.value
-                ? "bg-primary text-primary-foreground border-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Records table */}
+      {/* Table */}
       {records.length === 0 ? (
-        <div className="rounded border border-dashed p-8 text-center text-muted-foreground text-sm">
-          ไม่มีคำขอยืม
+        <div className="rounded border border-dashed p-10 text-center text-muted-foreground">
+          ไม่พบคำขอยืม
         </div>
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full min-w-120 text-sm">
+          <div className="hidden md:block overflow-x-auto rounded border bg-card">
+            <table className="w-full min-w-140 text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
@@ -143,22 +194,22 @@ export function BorrowingClient({
                     เครื่องมือวิจัย
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    ชื่อผู้ขอ
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    วันที่ขอ
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     ใบอนุญาต
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     สถานะ
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    วันที่ดำเนินการ
+                  </th>
+                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     วันที่ยื่น
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    การดำเนินการ
+                    ผู้ดำเนินการ
+                  </th>
+                  <th className="px-3 py-3 text-center font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                    ดำเนินการ
                   </th>
                 </tr>
               </thead>
@@ -169,43 +220,43 @@ export function BorrowingClient({
                     className="border-t transition-colors hover:bg-muted/30"
                   >
                     <td className="px-4 py-3 text-muted-foreground">
-                      {(page - 1) * 20 + i + 1}
+                      {(page - 1) * 10 + i + 1}
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium">{rec.studentName}</p>
-                      <p className="text-xs text-muted-foreground">{rec.studentId}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{rec.studentId}</p>
                     </td>
                     <td className="px-4 py-3 font-medium">{rec.instrumentName}</td>
-                    <td className="px-4 py-3">{rec.requesterName ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {rec.requestDate
-                        ? new Date(rec.requestDate).toLocaleDateString("th-TH")
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3 text-center">
                       {rec.licenseOriginalName ? (
                         <a
-                          href={`${basePath}/api/borrowing/${rec.id}/license`}
+                          href={`${BASE_PATH}/api/borrowing/${rec.id}/license`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
+                          className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-muted transition-colors"
+                          title={rec.licenseOriginalName}
                         >
-                          <FileText className="h-3.5 w-3.5" />
-                          เปิดไฟล์
+                          <FileText className="h-4 w-4 text-muted-foreground hover:text-primary" />
                         </a>
                       ) : (
-                        "—"
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={rec.status} />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {rec.reviewedAt ? formatDateTime(rec.reviewedAt) : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
                       {formatDateTime(rec.createdAt)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {rec.reviewedBy ?? "—"}
+                    </td>
+                    <td className="px-3 py-3">
                       {rec.status === "PENDING" && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-1">
                           <ApproveButton recordId={rec.id} />
                           <RejectButton recordId={rec.id} />
                         </div>
@@ -228,37 +279,36 @@ export function BorrowingClient({
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
             {records.map((rec) => (
-              <div key={rec.id} className="border rounded-lg p-4 space-y-3">
+              <div key={rec.id} className={`rounded border bg-card border-l-4 ${STATUS_BORDER[rec.status] ?? ""} p-4 space-y-3`}>
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm truncate">{rec.instrumentName}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {rec.studentName} ({rec.studentId})
-                    </p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm">{rec.instrumentName}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-primary">{rec.studentName}</span>
+                      <span className="text-xs text-muted-foreground font-mono">{rec.studentId}</span>
+                    </div>
                   </div>
                   <StatusBadge status={rec.status} />
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                   <div>
-                    <span className="text-muted-foreground">ชื่อผู้ขอ</span>
-                    <p>{rec.requesterName ?? "—"}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">วันที่ขอ</span>
-                    <p>
-                      {rec.requestDate
-                        ? new Date(rec.requestDate).toLocaleDateString("th-TH")
-                        : "—"}
-                    </p>
+                    <span className="text-muted-foreground">วันที่ดำเนินการ</span>
+                    <p>{rec.reviewedAt ? formatDateTime(rec.reviewedAt) : "—"}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">วันที่ยื่น</span>
                     <p>{formatDateTime(rec.createdAt)}</p>
                   </div>
+                  {rec.reviewedBy && (
+                    <div>
+                      <span className="text-muted-foreground">ผู้ดำเนินการ</span>
+                      <p>{rec.reviewedBy}</p>
+                    </div>
+                  )}
                 </div>
                 {rec.licenseOriginalName && (
                   <a
-                    href={`${basePath}/api/borrowing/${rec.id}/license`}
+                    href={`${BASE_PATH}/api/borrowing/${rec.id}/license`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
@@ -281,28 +331,30 @@ export function BorrowingClient({
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-2">
+          {(page > 1 || hasMore) && (
+            <div className="flex items-center justify-center gap-2">
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 disabled={page <= 1}
                 onClick={() => goToPage(page - 1)}
-                className="rounded"
+                className="rounded text-xs"
               >
-                <ChevronLeft className="h-4 w-4" />
+                ก่อนหน้า
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs text-muted-foreground px-2">
                 หน้า {page} / {totalPages}
               </span>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
-                disabled={!hasMore}
+                disabled={page >= totalPages}
                 onClick={() => goToPage(page + 1)}
-                className="rounded"
+                className="rounded text-xs"
               >
-                <ChevronRight className="h-4 w-4" />
+                ถัดไป
               </Button>
             </div>
           )}
@@ -337,15 +389,14 @@ function ApproveButton({ recordId }: { recordId: string }) {
   return (
     <form action={formAction}>
       <input type="hidden" name="recordId" value={recordId} />
-      <Button
+      <button
         type="submit"
-        size="sm"
         disabled={pending}
-        className="rounded font-semibold h-8"
+        title="อนุมัติ"
+        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-green-600 hover:bg-green-50 transition-colors"
       >
-        <Check className="h-3.5 w-3.5 mr-1" />
-        {pending ? "..." : "อนุมัติ"}
-      </Button>
+        <Check className="h-4 w-4" />
+      </button>
     </form>
   );
 }
@@ -379,16 +430,14 @@ function RejectButton({ recordId }: { recordId: string }) {
 
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="outline"
-        size="sm"
         onClick={() => setOpen(true)}
-        className="rounded h-8"
+        title="ปฏิเสธ"
+        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-amber-600 hover:bg-amber-50 transition-colors"
       >
-        <X className="h-3.5 w-3.5 mr-1" />
-        ปฏิเสธ
-      </Button>
+        <XCircle className="h-4 w-4" />
+      </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md rounded">
           <DialogHeader>
@@ -406,14 +455,14 @@ function RejectButton({ recordId }: { recordId: string }) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="เหตุผลในการปฏิเสธ"
-              className="rounded mt-2"
-              rows={3}
+              className="rounded min-h-24"
             />
             <DialogFooter className="gap-2 mt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
+                disabled={pending}
                 className="rounded"
               >
                 ยกเลิก
@@ -424,7 +473,7 @@ function RejectButton({ recordId }: { recordId: string }) {
                 variant="destructive"
                 className="rounded font-semibold"
               >
-                {pending ? "กำลังปฏิเสธ..." : "ปฏิเสธ"}
+                {pending ? "กำลังบันทึก..." : "ปฏิเสธ"}
               </Button>
             </DialogFooter>
           </form>

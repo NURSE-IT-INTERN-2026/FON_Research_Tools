@@ -69,7 +69,7 @@ async function main() {
   // Documents
   const now = new Date();
   const daysAgo = (d: number) => new Date(now.getTime() - d * 86400000);
-  const docData: { userId: string; title: string; fileName: string; originalName: string; fileSize: number; status: "PENDING" | "APPROVED" | "REJECTED"; approvedBy?: string; approvedAt?: Date; adminNotes?: string; createdAt: Date }[] = [];
+  const docData: { userId: string; title: string; fileName: string; originalName: string; fileSize: number; status: "PENDING" | "APPROVED" | "REJECTED"; reviewedBy?: string; reviewedAt?: Date; adminNotes?: string; createdAt: Date }[] = [];
 
   // Student 1: 15 documents (exceeds PAGE_SIZE=10 for detail page)
   for (let i = 0; i < 15; i++) {
@@ -82,8 +82,8 @@ async function main() {
       originalName: `document_v${i + 1}.pdf`,
       fileSize: 100000 + i * 15000,
       status,
-      approvedBy: status !== "PENDING" ? admins[0].email : undefined,
-      approvedAt: status !== "PENDING" ? daysAgo(15 - i) : undefined,
+      reviewedBy: status !== "PENDING" ? admins[0].email : undefined,
+      reviewedAt: status !== "PENDING" ? daysAgo(15 - i) : undefined,
       adminNotes: status === "REJECTED" ? "กรุณาแก้ไขและส่งใหม่" : undefined,
       createdAt: daysAgo(20 - i),
     });
@@ -103,8 +103,8 @@ async function main() {
         originalName: `doc_${d + 1}.pdf`,
         fileSize: 150000 + s * 10000 + d * 5000,
         status,
-        approvedBy: status === "APPROVED" ? admins[s % 2].email : undefined,
-        approvedAt: status === "APPROVED" ? daysAgo(10 - d) : undefined,
+        reviewedBy: status !== "PENDING" ? admins[s % 2].email : undefined,
+        reviewedAt: status !== "PENDING" ? daysAgo(10 - d) : undefined,
         adminNotes: status === "REJECTED" ? "ไฟล์ไม่ชัดเจน" : undefined,
         createdAt: daysAgo(15 - s + d),
       });
