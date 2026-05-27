@@ -39,7 +39,7 @@
 - [ ] **F18** Export data (Excel/CSV)
 - [ ] **F19** OCR ช่วยเจ้าหน้าที่
 - [x] **F20-A** ระบบยืมเครื่องมือวิจัย (ไม่มี OCR): Instrument catalog (auto-create from approved Documents) + BorrowingRecord + Student borrow page + Admin borrowing management + status flow (PENDING → APPROVED/REJECTED) + license PDF upload/download
-- [ ] **F20-B** Typhoon OCR integration: OCR อ่านใบอนุญาตแล้วกรอกข้อมูลอัตโนมัติ (ชื่อผู้ขอ, วันที่ขอ, รายละเอียดเพิ่มเติม)
+- [x] **F20-B** Typhoon OCR integration: OCR อ่านใบอนุญาตแล้วกรอกข้อมูลอัตโนมัติ (ชื่อผู้ขอ, วันที่ขอ, รายละเอียดเพิ่มเติม)
 
 ---
 

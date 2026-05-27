@@ -19,8 +19,9 @@ import {
   type BorrowingActionState,
 } from "@/actions/borrowing-actions";
 import { StatusBadge } from "@/components/status-badge";
-import { Upload, Trash2, FileText } from "lucide-react";
+import { Upload, Trash2, FileText, ScanText, Loader2 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { processOCR, type OCRActionState } from "@/actions/ocr-actions";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -50,6 +51,10 @@ export function BorrowClient({
   const [selectedInstrument, setSelectedInstrument] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [requesterName, setRequesterName] = useState("");
+  const [requestDate, setRequestDate] = useState("");
+  const [additionalDetails, setAdditionalDetails] = useState("");
   const [state, formAction, pending] = useActionState(
     submitBorrowRequest,
     {} as BorrowingActionState,
@@ -59,6 +64,35 @@ export function BorrowClient({
     selectedInstrument.trim() !== "" &&
     file != null;
 
+  const handleOCR = async () => {
+    if (!file) {
+      toast.error("กรุณาเลือกไฟล์ PDF ก่อนกดอ่านเอกสาร");
+      return;
+    }
+    setOcrLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("licenseFile", file);
+      const result: OCRActionState = await processOCR(fd);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data) {
+        if (result.data.requesterName) setRequesterName(result.data.requesterName);
+        if (result.data.requestDate) setRequestDate(result.data.requestDate);
+        if (result.data.additionalDetails) setAdditionalDetails(result.data.additionalDetails);
+        toast.success("อ่านเอกสารสำเร็จ กรุณาตรวจสอบข้อมูล");
+      } else {
+        toast.error("ไม่สามารถอ่านข้อมูลจากเอกสารได้");
+      }
+    } catch {
+      toast.error("เกิดข้อผิดพลาดในการอ่านเอกสาร");
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
   const prevSuccessRef = useRef(false);
   useEffect(() => {
     if (state.success && !prevSuccessRef.current) {
@@ -66,6 +100,9 @@ export function BorrowClient({
       formRef.current?.reset();
       setSelectedInstrument("");
       setFile(null);
+      setRequesterName("");
+      setRequestDate("");
+      setAdditionalDetails("");
       prevSuccessRef.current = true;
     }
     if (!state.success) {
@@ -119,6 +156,8 @@ export function BorrowClient({
                 id="requesterName"
                 name="requesterName"
                 placeholder="ชื่อ-นามสกุล"
+                value={requesterName}
+                onChange={(e) => setRequesterName(e.target.value)}
                 className="rounded"
               />
             </div>
@@ -130,6 +169,8 @@ export function BorrowClient({
                 id="requestDate"
                 name="requestDate"
                 type="date"
+                value={requestDate}
+                onChange={(e) => setRequestDate(e.target.value)}
                 className="rounded"
               />
             </div>
@@ -142,6 +183,8 @@ export function BorrowClient({
                 name="additionalDetails"
                 rows={3}
                 placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"
+                value={additionalDetails}
+                onChange={(e) => setAdditionalDetails(e.target.value)}
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
@@ -149,19 +192,35 @@ export function BorrowClient({
             {/* License upload */}
             <div className="space-y-1.5">
               <Label htmlFor="licenseFile">ใบอนุญาต / ใบรับรอง (PDF)</Label>
-              <Input
-                id="licenseFile"
-                name="licenseFile"
-                type="file"
-                accept=".pdf"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
-                  setFile(f);
-                }}
-                className="rounded"
-              />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  id="licenseFile"
+                  name="licenseFile"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setFile(f);
+                  }}
+                  className="rounded flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!file || ocrLoading}
+                  onClick={handleOCR}
+                  className="rounded shrink-0"
+                >
+                  {ocrLoading ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ScanText className="mr-1.5 h-4 w-4" />
+                  )}
+                  {ocrLoading ? "กำลังอ่าน..." : "อ่านเอกสารอัตโนมัติ"}
+                </Button>
+              </div>
               <span className="text-xs text-muted-foreground">
-                PDF เท่านั้น ขนาดสูงสุด 10 MB
+                PDF เท่านั้น ขนาดสูงสุด 10 MB — กดอ่านเอกสารเพื่อกรอกข้อมูลอัตโนมัติ
               </span>
             </div>
 
