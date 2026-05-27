@@ -27,10 +27,10 @@ export default function AdminLoginPage() {
             </span>
           </div>
           <h2 className="font-heading text-2xl font-bold tracking-tight">
-            เข้าสู่ระบบเจ้าหน้าที่
+            เข้าสู่ระบบ
           </h2>
           <p className="text-sm text-muted-foreground">
-            สำหรับเจ้าหน้าที่เท่านั้น
+            สำหรับเจ้าหน้าที่และนักศึกษา (ทดสอบ)
           </p>
         </div>
         <div className="p-6 pt-0 space-y-4">

@@ -1,6 +1,6 @@
 "use server";
 
-import { verifyAdminCredentials } from "@/lib/auth/admin-credentials";
+import { verifyCredentials } from "@/lib/auth/admin-credentials";
 import { createSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 
@@ -20,11 +20,11 @@ export async function adminLogin(
     return { error: "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน" };
   }
 
-  const admin = await verifyAdminCredentials(username, password);
-  if (!admin) {
+  const user = await verifyCredentials(username, password);
+  if (!user) {
     return { error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
   }
 
-  await createSession(admin);
-  redirect("/admin/dashboard");
+  await createSession(user);
+  redirect(user.role === "ADMIN" ? "/admin/dashboard" : "/thesis");
 }
