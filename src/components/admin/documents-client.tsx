@@ -25,6 +25,7 @@ import {
 } from "@/actions/document-actions";
 import { CheckCircle, XCircle, Trash2, Check, Search, X, ChevronDown, ChevronUp, BookOpen, Download, FileText, Clock, AlertTriangle } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { ExportDropdown } from "./export-dropdown";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -149,8 +150,9 @@ export function DocumentsClient({
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative w-full max-w-md">
+      {/* Search + Export */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           ref={searchInputRef}
@@ -172,6 +174,8 @@ export function DocumentsClient({
           </button>
         )}
       </div>
+      <ExportDropdown status={currentStatus} query={currentQuery} />
+    </div>
 
       {/* Status filter cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
