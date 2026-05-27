@@ -8,6 +8,7 @@ Single source for every technology decision and its scope.
 
 | Technology | Version | Purpose |
 |---|---|---|
+| Node.js | 24 | Runtime |
 | Next.js | 16 (App Router) | Framework, SSR, routing, Server Components, Server Actions |
 | React | 19 | UI library |
 | TypeScript | 5+ | Type safety |
@@ -35,12 +36,23 @@ Single source for every technology decision and its scope.
 | Thesis API (`mis.nurse.cmu.ac.th/thesis/student/GetDataThesis`) | ดึงข้อมูลวิทยานิพนธ์ (ไม่เก็บใน DB) |
 | Microsoft Azure AD OAuth | Authentication |
 | Email API (`mis.nurse.cmu.ac.th/thesis/EmailApi`) | ส่งอีเมลแจ้งเตือน (GetToken + SendEmail) |
+| Typhoon OCR (`api.opentyphoon.ai`) | OCR อ่านใบอนุญาต PDF แล้วกรอกข้อมูลอัตโนมัติ |
 
 ## File Storage
 
 | Technology | Purpose |
 |---|---|
 | Local filesystem (`uploads/`) | เก็บไฟล์ PDF ที่นักศึกษาอัปโหลด |
+
+## Libraries
+
+| Technology | Purpose |
+|---|---|
+| Prisma 7 | ORM — all application data access |
+| PDFKit | สร้าง PDF ใบรับรอง |
+| XLSX (SheetJS) | Export ข้อมูลเป็น Excel/CSV |
+| bcryptjs | Hash password สำหรับ admin login |
+| sips / pdftoppm | แปลง PDF เป็น PNG ก่อนส่ง Typhoon OCR |
 
 ## UI
 
