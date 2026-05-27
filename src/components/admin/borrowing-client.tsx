@@ -365,6 +365,7 @@ export function BorrowingClient({
 }
 
 function ApproveButton({ recordId }: { recordId: string }) {
+  const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     async (_prev: BorrowingActionState, formData: FormData) => {
       const id = formData.get("recordId") as string;
@@ -386,18 +387,53 @@ function ApproveButton({ recordId }: { recordId: string }) {
     if (!state.success) prevSuccessRef.current = false;
   }, [state.success]);
 
+  if (state.success && open) setOpen(false);
+
   return (
-    <form action={formAction}>
-      <input type="hidden" name="recordId" value={recordId} />
+    <>
       <button
-        type="submit"
+        type="button"
         disabled={pending}
+        onClick={() => setOpen(true)}
         title="อนุมัติ"
         className="inline-flex items-center justify-center rounded-md h-7 w-7 text-green-600 hover:bg-green-50 transition-colors"
       >
         <Check className="h-4 w-4" />
       </button>
-    </form>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-bold tracking-tight">
+              ยืนยันการอนุมัติ
+            </DialogTitle>
+            <DialogDescription>
+              ต้องการอนุมัติคำขอยืมนี้หรือไม่?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={pending}
+              className="rounded"
+            >
+              ยกเลิก
+            </Button>
+            <form action={formAction}>
+              <input type="hidden" name="recordId" value={recordId} />
+              <Button
+                type="submit"
+                disabled={pending}
+                className="rounded font-semibold"
+              >
+                {pending ? "กำลังอนุมัติ..." : "อนุมัติ"}
+              </Button>
+            </form>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
