@@ -39,11 +39,11 @@ export async function GET(
 
   const approvedDocs = await db.document.findMany({
     where: { userId: doc.userId, status: "APPROVED" },
-    orderBy: { approvedAt: "asc" },
-    select: { title: true, approvedAt: true },
+    orderBy: { reviewedAt: "asc" },
+    select: { title: true, reviewedAt: true },
   });
 
-  const latestApprovalDate = approvedDocs[approvedDocs.length - 1]?.approvedAt ?? doc.approvedAt!;
+  const latestApprovalDate = approvedDocs[approvedDocs.length - 1]?.reviewedAt ?? doc.reviewedAt!;
 
   const pdfDoc = new PDFDocument({ size: "A4", margin: 60 });
   pdfDoc.registerFont("Sarabun", FONT_REGULAR);

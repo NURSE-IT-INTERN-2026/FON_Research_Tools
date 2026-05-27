@@ -21,7 +21,7 @@ export default async function BorrowPage() {
         status: true,
         adminNotes: true,
         createdAt: true,
-        approvedAt: true,
+        reviewedAt: true,
         licenseOriginalName: true,
         instrument: { select: { name: true } },
       },
@@ -32,7 +32,7 @@ export default async function BorrowPage() {
     ...r,
     requestDate: r.requestDate?.toISOString() ?? null,
     createdAt: r.createdAt.toISOString(),
-    approvedAt: r.approvedAt?.toISOString() ?? null,
+    reviewedAt: r.reviewedAt?.toISOString() ?? null,
   }));
 
   return (

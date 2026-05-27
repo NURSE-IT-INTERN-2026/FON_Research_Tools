@@ -98,8 +98,8 @@ export async function approveBorrowing(
     where: { id: recordId },
     data: {
       status: "APPROVED",
-      approvedBy: ctx.userId,
-      approvedAt: new Date(),
+      reviewedBy: ctx.userId,
+      reviewedAt: new Date(),
     },
   });
 
@@ -132,8 +132,8 @@ export async function rejectBorrowing(
     where: { id: recordId },
     data: {
       status: "REJECTED",
-      approvedBy: ctx.userId,
-      approvedAt: new Date(),
+      reviewedBy: ctx.userId,
+      reviewedAt: new Date(),
       adminNotes: notes,
     },
   });

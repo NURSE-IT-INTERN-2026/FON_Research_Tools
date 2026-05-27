@@ -27,8 +27,8 @@ export default async function ThesisPage() {
         status: true,
         adminNotes: true,
         createdAt: true,
-        approvedAt: true,
-        approvedBy: true,
+        reviewedAt: true,
+        reviewedBy: true,
       },
     }),
   ]);
@@ -36,7 +36,7 @@ export default async function ThesisPage() {
   const serialized = documents.map((d) => ({
     ...d,
     createdAt: d.createdAt.toISOString(),
-    approvedAt: d.approvedAt?.toISOString() ?? null,
+    reviewedAt: d.reviewedAt?.toISOString() ?? null,
   }));
 
   return (

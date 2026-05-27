@@ -32,8 +32,8 @@ type DocumentRow = {
   status: string;
   adminNotes: string | null;
   createdAt: string;
-  approvedAt: string | null;
-  approvedBy: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
 };
 
 export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
@@ -315,10 +315,10 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                         {formatDateTime(doc.createdAt)}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">
-                        {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
+                        {doc.reviewedAt ? formatDateTime(doc.reviewedAt) : "—"}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">
-                        {doc.approvedBy ?? "—"}
+                        {doc.reviewedBy ?? "—"}
                       </td>
                       <td className="px-4 py-3">
                         {doc.status === "PENDING" && (
@@ -379,12 +379,12 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                     </div>
                     <div>
                       <span className="text-muted-foreground">วันที่อนุมัติ</span>
-                      <p>{doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}</p>
+                      <p>{doc.reviewedAt ? formatDateTime(doc.reviewedAt) : "—"}</p>
                     </div>
-                    {doc.approvedBy && (
+                    {doc.reviewedBy && (
                       <div>
                         <span className="text-muted-foreground">ผู้อนุมัติ</span>
-                        <p>{doc.approvedBy}</p>
+                        <p>{doc.reviewedBy}</p>
                       </div>
                     )}
                   </div>

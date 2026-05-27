@@ -54,7 +54,7 @@ export default async function BorrowingPage({
     status: r.status,
     adminNotes: r.adminNotes,
     createdAt: r.createdAt.toISOString(),
-    approvedAt: r.approvedAt?.toISOString() ?? null,
+    reviewedAt: r.reviewedAt?.toISOString() ?? null,
   }));
 
   return (

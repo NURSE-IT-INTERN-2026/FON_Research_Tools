@@ -39,8 +39,8 @@ type DocumentRow = {
   thesisTitleEn: string | null;
   status: string;
   createdAt: string;
-  approvedAt: string | null;
-  approvedBy: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
 };
 
 type DocumentsClientProps = {
@@ -272,10 +272,10 @@ export function DocumentsClient({
                           {formatDateTime(first.createdAt)}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground text-xs">
-                          {first.approvedAt ? formatDateTime(first.approvedAt) : "—"}
+                          {first.reviewedAt ? formatDateTime(first.reviewedAt) : "—"}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground text-xs">
-                          {first.approvedBy ?? "—"}
+                          {first.reviewedBy ?? "—"}
                         </td>
                         <td className="px-3 py-3">
                           <ActionButtons doc={first} documents={documents} />
@@ -318,10 +318,10 @@ export function DocumentsClient({
                             {formatDateTime(doc.createdAt)}
                           </td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">
-                            {doc.approvedAt ? formatDateTime(doc.approvedAt) : "—"}
+                            {doc.reviewedAt ? formatDateTime(doc.reviewedAt) : "—"}
                           </td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">
-                            {doc.approvedBy ?? "—"}
+                            {doc.reviewedBy ?? "—"}
                           </td>
                           <td className="px-3 py-3">
                             <ActionButtons doc={doc} documents={documents} />
@@ -763,7 +763,7 @@ function DocumentCard({
       </div>
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span>อัปโหลด: {formatDateTime(doc.createdAt)}</span>
-        {doc.approvedAt && <span>อนุมัติ: {formatDateTime(doc.approvedAt)}{doc.approvedBy ? ` (${doc.approvedBy})` : ""}</span>}
+        {doc.reviewedAt && <span>อนุมัติ: {formatDateTime(doc.reviewedAt)}{doc.reviewedBy ? ` (${doc.reviewedBy})` : ""}</span>}
         <a
           href={`${BASE_PATH}/api/documents/${doc.id}/file`}
           download

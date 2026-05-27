@@ -37,7 +37,7 @@ export default async function DocumentsPage({
         where,
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE + 1,
-        orderBy: { createdAt: "desc" },
+        orderBy: (statusFilter === "APPROVED" || statusFilter === "REJECTED") ? { reviewedAt: "desc" } : { createdAt: "desc" },
         include: {
           profile: {
             select: { name: true, studentId: true, thesisTitleTh: true, thesisTitleEn: true },
@@ -62,8 +62,8 @@ export default async function DocumentsPage({
     thesisTitleEn: doc.profile.thesisTitleEn,
     status: doc.status,
     createdAt: doc.createdAt.toISOString(),
-    approvedAt: doc.approvedAt?.toISOString() ?? null,
-    approvedBy: doc.approvedBy,
+    reviewedAt: doc.reviewedAt?.toISOString() ?? null,
+    reviewedBy: doc.reviewedBy,
   }));
 
   return (

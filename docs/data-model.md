@@ -80,8 +80,8 @@ model Document {
   originalName String         // ชื่อไฟล์ต้นฉบับ
   fileSize     Int            // ขนาดไฟล์ (bytes)
   status       DocumentStatus @default(PENDING)
-  approvedBy   String?        // อีเมลผู้อนุมัติ/ปฏิเสธ
-  approvedAt   DateTime?      // เวลาที่อนุมัติ/ปฏิเสธ
+  reviewedBy   String?        // อีเมลผู้ดำเนินการ (อนุมัติ/ปฏิเสธ)
+  reviewedAt   DateTime?      // เวลาที่ดำเนินการ
   adminNotes   String?        // หมายเหตุ (กรณีปฏิเสธ)
   instrumentId String?        // link to Instrument (set when approved)
   createdAt    DateTime       @default(now())
@@ -151,8 +151,8 @@ model BorrowingRecord {
   licenseOriginalName String?
   licenseFileSize     Int?
   status              BorrowingStatus @default(PENDING)
-  approvedBy          String?
-  approvedAt          DateTime?
+  reviewedBy          String?
+  reviewedAt          DateTime?
   adminNotes          String?
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt

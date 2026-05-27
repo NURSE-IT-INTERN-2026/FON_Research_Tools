@@ -34,7 +34,7 @@ type BorrowRecord = {
   status: string;
   adminNotes: string | null;
   createdAt: string;
-  approvedAt: string | null;
+  reviewedAt: string | null;
   licenseOriginalName: string | null;
   instrument: { name: string };
 };

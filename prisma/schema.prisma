@@ -63,8 +63,8 @@ model Document {
   originalName String
   fileSize     Int
   status       DocumentStatus @default(PENDING)
-  approvedBy   String?
-  approvedAt   DateTime?
+  reviewedBy   String?
+  reviewedAt   DateTime?
   adminNotes   String?
   instrumentId String?
   createdAt    DateTime       @default(now())
@@ -117,8 +117,8 @@ model BorrowingRecord {
   licenseOriginalName String?
   licenseFileSize     Int?
   status              BorrowingStatus @default(PENDING)
-  approvedBy          String?
-  approvedAt          DateTime?
+  reviewedBy          String?
+  reviewedAt          DateTime?
   adminNotes          String?
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt

@@ -53,8 +53,8 @@ export default async function StudentDetailPage({
           originalName: true,
           status: true,
           adminNotes: true,
-          approvedBy: true,
-          approvedAt: true,
+          reviewedBy: true,
+          reviewedAt: true,
           createdAt: true,
         },
         skip: (page - 1) * PAGE_SIZE,
@@ -78,8 +78,8 @@ export default async function StudentDetailPage({
     originalName: d.originalName,
     status: d.status,
     adminNotes: d.adminNotes,
-    approvedBy: d.approvedBy,
-    approvedAt: d.approvedAt?.toISOString() ?? null,
+    reviewedBy: d.reviewedBy,
+    reviewedAt: d.reviewedAt?.toISOString() ?? null,
     createdAt: d.createdAt.toISOString(),
   }));
 

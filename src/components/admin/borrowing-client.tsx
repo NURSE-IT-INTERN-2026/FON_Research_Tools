@@ -36,7 +36,7 @@ type BorrowRecord = {
   status: string;
   adminNotes: string | null;
   createdAt: string;
-  approvedAt: string | null;
+  reviewedAt: string | null;
 };
 
 const STATUS_OPTIONS = [

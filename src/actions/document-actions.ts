@@ -177,8 +177,8 @@ export async function approveDocument(
     where: { id: documentId },
     data: {
       status: "APPROVED",
-      approvedBy: ctx.userId,
-      approvedAt: new Date(),
+      reviewedBy: ctx.userId,
+      reviewedAt: new Date(),
     },
   });
 
@@ -241,8 +241,8 @@ export async function rejectDocument(
     where: { id: documentId },
     data: {
       status: "REJECTED",
-      approvedBy: ctx.userId,
-      approvedAt: new Date(),
+      reviewedBy: ctx.userId,
+      reviewedAt: new Date(),
       adminNotes: notes,
     },
   });
@@ -291,8 +291,8 @@ export async function approveAllStudentPending(
     where: { userId: studentUserId, status: "PENDING" },
     data: {
       status: "APPROVED",
-      approvedBy: ctx.userId,
-      approvedAt: now,
+      reviewedBy: ctx.userId,
+      reviewedAt: now,
     },
   });
 

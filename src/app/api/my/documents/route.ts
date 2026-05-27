@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       title: true,
       status: true,
       createdAt: true,
-      approvedAt: true,
+      reviewedAt: true,
       adminNotes: true,
     },
     orderBy: { createdAt: "desc" },
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       title: doc.title,
       status: doc.status,
       createdAt: doc.createdAt.toISOString(),
-      approvedAt: doc.approvedAt?.toISOString() ?? null,
+      reviewedAt: doc.reviewedAt?.toISOString() ?? null,
       adminNotes: doc.adminNotes,
     })),
   });

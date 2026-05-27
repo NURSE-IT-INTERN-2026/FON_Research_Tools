@@ -40,8 +40,8 @@ type DocumentRow = {
   originalName: string;
   status: string;
   adminNotes: string | null;
-  approvedBy: string | null;
-  approvedAt: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
   createdAt: string;
 };
 
@@ -448,12 +448,12 @@ function DocumentCard({ doc, selected, onToggle }: { doc: DocumentRow; selected:
         </div>
 
         {/* Approved info */}
-        {doc.status === "APPROVED" && doc.approvedAt && (
+        {doc.status === "APPROVED" && doc.reviewedAt && (
           <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground bg-green-50 rounded-md px-3 py-2">
             <ShieldCheck className="h-3.5 w-3.5 text-green-600 shrink-0" />
             <span>
-              อนุมัติเมื่อ {formatDateTime(doc.approvedAt)}
-              {doc.approvedBy && ` โดย ${doc.approvedBy}`}
+              อนุมัติเมื่อ {formatDateTime(doc.reviewedAt)}
+              {doc.reviewedBy && ` โดย ${doc.reviewedBy}`}
             </span>
           </div>
         )}
