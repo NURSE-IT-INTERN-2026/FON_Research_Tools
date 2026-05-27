@@ -413,19 +413,21 @@ function DocumentCard({ doc, selected, onToggle }: { doc: DocumentRow; selected:
       ? "border-l-green-400"
       : "border-l-red-400";
 
+  const isSelectable = doc.status === "PENDING";
+
   return (
-    <div className={`rounded-lg border bg-card border-l-4 ${borderColor} ${selected ? "bg-primary/5" : ""} overflow-hidden`}>
+    <div
+      onClick={isSelectable ? onToggle : undefined}
+      className={`rounded-lg border bg-card border-l-4 ${borderColor} overflow-hidden transition-colors ${isSelectable ? "cursor-pointer hover:bg-muted/30" : ""} ${selected ? "bg-primary/5 ring-1 ring-primary" : ""}`}
+    >
       <div className="p-4 sm:p-5">
-        {/* Top row: checkbox + title + status */}
+        {/* Top row: title + status */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0 flex-1">
-            {doc.status === "PENDING" && (
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={onToggle}
-                className="rounded border-muted-foreground/40 accent-primary mt-1"
-              />
+            {isSelectable && (
+              <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${selected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
+                {selected && <Check className="h-3.5 w-3.5" />}
+              </div>
             )}
             <div className="min-w-0 flex-1">
               <h3 className="font-medium text-sm sm:text-base wrap-break-word">{doc.title}</h3>
@@ -433,6 +435,7 @@ function DocumentCard({ doc, selected, onToggle }: { doc: DocumentRow; selected:
                 <a
                   href={`${BASE_PATH}/api/documents/${doc.id}/file`}
                   download
+                  onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center gap-1.5 text-primary hover:underline rounded-md border border-primary/20 hover:bg-primary/5 px-3 py-1.5 text-sm font-medium transition-colors"
                 >
                   <FileText className="h-4 w-4" />
@@ -467,7 +470,7 @@ function DocumentCard({ doc, selected, onToggle }: { doc: DocumentRow; selected:
         )}
 
         {/* Actions */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t">
+        <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
           {doc.status === "PENDING" && (
             <>
               <RejectButton documentId={doc.id} />

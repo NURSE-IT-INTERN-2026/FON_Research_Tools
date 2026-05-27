@@ -41,9 +41,7 @@ export default async function BorrowPage() {
         <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">
           ยืมเครื่องมือวิจัย
         </h1>
-        <p className="text-muted-foreground mt-3">
-          เลือกเครื่องมือวิจัยและอัปโหลดใบอนุญาตเพื่อขอยืม
-        </p>
+      
       </div>
 
       <BorrowClient instruments={instruments} records={serialized} />

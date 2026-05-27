@@ -45,9 +45,7 @@ export default async function ThesisPage() {
         <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">
           วิทยานิพนธ์ของฉัน
         </h1>
-        <p className="text-muted-foreground mt-3">
-          ข้อมูลวิทยานิพนธ์และเอกสารเครื่องมือวิจัย
-        </p>
+        
       </div>
 
       {/* Section 1: Profile info */}
