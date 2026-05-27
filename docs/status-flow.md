@@ -78,3 +78,42 @@
 | Active | กำลังศึกษา | เขียว |
 | Resigned | ลาออก | เทา |
 | Dismissed | พ้นสภาพ | แดง |
+
+---
+
+## Borrowing Status (F20-A)
+
+```
+                    ┌──────────────────┐
+                    │                  │
+   นักศึกษา         │    PENDING       │
+   ส่งคำขอยืม       │   รอตรวจสอบ      │
+  ─────────────►    └────────┬─────────┘
+                            │
+                   ┌────────┴─────────┐
+                   │                  │
+              ┌────▼─────┐     ┌─────▼─────┐
+              │          │     │           │
+              │ APPROVED │     │ REJECTED  │
+              │อนุมัติแล้ว  │     │ปฏิเสธแล้ว   │
+              │          │     │           │
+              └──────────┘     └───────────┘
+```
+
+---
+
+## Borrowing Status Transitions
+
+| From | To | Triggered By | Side Effects |
+|---|---|---|---|
+| — | PENDING | นักศึกษาส่งคำขอยืม (เลือกเครื่องมือ + อัปโหลดใบอนุญาต) | บันทึกลง ActivityLog (BORROW_SUBMIT) |
+| PENDING | APPROVED | แอดมินอนุมัติ | set approvedBy, approvedAt; บันทึกลง ActivityLog (BORROW_APPROVE) |
+| PENDING | REJECTED | แอดมินปฏิเสธ (พร้อมเหตุผล) | set approvedBy, approvedAt, adminNotes; บันทึกลง ActivityLog (BORROW_REJECT) |
+| PENDING | (deleted) | นักศึกษาลบคำขอของตัวเอง | ลบไฟล์ + ลบ record |
+| any | (deleted) | แอดมินลบ | ลบไฟล์ + ลบ record |
+
+### Immutable rules
+
+- APPROVED และ REJECTED เป็น terminal states — เปลี่ยนสถานะต่อไม่ได้
+- นักศึกษาลบได้เฉพาะ PENDING ของตัวเอง
+- แอดมินลบได้ทุกสถานะ

@@ -18,6 +18,12 @@ enum DocumentStatus {
   REJECTED
 }
 
+enum BorrowingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum ActivityAction {
   USER_LOGIN
   DOCUMENT_UPLOAD
@@ -25,6 +31,10 @@ enum ActivityAction {
   DOCUMENT_REJECT
   DOCUMENT_REMOVE
   ADMIN_CREATED
+  BORROW_SUBMIT
+  BORROW_APPROVE
+  BORROW_REJECT
+  BORROW_REMOVE
 }
 ```
 
@@ -47,8 +57,9 @@ model Profile {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  documents     Document[]
-  activityLogs  ActivityLog[]
+  documents        Document[]
+  borrowingRecords BorrowingRecord[]
+  activityLogs     ActivityLog[]
 }
 ```
 
@@ -72,10 +83,12 @@ model Document {
   approvedBy   String?        // อีเมลผู้อนุมัติ/ปฏิเสธ
   approvedAt   DateTime?      // เวลาที่อนุมัติ/ปฏิเสธ
   adminNotes   String?        // หมายเหตุ (กรณีปฏิเสธ)
+  instrumentId String?        // link to Instrument (set when approved)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
   profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrument Instrument? @relation(fields: [instrumentId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -92,7 +105,7 @@ model ActivityLog {
   id          String         @id @default(cuid())
   action      ActivityAction
   userId      String
-  targetType  String?        // "Document" | "Profile"
+  targetType  String?        // "Document" | "Profile" | "BorrowingRecord"
   targetId    String?
   targetLabel String?        // "สมชาย → The Positive Discipline Questionnaire"
   metadata    String?
@@ -108,11 +121,75 @@ model ActivityLog {
 
 ---
 
-## Relations
+### Instrument
+
+```prisma
+model Instrument {
+  id        String   @id @default(cuid())
+  name      String   @unique   // ชื่อเครื่องมือวิจัย (normalized)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents        Document[]
+  borrowingRecords BorrowingRecord[]
+}
+```
+
+สร้างอัตโนมัติเมื่อ Document ถูก APPROVED — ใช้ `upsert` ตามชื่อ (case-sensitive, trimmed)
+
+### BorrowingRecord
+
+```prisma
+model BorrowingRecord {
+  id                  String          @id @default(cuid())
+  instrumentId        String          // เครื่องมือที่ขอยืม
+  userId              String          // นักศึกษาผู้ขอยืม
+  requesterName       String?         // ชื่อผู้ขอ (กรอกเอง / OCR)
+  requestDate         DateTime?       // วันที่ขอ (กรอกเอง / OCR)
+  additionalDetails   String?         // รายละเอียดเพิ่มเติม (กรอกเอง / OCR)
+  licenseFileName     String?         // ไฟล์ใบอนุญาต PDF
+  licenseOriginalName String?
+  licenseFileSize     Int?
+  status              BorrowingStatus @default(PENDING)
+  approvedBy          String?
+  approvedAt          DateTime?
+  adminNotes          String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  instrument Instrument @relation(fields: [instrumentId], references: [id])
+  profile    Profile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([instrumentId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+```
+
+ฟิลด์ที่นักศึกษากรอกเอง (F20-A): instrumentId, requesterName, requestDate, additionalDetails + อัปโหลด license PDF
+
+---
+
+## File Storage (Borrowing)
+
+```
+uploads/borrowing/
+├── {recordId_1}.pdf
+├── {recordId_2}.pdf
+└── ...
+```
+
+- รองรับเฉพาะ PDF
+- ขนาดสูงสุด 10 MB ต่อไฟล์
+- ชื่อไฟล์อัตโนมัติ: `{BorrowingRecord.id}.pdf`
 
 ```
 Profile 1──N Document
+Profile 1──N BorrowingRecord
 Profile 1──N ActivityLog
+Instrument 1──N Document
+Instrument 1──N BorrowingRecord
 ```
 
 ---

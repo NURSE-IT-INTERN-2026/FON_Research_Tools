@@ -12,6 +12,7 @@ import {
   Activity,
   Menu,
   Shield,
+  Package,
 } from "lucide-react";
 import { logout } from "@/actions/logout";
 
@@ -22,6 +23,7 @@ const ICON_MAP = {
   Users,
   Activity,
   Shield,
+  Package,
 } as const;
 
 export type IconName = keyof typeof ICON_MAP;

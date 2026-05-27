@@ -4,7 +4,7 @@ import type { ActivityAction } from "@/generated/prisma/enums";
 type LogActivityInput = {
   action: ActivityAction;
   userId: string;
-  targetType?: "Document" | "Profile" | "Session" | null;
+  targetType?: "Document" | "Profile" | "Session" | "BorrowingRecord" | null;
   targetId?: string | null;
   targetLabel?: string | null;
   metadata?: Record<string, unknown> | null;

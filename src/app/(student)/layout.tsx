@@ -4,6 +4,7 @@ import type { NavItem } from "@/components/sidebar";
 
 const STUDENT_NAV: NavItem[] = [
   { label: "วิทยานิพนธ์ของฉัน", href: "/thesis", icon: "BookOpen" },
+  { label: "ยืมเครื่องมือวิจัย", href: "/borrow", icon: "Package" },
 ];
 
 export default async function StudentLayout({

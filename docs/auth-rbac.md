@@ -95,6 +95,13 @@ Runs on every matched request. Responsibilities:
 | Approve/reject documents | — | Yes | Redirect to `/` |
 | Bulk approve (PENDING only) | — | Yes | Redirect to `/` |
 | Remove any document | — | Yes | Redirect to `/` |
+| Browse instruments + submit borrow request | Yes | — | Redirect to `/` |
+| Upload borrowing license (PDF) | Yes | — | Redirect to `/` |
+| View own borrowing records | Yes | — | Redirect to `/` |
+| Remove own PENDING borrow request | Yes | — | N/A |
+| View all borrowing records | — | Yes | Redirect to `/` |
+| Approve/reject borrow requests | — | Yes | Redirect to `/` |
+| Remove any borrow request | — | Yes | Redirect to `/` |
 | View student list | — | Yes | Redirect to `/` |
 | Search students | — | Yes | Redirect to `/` |
 | Manage admins | — | Yes | Redirect to `/` |

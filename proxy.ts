@@ -12,7 +12,7 @@ const BASE = "/researchtool";
 const PUBLIC_ROUTES = ["/", "/login", "/unauthorized", "/admin/login"];
 const API_PUBLIC_ROUTES = ["/api/auth/callback"];
 const ADMIN_PREFIX = "/admin";
-const STUDENT_PREFIXES = ["/thesis"];
+const STUDENT_PREFIXES = ["/thesis", "/borrow"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

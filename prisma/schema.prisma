@@ -26,6 +26,16 @@ enum ActivityAction {
   DOCUMENT_REJECT
   DOCUMENT_REMOVE
   ADMIN_CREATED
+  BORROW_SUBMIT
+  BORROW_APPROVE
+  BORROW_REJECT
+  BORROW_REMOVE
+}
+
+enum BorrowingStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Profile {
@@ -40,8 +50,9 @@ model Profile {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  documents     Document[]
-  activityLogs  ActivityLog[]
+  documents        Document[]
+  borrowingRecords BorrowingRecord[]
+  activityLogs     ActivityLog[]
 }
 
 model Document {
@@ -55,10 +66,12 @@ model Document {
   approvedBy   String?
   approvedAt   DateTime?
   adminNotes   String?
+  instrumentId String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
   profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrument Instrument? @relation(fields: [instrumentId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -80,5 +93,41 @@ model ActivityLog {
   @@index([action])
   @@index([targetType])
   @@index([userId])
+  @@index([createdAt])
+}
+
+model Instrument {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents        Document[]
+  borrowingRecords BorrowingRecord[]
+}
+
+model BorrowingRecord {
+  id                  String          @id @default(cuid())
+  instrumentId        String
+  userId              String
+  requesterName       String?
+  requestDate         DateTime?
+  additionalDetails   String?
+  licenseFileName     String?
+  licenseOriginalName String?
+  licenseFileSize     Int?
+  status              BorrowingStatus @default(PENDING)
+  approvedBy          String?
+  approvedAt          DateTime?
+  adminNotes          String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  instrument Instrument @relation(fields: [instrumentId], references: [id])
+  profile    Profile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([instrumentId])
+  @@index([userId])
+  @@index([status])
   @@index([createdAt])
 }

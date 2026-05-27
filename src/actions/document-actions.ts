@@ -182,6 +182,19 @@ export async function approveDocument(
     },
   });
 
+  // Auto-create Instrument if not exists
+  const normalizedName = doc.title.trim();
+  await db.instrument.upsert({
+    where: { name: normalizedName },
+    update: {},
+    create: { name: normalizedName },
+  }).then(async (instrument) => {
+    await db.document.update({
+      where: { id: documentId },
+      data: { instrumentId: instrument.id },
+    });
+  });
+
   await logActivity({
     action: "DOCUMENT_APPROVE",
     userId: ctx.userId,
@@ -290,6 +303,18 @@ export async function approveAllStudentPending(
       targetType: "Document",
       targetId: doc.id,
       targetLabel: doc.title,
+    });
+
+    // Auto-create Instrument if not exists
+    const normalizedName = doc.title.trim();
+    const instrument = await db.instrument.upsert({
+      where: { name: normalizedName },
+      update: {},
+      create: { name: normalizedName },
+    });
+    await db.document.update({
+      where: { id: doc.id },
+      data: { instrumentId: instrument.id },
     });
   }
 

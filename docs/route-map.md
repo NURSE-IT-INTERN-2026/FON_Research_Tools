@@ -42,6 +42,8 @@ src/app/
 │   ├── layout.tsx                ← Sidebar (orange theme) + main content
 │   └── dashboard/
 │       └── page.tsx              ← Profile + thesis info + upload form + document list
+│   └── borrow/
+│       └── page.tsx              ← Borrow instruments + upload license + borrowing history
 └── (admin)/                      ← Route group: admin layout + auth guard
     ├── layout.tsx                ← Sidebar (purple theme) + search button on navbar
     └── admin/
@@ -53,6 +55,8 @@ src/app/
         │   ├── page.tsx          ← Student list with status + document counts
         │   └── [id]/
         │       └── page.tsx      ← Student detail: profile + thesis + documents with actions
+        ├── borrowing/
+        │   └── page.tsx          ← Borrowing request management + history
         └── activity-log/
             └── page.tsx          ← Full activity log with search + filters
 ```
@@ -76,6 +80,7 @@ src/app/
 | Route | Page | Data Source |
 |---|---|---|
 | `/dashboard` | Profile + upload + documents | Profile (MIS API data), Document table filtered by userId |
+| `/borrow` | Instrument selection + license upload + borrowing history | Instrument catalog, BorrowingRecord filtered by userId |
 
 ### Admin Routes (requires `ADMIN` role)
 
@@ -85,6 +90,7 @@ src/app/
 | `/admin/documents` | Document management | Document + Profile join, filtered by status via URL `searchParams`, searchable by title/student name/student ID (`q` param), backend pagination (`page`, `limit`) |
 | `/admin/students` | Student list | Profile, Document count per student, search by name/studentId |
 | `/admin/students/[id]` | Student detail | Profile, Thesis API data, Documents with approve/reject/remove actions |
+| `/admin/borrowing` | Borrowing management | BorrowingRecord + Instrument + Profile join, filtered by status via URL `searchParams`, backend pagination |
 | `/admin/activity-log` | Activity log | ActivityLog + Profile join, filtered/searched via URL `searchParams`, backend pagination, date filter (`from`, `to`) |
 
 ### API Routes
@@ -98,6 +104,7 @@ src/app/
 | PATCH | `/api/documents/[id]/reject` | Admin | Reject document with notes |
 | GET | `/api/my/documents` | Student | Own documents with status + approval timestamps |
 | GET | `/api/documents/[id]/certificate` | Student (own) / Admin | Download PDF certificate (APPROVED only) |
+| GET | `/api/borrowing/[id]/license` | Student (own) / Admin | Serve borrowing license PDF |
 
 ---
 
@@ -120,6 +127,10 @@ src/app/
 | `rejectDocument` | Admin reject button | Update Document → REJECTED, set adminNotes + approvedBy + approvedAt + send email to student with reason |
 | `getRecentActivity` | Activity panel | Query ActivityLog last 25, admin-only |
 | `logActivity` | Internal (after every mutation) | Insert ActivityLog row (fire-and-forget) |
+| `submitBorrowRequest` | Student borrow form | Save license PDF + insert BorrowingRecord row |
+| `approveBorrowing` | Admin approve button | Update BorrowingRecord → APPROVED |
+| `rejectBorrowing` | Admin reject button | Update BorrowingRecord → REJECTED + adminNotes |
+| `removeBorrowing` | Student/Admin remove button | Delete license file + delete BorrowingRecord row |
 
 ---
 

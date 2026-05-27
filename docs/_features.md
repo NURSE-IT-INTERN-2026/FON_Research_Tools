@@ -38,7 +38,8 @@
 - [x] **F17** Student detail page: `/admin/students/[id]`
 - [ ] **F18** Export data (Excel/CSV)
 - [ ] **F19** OCR ช่วยเจ้าหน้าที่
-- [ ] **F20** Tool usage history feature
+- [x] **F20-A** ระบบยืมเครื่องมือวิจัย (ไม่มี OCR): Instrument catalog (auto-create from approved Documents) + BorrowingRecord + Student borrow page + Admin borrowing management + status flow (PENDING → APPROVED/REJECTED) + license PDF upload/download
+- [ ] **F20-B** Typhoon OCR integration: OCR อ่านใบอนุญาตแล้วกรอกข้อมูลอัตโนมัติ (ชื่อผู้ขอ, วันที่ขอ, รายละเอียดเพิ่มเติม)
 
 ---
 
@@ -57,3 +58,4 @@
 11. **F15** — Email notifications (CMU Email API)
 12. **F16** — Download PDF certificate
 13. **F17-F20** — Post-MVP
+14. **F20-A** — Borrowing system (without OCR)

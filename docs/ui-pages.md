@@ -77,7 +77,23 @@
 - Empty state: ยังไม่มีเอกสาร
 
 **Sidebar nav items (Student):**
-- แดชบอร์ด (LayoutDashboard) → `/dashboard`
+- วิทยานิพนธ์ของฉัน (BookOpen) → `/thesis`
+- ยืมเครื่องมือวิจัย (Package) → `/borrow`
+
+### Borrow Instruments — `/borrow`
+
+**Section 1: ฟอร์มขอยืมเครื่องมือวิจัย** (card with form)
+- Dropdown เลือกเครื่องมือวิจัย (จาก Instrument catalog)
+- ช่องกรอก: ชื่อผู้ขอ (Input), วันที่ขอ (date Input), รายละเอียดเพิ่มเติม (textarea)
+- เลือกไฟล์: PDF file picker (ใบอนุญาต/ใบรับรอง)
+- ปุ่ม ส่งคำขอยืม (primary)
+- Validation: PDF เท่านั้น, ขนาดสูงสุด 10 MB, ต้องเลือกเครื่องมือ
+- Confirm dialog ก่อน submit
+
+**Section 2: ประวัติการยืมของฉัน** (table)
+- คอลัมน์: ลำดับ, เครื่องมือวิจัย, ชื่อผู้ขอ, วันที่ขอ, ใบอนุญาต (link), สถานะ (badge), วันที่ยื่น, การดำเนินการ
+- การดำเนินการ: ลบ (เฉพาะ PENDING), เหตุผล (เฉพาะ REJECTED)
+- Empty state: ยังไม่มีประวัติการยืม
 
 ---
 
@@ -159,9 +175,37 @@
 
 **Sidebar nav items (Admin):**
 - แดชบอร์ด (LayoutDashboard) → `/admin/dashboard`
-- เอกสารรอตรวจสอบ (FileText) → `/admin/documents`
+- เอกสารเครื่องมือวิจัย (FileText) → `/admin/documents`
+- คำขอยืมเครื่องมือ (Package) → `/admin/borrowing`
 - รายชื่อนักศึกษา (Users) → `/admin/students`
+- จัดการผู้ดูแล (Shield) → `/admin/admins`
 - บันทึกกิจกรรม (Activity) → `/admin/activity-log`
+
+### Borrowing Management — `/admin/borrowing`
+
+**Header:** "คำขอยืมเครื่องมือวิจัย"
+
+**Stat Cards** (4-card grid):
+| Label | Color |
+|---|---|
+| รอตรวจสอบ | เหลือง/ส้ม |
+| อนุมัติแล้ว | เขียว |
+| ปฏิเสธแล้ว | แดง |
+| ทั้งหมด | น้ำเงิน |
+
+**Status Filter Pills:** ทั้งหมด / รอตรวจสอบ / อนุมัติแล้ว / ปฏิเสธแล้ว
+
+**Data Table** (Backend Pagination):
+- คอลัมน์: ลำดับ, นักศึกษา (ชื่อ+รหัส), เครื่องมือวิจัย, ชื่อผู้ขอ, วันที่ขอ, ใบอนุญาต (link PDF), สถานะ (badge), วันที่ยื่น, การดำเนินการ
+
+**Actions by status:**
+| Status | Buttons |
+|---|---|
+| PENDING | อนุมัติ (primary) + ปฏิเสธ (outline) |
+| APPROVED | — |
+| REJECTED | เหตุผล (ถ้ามี) |
+
+**Reject Dialog:** Modal with textarea for เหตุผล
 
 ---
 
