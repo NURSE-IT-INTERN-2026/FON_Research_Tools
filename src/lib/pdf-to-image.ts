@@ -13,7 +13,7 @@ export function convertPdfToImage(pdfBuffer: Buffer): Buffer {
     writeFileSync(pdfPath, pdfBuffer);
 
     if (process.platform === "darwin") {
-      execFileSync("sips", ["-s", "format", "png", pdfPath, "--out", pngPath], {
+      execFileSync("sips", ["-s", "format", "png", "--resampleWidth", "2400", pdfPath, "--out", pngPath], {
         timeout: 15000,
       });
     } else {
