@@ -12,13 +12,16 @@ type ChatCompletionResponse = {
   }>;
 };
 
-const OCR_PROMPT = `วิเคราะห์เอกสารใบอนุญาตนี้และดึงข้อมูลที่สำคัญ
-ตอบเป็น JSON เท่านั้น ไม่ต้องมี markdown code block หรือข้อความอื่นใด:
+const OCR_PROMPT = `อ่านเอกสารใบอนุญาตนี้แล้วดึงข้อมูลต่อไปนี้
+ตอบเป็น JSON เท่านั้น ไม่ต้องมี markdown code block หรือข้อความอื่นใด
+
 {
-  "requesterName": "ชื่อ-นามสกุล ของผู้ขอยืม หรือ null ถ้าไม่พบ",
-  "requestDate": "วันที่ในเอกสาร รูปแบบ YYYY-MM-DD หรือ null ถ้าไม่พบ",
-  "additionalDetails": "ข้อมูลเพิ่มเติมที่สำคัญจากเอกสาร เช่น ชื่อเครื่องมือวิจัย จุดประสงค์การยืม หรือ null ถ้าไม่พบ"
-}`;
+  "requesterName": "ชื่อ-นามสกุล ของผู้ขอยืม (เช่น นางสาวสมหญิง ใจดี) หรือ null ถ้าไม่พบ",
+  "requestDate": "วันที่ในเอกสาร เป็นปีคริสต์ศักราช รูปแบบ YYYY-MM-DD (เช่น 15 พฤษภาคม 2569 → 2026-05-15, 1 มกราคม 2568 → 2025-01-01) หรือ null ถ้าไม่พบ",
+  "additionalDetails": "ชื่อเครื่องมือวิจัยที่ขอยืม และจุดประสงค์การยืม รวมเป็นข้อความเดียว หรือข้อมูลอื่นๆ ที่สำคัญจากเอกสาร หรือ null ถ้าไม่พบ"
+}
+
+สำคัญมาก: ถ้าวันที่เป็นปีพุทธศักราช (พ.ศ.) ให้ลบ 543 เพื่อแปลงเป็นปีคริสต์ศักราช (ค.ศ.)`;
 
 export async function extractLicenseData(
   pdfBuffer: Buffer,
@@ -33,8 +36,10 @@ export async function extractLicenseData(
     );
   }
 
-  const base64 = pdfBuffer.toString("base64");
-  const dataUrl = `data:application/pdf;base64,${base64}`;
+  const { convertPdfToImage } = await import("./pdf-to-image");
+  const imageBuffer = convertPdfToImage(pdfBuffer);
+  const base64 = imageBuffer.toString("base64");
+  const dataUrl = `data:image/png;base64,${base64}`;
 
   const endpoint = `${baseURL.replace(/\/+$/, "")}/v1/chat/completions`;
 
@@ -63,6 +68,8 @@ export async function extractLicenseData(
   });
 
   if (!response.ok) {
+    const errorBody = await response.text().catch(() => "");
+    console.error("[OCR] API error:", response.status, errorBody.slice(0, 500));
     throw new Error("ไม่สามารถเชื่อมต่อบริการอ่านเอกสารได้ กรุณาลองใหม่");
   }
 
@@ -93,10 +100,41 @@ function parseOCRResponse(content: string): OCRResult {
     const parsed = JSON.parse(stripped);
     return {
       requesterName: typeof parsed.requesterName === "string" ? parsed.requesterName : null,
-      requestDate: typeof parsed.requestDate === "string" ? parsed.requestDate : null,
+      requestDate: normalizeDate(parsed.requestDate),
       additionalDetails: typeof parsed.additionalDetails === "string" ? parsed.additionalDetails : null,
     };
   } catch {
     return empty;
   }
+}
+
+const THAI_MONTHS: Record<string, number> = {
+  "มกราคม": 1, "กุมภาพันธ์": 2, "มีนาคม": 3, "เมษายน": 4,
+  "พฤษภาคม": 5, "มิถุนายน": 6, "กรกฎาคม": 7, "สิงหาคม": 8,
+  "กันยายน": 9, "ตุลาคม": 10, "พฤศจิกายน": 11, "ธันวาคม": 12,
+  "ม.ค.": 1, "ก.พ.": 2, "มี.ค.": 3, "เม.ย.": 4,
+  "พ.ค.": 5, "มิ.ย.": 6, "ก.ค.": 7, "ส.ค.": 8,
+  "ก.ย.": 9, "ต.ค.": 10, "พ.ย.": 11, "ธ.ค.": 12,
+};
+
+function normalizeDate(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const v = value.trim();
+
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+  // Thai date: "15 พฤษภาคม 2569" or "15 พ.ค. 2569"
+  const thaiMatch = v.match(/(\d{1,2})\s+(\S+)\s+(\d{4})/);
+  if (thaiMatch) {
+    const day = parseInt(thaiMatch[1], 10);
+    const month = THAI_MONTHS[thaiMatch[2]];
+    let year = parseInt(thaiMatch[3], 10);
+    if (month && year > 2400) {
+      year -= 543; // Buddhist → Gregorian
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+  }
+
+  return null;
 }
