@@ -1,5 +1,5 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import db from "@/lib/db";
+import { verifyPassword } from "@/lib/auth/password";
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME ?? "admin";
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
@@ -7,24 +7,15 @@ const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
 const DEV_STUDENT_USERNAME = process.env.DEV_STUDENT_USERNAME;
 const DEV_STUDENT_PASSWORD_HASH = process.env.DEV_STUDENT_PASSWORD_HASH;
 
-function hashPassword(password: string) {
-  return createHash("sha256").update(password).digest("hex");
-}
-
-function verifyHash(input: string, expected: string) {
-  return timingSafeEqual(Buffer.from(input), Buffer.from(expected));
-}
-
 export async function verifyCredentials(
   username: string,
   password: string,
 ) {
   if (!username || !password) return null;
 
-  // Admin login
+  // Admin login (bcrypt)
   if (ADMIN_PASSWORD_HASH && username === ADMIN_USERNAME) {
-    const inputHash = hashPassword(password);
-    if (verifyHash(inputHash, ADMIN_PASSWORD_HASH)) {
+    if (await verifyPassword(password, ADMIN_PASSWORD_HASH)) {
       const admin = await db.profile.findFirst({
         where: { role: "ADMIN" },
         select: { id: true, email: true, name: true },
@@ -39,10 +30,9 @@ export async function verifyCredentials(
     }
   }
 
-  // Dev student login
+  // Dev student login (bcrypt)
   if (DEV_STUDENT_USERNAME && DEV_STUDENT_PASSWORD_HASH && username === DEV_STUDENT_USERNAME) {
-    const inputHash = hashPassword(password);
-    if (verifyHash(inputHash, DEV_STUDENT_PASSWORD_HASH)) {
+    if (await verifyPassword(password, DEV_STUDENT_PASSWORD_HASH)) {
       const student = await db.profile.findFirst({
         where: { role: "STUDENT" },
         select: { id: true, email: true, name: true },

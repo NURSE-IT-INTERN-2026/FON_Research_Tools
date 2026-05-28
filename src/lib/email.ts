@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, chmodSync } from "node:fs";
 
 const EMAIL_API_BASE = process.env.EMAIL_API_BASE ?? "https://mis.nurse.cmu.ac.th/thesis";
 const TOKEN_CACHE_PATH = join(process.cwd(), ".cache", "email-token.json");
@@ -40,8 +40,7 @@ async function getEmailToken(): Promise<string> {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    console.error("[email] GetToken failed:", text);
+    console.error("[email] GetToken failed: status", res.status);
     throw new Error(`Email GetToken failed: ${res.status}`);
   }
 
@@ -56,6 +55,7 @@ async function getEmailToken(): Promise<string> {
   const cacheDir = join(process.cwd(), ".cache");
   if (!existsSync(cacheDir)) await mkdir(cacheDir, { recursive: true });
   await writeFile(TOKEN_CACHE_PATH, JSON.stringify(cache));
+  chmodSync(TOKEN_CACHE_PATH, 0o600);
 
   return data.access_token;
 }
@@ -71,7 +71,7 @@ type SendEmailParams = {
 export async function sendEmail(params: SendEmailParams): Promise<boolean> {
   try {
     const token = await getEmailToken();
-    console.log("[email] Sending to:", params.sentTo, "subject:", params.subject);
+    console.log("[email] Sending email, subject:", params.subject);
 
     const res = await fetch(`${EMAIL_API_BASE}/EmailApi/SendEmail`, {
       method: "POST",
@@ -89,10 +89,9 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
     });
 
     const data = await res.json();
-    console.log("[email] API response:", JSON.stringify(data));
 
     if (!res.ok) {
-      console.error("[email] SendEmail failed:", res.status, data);
+      console.error("[email] SendEmail failed: status", res.status);
       return false;
     }
 
