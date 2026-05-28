@@ -31,7 +31,11 @@ async function getEmailToken(): Promise<string> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       client_id: process.env.EMAIL_CLIENT_ID ?? "nurse-email-api",
-      client_secret: process.env.EMAIL_CLIENT_SECRET ?? "NurseEmail@CMU2025!",
+      client_secret: (() => {
+        const secret = process.env.EMAIL_CLIENT_SECRET;
+        if (!secret) throw new Error("EMAIL_CLIENT_SECRET is required");
+        return secret;
+      })(),
     }),
   });
 
