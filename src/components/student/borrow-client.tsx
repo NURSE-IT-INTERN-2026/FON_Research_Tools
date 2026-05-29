@@ -19,7 +19,10 @@ import {
   type BorrowingActionState,
 } from "@/actions/borrowing-actions";
 import { StatusBadge } from "@/components/status-badge";
-import { Upload, Trash2, FileText, ScanText, Loader2 } from "lucide-react";
+import { Upload, Trash2, FileText, ScanText, Loader2, ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatDateTime } from "@/lib/utils";
 import { processOCR, type OCRActionState } from "@/actions/ocr-actions";
 
@@ -49,6 +52,7 @@ export function BorrowClient({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [selectedInstrument, setSelectedInstrument] = useState("");
+  const [instrumentOpen, setInstrumentOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -130,23 +134,55 @@ export function BorrowClient({
           </div>
         ) : (
           <form ref={formRef} action={formAction} className="space-y-4">
-            {/* Instrument select */}
+            {/* Instrument select — searchable combobox */}
             <div className="space-y-1.5">
-              <Label htmlFor="instrumentId">เครื่องมือวิจัย</Label>
-              <select
-                id="instrumentId"
-                name="instrumentId"
-                value={selectedInstrument}
-                onChange={(e) => setSelectedInstrument(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">— เลือกเครื่องมือวิจัย —</option>
-                {instruments.map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    {inst.name}
-                  </option>
-                ))}
-              </select>
+              <Label>เครื่องมือวิจัย</Label>
+              <Popover open={instrumentOpen} onOpenChange={setInstrumentOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={instrumentOpen}
+                    className="w-full justify-between rounded font-normal"
+                  >
+                    {selectedInstrument
+                      ? instruments.find((i) => i.id === selectedInstrument)?.name
+                      : "— เลือกเครื่องมือวิจัย —"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0 rounded" align="start">
+                  <Command>
+                    <CommandInput placeholder="ค้นหาเครื่องมือวิจัย..." />
+                    <CommandList>
+                      <CommandEmpty>ไม่พบเครื่องมือวิจัย</CommandEmpty>
+                      <CommandGroup>
+                        {instruments.map((inst) => (
+                          <CommandItem
+                            key={inst.id}
+                            value={inst.name}
+                            onSelect={() => {
+                              setSelectedInstrument(
+                                selectedInstrument === inst.id ? "" : inst.id
+                              );
+                              setInstrumentOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedInstrument === inst.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {inst.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <input type="hidden" name="instrumentId" value={selectedInstrument} />
             </div>
 
             {/* Requester name */}
