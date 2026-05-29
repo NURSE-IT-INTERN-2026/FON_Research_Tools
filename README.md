@@ -20,13 +20,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-## Test Accounts (after seed)
-
-| Role | Email | Password |
-|---|---|---|
-| Admin | admin@cmu.ac.th | password123 |
-| Student | student1@cmu.ac.th | password123 |
-
 ## Tech Stack
 
 - Next.js 16 (App Router) + React 19 + TypeScript
