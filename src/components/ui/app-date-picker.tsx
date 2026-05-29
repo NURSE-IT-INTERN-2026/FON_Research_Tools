@@ -192,6 +192,7 @@ export function AppDatePicker({
             defaultMonth={selectedDate ?? new Date()}
             fromYear={startYear}
             toYear={endYear}
+            hideNavigation
             captionLayout="label"
             components={{ MonthCaption: Caption }}
             classNames={{
