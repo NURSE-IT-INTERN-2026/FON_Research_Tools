@@ -2,12 +2,15 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, CheckCircle, ChevronsUpDown, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FilterPills } from "@/components/filter-pills";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ACTION_LABELS, ACTION_ICONS, ACTION_COLORS, ACTION_OPTIONS, TARGET_OPTIONS } from "@/lib/activity-meta";
+import { AppDatePicker } from "@/components/ui/app-date-picker";
 
 type LogEntry = {
   id: string;
@@ -110,18 +113,22 @@ function DateRangeFilter({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Input
-        type="date"
+      <AppDatePicker
         value={from}
-        onChange={(e) => updateDate("from", e.target.value)}
-        className="h-8 rounded text-xs w-full sm:w-auto"
+        onChange={(v) => updateDate("from", v)}
+        tone="admin"
+        size="md"
+        placeholder="จากวันที่"
+        className="text-xs"
       />
       <span className="text-xs text-muted-foreground">ถึง</span>
-      <Input
-        type="date"
+      <AppDatePicker
         value={to}
-        onChange={(e) => updateDate("to", e.target.value)}
-        className="h-8 rounded text-xs w-full sm:w-auto"
+        onChange={(v) => updateDate("to", v)}
+        tone="admin"
+        size="md"
+        placeholder="ถึงวันที่"
+        className="text-xs"
       />
       {(from || to) && (
         <Button
@@ -181,6 +188,7 @@ function Pagination({
 export function ActivityLogClient({ logs, users, page, hasMore, totalPages, currentFilters }: ActivityLogClientProps & { hasMore: boolean; totalPages: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [userOpen, setUserOpen] = useState(false);
 
   const currentRole = currentFilters.userRole || "ALL";
   const roleUsers = currentRole === "ADMIN"
@@ -273,16 +281,48 @@ export function ActivityLogClient({ logs, users, page, hasMore, totalPages, curr
               ))}
             </div>
             {roleUsers.length > 0 && (
-              <select
-                value={currentFilters.userId || "ALL"}
-                onChange={(e) => updateUserId(e.target.value)}
-                className="flex h-8 rounded border border-input bg-background px-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1.5"
-              >
-                <option value="ALL">-- เลือกผู้ใช้ --</option>
-                {roleUsers.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
+              <Popover open={userOpen} onOpenChange={setUserOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={userOpen}
+                    className="h-8 w-full justify-between rounded text-xs font-normal mt-1.5"
+                  >
+                    {currentFilters.userId
+                      ? roleUsers.find((u) => u.id === currentFilters.userId)?.name
+                      : "— เลือกผู้ใช้ —"}
+                    <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0 rounded" align="start">
+                  <Command>
+                    <CommandInput placeholder="ค้นหาผู้ใช้..." />
+                    <CommandList>
+                      <CommandEmpty>ไม่พบผู้ใช้</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="ทั้งหมด"
+                          onSelect={() => { updateUserId("ALL"); setUserOpen(false); }}
+                        >
+                          <Check className={cn("mr-2 h-3.5 w-3.5", !currentFilters.userId ? "opacity-100" : "opacity-0")} />
+                          ทั้งหมด
+                        </CommandItem>
+                        {roleUsers.map((u) => (
+                          <CommandItem
+                            key={u.id}
+                            value={u.name}
+                            onSelect={() => { updateUserId(u.id); setUserOpen(false); }}
+                          >
+                            <Check className={cn("mr-2 h-3.5 w-3.5", currentFilters.userId === u.id ? "opacity-100" : "opacity-0")} />
+                            {u.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
           <div className="space-y-1">

@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatDateTime } from "@/lib/utils";
 import { processOCR, type OCRActionState } from "@/actions/ocr-actions";
+import { AppDatePicker } from "@/components/ui/app-date-picker";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -200,14 +201,13 @@ export function BorrowClient({
 
             {/* Request date */}
             <div className="space-y-1.5">
-              <Label htmlFor="requestDate">วันที่ขอ</Label>
-              <Input
-                id="requestDate"
-                name="requestDate"
-                type="date"
+              <Label>วันที่ขอ</Label>
+              <AppDatePicker
                 value={requestDate}
-                onChange={(e) => setRequestDate(e.target.value)}
-                className="rounded"
+                onChange={setRequestDate}
+                tone="student"
+                placeholder="เลือกวันที่ขอ"
+                name="requestDate"
               />
             </div>
 
