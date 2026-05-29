@@ -14,6 +14,7 @@ export default function HomePage() {
 
       <div className="flex flex-col items-center gap-8 text-center max-w-lg relative z-10">
         <div className="animate-fade-in">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/nurse_logo.svg`} alt="Research Tools" width={56} height={56} />
         </div>
 

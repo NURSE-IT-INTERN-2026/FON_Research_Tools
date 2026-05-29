@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +20,7 @@ import {
   type BorrowingActionState,
 } from "@/actions/borrowing-actions";
 import { StatusBadge } from "@/components/status-badge";
-import { CheckCircle, XCircle, Check, Search, X, FileText, Clock, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle, XCircle, Check, Search, X, FileText, Clock, AlertTriangle } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";

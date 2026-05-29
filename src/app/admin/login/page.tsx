@@ -14,6 +14,7 @@ export default function AdminLoginPage() {
         <div className="flex flex-col space-y-1.5 p-6 text-center pt-6">
           <div className="flex items-center justify-center gap-2.5 mb-3">
             <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/nurse_logo.svg`}
                 alt=""

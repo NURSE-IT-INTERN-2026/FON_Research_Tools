@@ -65,6 +65,7 @@ export function Sidebar({ navItems, userEmail, headerActions }: NavbarProps) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/nurse_logo.svg`} alt="Research Tools" width={20} height={20} className="brightness-0 invert" />
             <span className="font-heading font-bold text-sm tracking-widest uppercase">
               Research Tools

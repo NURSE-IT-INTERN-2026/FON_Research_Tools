@@ -220,10 +220,6 @@ function pickString(...values: unknown[]) {
   return null;
 }
 
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function normalizeWhitespace(value: string) {
   return value
     .replace(/[๐-๙]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 3664))
