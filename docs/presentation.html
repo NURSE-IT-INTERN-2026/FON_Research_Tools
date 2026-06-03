@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจัดการเอกสารเครื่องมือวิจัย — สถานะการพัฒนา</title>
+<style>
+  :root {
+    --student: #ea580c;
+    --student-light: #fff7ed;
+    --student-border: #fdba74;
+    --admin: #7c3aed;
+    --admin-light: #f5f3ff;
+    --admin-border: #c4b5fd;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --green-border: #86efac;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --red-border: #fca5a5;
+    --amber: #d97706;
+    --amber-light: #fffbeb;
+    --amber-border: #fcd34d;
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --blue-border: #93c5fd;
+    --gray: #6b7280;
+    --gray-light: #f9fafb;
+    --gray-border: #d1d5db;
+    --bg: #ffffff;
+    --text: #1f2937;
+    --text-secondary: #6b7280;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --card-shadow-hover: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+  }
+  .header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .header .subtitle { font-size: 1rem; opacity: 0.8; }
+  .header .badge-row { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.25rem; flex-wrap: wrap; }
+  .header .tech-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* Nav */
+  .toc {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--card-shadow);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+  }
+  .toc a {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: var(--blue);
+    text-decoration: none;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    transition: background 0.15s;
+  }
+  .toc a:hover { background: var(--blue-light); }
+  .toc-title {
+    grid-column: 1 / -1;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  /* Sections */
+  .section {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--card-shadow);
+  }
+  .section h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem;
+  }
+  .section p { margin-bottom: 0.75rem; color: var(--text); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    border: 1px solid;
+  }
+  .badge-done { background: var(--green-light); color: var(--green); border-color: var(--green-border); }
+  .badge-pending { background: var(--amber-light); color: var(--amber); border-color: var(--amber-border); }
+
+  /* Feature list */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 768px) { .feature-grid { grid-template-columns: 1fr; } }
+
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    transition: box-shadow 0.15s;
+  }
+  .feature-item:hover { box-shadow: var(--card-shadow-hover); }
+  .feature-icon {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    margin-top: 0.15rem;
+  }
+  .feature-icon.done { background: var(--green); color: white; }
+  .feature-icon.pending { background: var(--amber); color: white; }
+  .feature-text { font-size: 0.9rem; line-height: 1.5; }
+  .feature-text strong { display: block; font-weight: 600; }
+  .feature-text small { color: var(--text-secondary); font-size: 0.8rem; }
+
+  /* Phase group */
+  .phase-group {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid;
+  }
+  .phase-group.student { background: var(--student-light); border-color: var(--student); }
+  .phase-group.admin { background: var(--admin-light); border-color: var(--admin); }
+  .phase-group.system { background: var(--blue-light); border-color: var(--blue); }
+  .phase-group.post { background: var(--gray-light); border-color: var(--gray); }
+  .phase-group h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 1.5rem 0;
+  }
+  .flow-node {
+    padding: 0.6rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    border: 2px solid;
+    min-width: 100px;
+  }
+  .flow-arrow {
+    font-size: 1.25rem;
+    color: var(--gray);
+    font-weight: 700;
+  }
+  .flow-node.orange { background: var(--student-light); border-color: var(--student); color: var(--student); }
+  .flow-node.purple { background: var(--admin-light); border-color: var(--admin); color: var(--admin); }
+  .flow-node.green { background: var(--green-light); border-color: var(--green); color: var(--green); }
+  .flow-node.red { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  .flow-node.amber { background: var(--amber-light); border-color: var(--amber); color: var(--amber); }
+  .flow-node.blue { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+  .flow-node.gray { background: var(--gray-light); border-color: var(--gray); color: var(--gray); }
+
+  /* State machine */
+  .state-machine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 1.5rem;
+  }
+  .state-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+  .state-box {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 2px solid;
+    text-align: center;
+    min-width: 140px;
+  }
+  .state-box.pending { background: var(--amber-light); border-color: var(--amber); color: #92400e; }
+  .state-box.approved { background: var(--green-light); border-color: var(--green); color: #166534; }
+  .state-box.rejected { background: var(--red-light); border-color: var(--red); color: #991b1b; }
+  .state-connector-v {
+    width: 2px;
+    height: 1.5rem;
+    background: var(--gray);
+  }
+  .state-connector-h {
+    height: 2px;
+    width: 2rem;
+    background: var(--gray);
+  }
+  .state-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding: 0.15rem 0.5rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.25rem;
+  }
+
+  /* Mockup wireframe */
+  .mockup-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 768px) { .mockup-container { grid-template-columns: 1fr; } }
+
+  .mockup {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    font-size: 0.78rem;
+    box-shadow: var(--card-shadow);
+    transition: box-shadow 0.15s;
+  }
+  .mockup:hover { box-shadow: var(--card-shadow-hover); }
+  .mockup-title {
+    padding: 0.6rem 1rem;
+    font-weight: 600;
+    font-size: 0.82rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .mockup-body { padding: 0; background: white; }
+
+  /* Wireframe: Sidebar layout */
+  .wire-layout {
+    display: flex;
+    min-height: 250px;
+  }
+  .wire-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    padding: 1rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+  }
+  .wire-sidebar.student-sidebar { background: #fff7ed; border-right: 2px solid var(--student); }
+  .wire-sidebar.admin-sidebar { background: #f5f3ff; border-right: 2px solid var(--admin); }
+  .wire-sidebar .logo-area {
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  .wire-sidebar .nav-item {
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .wire-sidebar .nav-item.active { font-weight: 600; }
+  .wire-sidebar.student-sidebar .nav-item.active { background: var(--student); color: white; }
+  .wire-sidebar.admin-sidebar .nav-item.active { background: var(--admin); color: white; }
+  .wire-content { flex: 1; padding: 0.75rem 1rem; overflow: hidden; }
+
+  /* Wireframe components */
+  .wire-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.4rem;
+    padding: 0.5rem 0.65rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.7rem;
+  }
+  .wire-card h5 { font-size: 0.72rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .wire-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .wire-stat {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.4rem;
+    padding: 0.4rem 0.5rem;
+    text-align: center;
+  }
+  .wire-stat .num { font-size: 1.1rem; font-weight: 700; }
+  .wire-stat .label { font-size: 0.65rem; color: var(--text-secondary); }
+  .wire-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.65rem;
+  }
+  .wire-table th, .wire-table td {
+    padding: 0.3rem 0.4rem;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: left;
+  }
+  .wire-table th { font-weight: 600; color: var(--text-secondary); }
+  .wire-status {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 9999px;
+    font-size: 0.6rem;
+    font-weight: 500;
+  }
+  .wire-status.pending { background: var(--amber-light); color: #92400e; }
+  .wire-status.approved { background: var(--green-light); color: #166534; }
+  .wire-status.rejected { background: var(--red-light); color: #991b1b; }
+  .wire-btn {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.2rem;
+    font-size: 0.6rem;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .wire-btn.green { background: var(--green); color: white; border-color: var(--green); }
+  .wire-btn.red { background: white; color: var(--red); border-color: var(--red); }
+  .wire-form-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+    align-items: center;
+  }
+  .wire-input {
+    flex: 1;
+    height: 22px;
+    border: 1px solid #d1d5db;
+    border-radius: 0.2rem;
+    font-size: 0.6rem;
+    padding: 0 0.3rem;
+    background: #f9fafb;
+  }
+  .wire-file {
+    height: 22px;
+    border: 1px dashed #d1d5db;
+    border-radius: 0.2rem;
+    font-size: 0.55rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9fafb;
+    flex: 1;
+  }
+  .wire-upload-btn {
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.2rem;
+    font-size: 0.6rem;
+    font-weight: 500;
+  }
+
+  /* Email diagram */
+  .email-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  .email-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    font-size: 0.85rem;
+  }
+  .email-icon {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+  }
+  .email-icon.to-admin { background: var(--admin-light); color: var(--admin); }
+  .email-icon.to-student { background: var(--student-light); color: var(--student); }
+
+  /* Roadmap */
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 768px) { .roadmap-grid { grid-template-columns: 1fr; } }
+  .roadmap-card {
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+  }
+  .roadmap-card.done { background: var(--green-light); border-color: var(--green-border); }
+  .roadmap-card.planned { background: var(--amber-light); border-color: var(--amber-border); }
+  .roadmap-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .roadmap-card ul { list-style: none; font-size: 0.85rem; }
+  .roadmap-card li { padding: 0.2rem 0; }
+  .roadmap-card li::before { content: ''; margin-right: 0.5rem; }
+
+  /* Stat summary */
+  .stat-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 768px) { .stat-bar { grid-template-columns: repeat(2, 1fr); } }
+  .stat-item {
+    text-align: center;
+    padding: 1.25rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid;
+  }
+  .stat-item .num { font-size: 2rem; font-weight: 800; display: block; }
+  .stat-item .label { font-size: 0.8rem; margin-top: 0.25rem; display: block; }
+  .stat-item.green { background: var(--green-light); border-color: var(--green-border); color: var(--green); }
+  .stat-item.amber { background: var(--amber-light); border-color: var(--amber-border); color: var(--amber); }
+  .stat-item.purple { background: var(--admin-light); border-color: var(--admin-border); color: var(--admin); }
+  .stat-item.orange { background: var(--student-light); border-color: var(--student-border); color: var(--student); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  /* Flow chart vertical */
+  .flow-v {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 1rem 0;
+  }
+  .flow-v .flow-node { margin: 0; }
+  .flow-v .flow-connector {
+    width: 2px;
+    height: 1.25rem;
+    background: var(--gray);
+    position: relative;
+  }
+  .flow-v .flow-connector-label {
+    position: absolute;
+    left: 1rem;
+    top: -0.5rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* Role comparison */
+  .role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 768px) { .role-grid { grid-template-columns: 1fr; } }
+  .role-card {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    border: 2px solid;
+  }
+  .role-card.student { background: var(--student-light); border-color: var(--student-border); }
+  .role-card.admin { background: var(--admin-light); border-color: var(--admin-border); }
+  .role-card h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .role-card ul { list-style: none; font-size: 0.88rem; }
+  .role-card li { padding: 0.3rem 0; padding-left: 1.25rem; position: relative; }
+  .role-card li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    font-weight: 700;
+  }
+  .role-card.student li::before { color: var(--student); }
+  .role-card.admin li::before { color: var(--admin); }
+
+  /* Scrollable flow */
+  .flow-scroll {
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .section { break-inside: avoid; box-shadow: none; border: 1px solid #e5e7eb; }
+    .header { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>ระบบจัดการเอกสารเครื่องมือวิจัย</h1>
+    <div class="subtitle">คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่ — สถานะการพัฒนา</div>
+    <div class="badge-row">
+      <span class="tech-badge">Next.js 16</span>
+      <span class="tech-badge">React</span>
+      <span class="tech-badge">Tailwind CSS</span>
+      <span class="tech-badge">PostgreSQL</span>
+      <span class="tech-badge">Prisma</span>
+      <span class="tech-badge">CMU OAuth 2.0</span>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">สารบัญ</div>
+    <a href="#overview">1. ภาพรวมระบบ</a>
+    <a href="#roles">2. บทบาทผู้ใช้งาน</a>
+    <a href="#status">3. สถานะการพัฒนา</a>
+    <a href="#login-flow">4. Flow การล็อกอิน</a>
+    <a href="#doc-flow">5. Flow การจัดการเอกสาร</a>
+    <a href="#borrow-flow">6. Flow การยืมเครื่องมือ</a>
+    <a href="#email-flow">7. ระบบแจ้งเตือนอีเมล</a>
+    <a href="#screens">8. ตัวอย่างหน้าจอแอป</a>
+    <a href="#roadmap">9. แผนงาน</a>
+  </div>
+
+  <!-- 1. Overview -->
+  <div class="section" id="overview">
+    <h2>1. ภาพรวมระบบ</h2>
+    <p>ระบบจัดการเอกสารเครื่องมือวิจัยสำหรับคณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่ — รองรับ <strong>2 บทบาท</strong> ผู้ใช้งาน คือ <strong style="color:var(--student)">นักศึกษา</strong> และ <strong style="color:var(--admin)">เจ้าหน้าที่</strong></p>
+
+    <div class="stat-bar" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="stat-item green">
+        <span class="num">19</span>
+        <span class="label">ฟีเจอร์เสร็จสมบูรณ์</span>
+      </div>
+      <div class="stat-item purple">
+        <span class="num">6</span>
+        <span class="label">หน้าจอ Admin</span>
+      </div>
+      <div class="stat-item orange">
+        <span class="num">2</span>
+        <span class="label">หน้าจอ Student</span>
+      </div>
+    </div>
+
+    <h3>ภาพรวม Flow ทั้งระบบ</h3>
+
+    <!-- Flow A: Document Management -->
+    <div style="margin-bottom: 1.5rem;">
+      <h4 style="font-size:0.9rem; font-weight:600; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem;">
+        <span style="background:var(--student); color:white; padding:0.15rem 0.5rem; border-radius:0.25rem; font-size:0.75rem;">A</span>
+        Flow จัดการเอกสารเครื่องมือวิจัย
+      </h4>
+
+      <!-- Step 1: Upload -->
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+        <div class="flow-node orange" style="min-width:130px;">นักศึกษา<br><small>อัปโหลด PDF</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node amber" style="min-width:120px;">PENDING<br><small>รอตรวจสอบ</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
+          <div style="background:#dbeafe; border:2px solid var(--blue); border-radius:0.5rem; padding:0.4rem 0.75rem; font-size:0.78rem; color:var(--blue); text-align:center;">
+            &#x2709; ส่งอีเมลแจ้ง<br><strong>เจ้าหน้าที่</strong>
+          </div>
+          <div style="font-size:0.65rem; color:var(--text-secondary);">To: supapan.ch@cmu.ac.th<br>CC: ampika.s@cmu.ac.th</div>
+        </div>
+      </div>
+
+      <!-- Step 2: Admin reviews -->
+      <div style="display:flex; align-items:flex-start; gap:0.5rem; flex-wrap:wrap; margin-left: 6.5rem; margin-bottom:0.5rem;">
+        <div class="flow-node purple" style="min-width:120px;">เจ้าหน้าที่<br><small>ตรวจสอบ PDF</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+          <!-- Approve branch -->
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <div class="flow-node green" style="min-width:110px;">อนุมัติ<br><small>APPROVED</small></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div style="background:#dbeafe; border:2px solid var(--blue); border-radius:0.5rem; padding:0.4rem 0.75rem; font-size:0.78rem; color:var(--blue); text-align:center;">
+              &#x2709; ส่งอีเมลแจ้ง<br><strong>นักศึกษา</strong>
+            </div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node green" style="font-size:0.8rem; min-width:110px;">นักศึกษาดาวน์โหลด<br><small>ใบรับรอง PDF</small></div>
+          </div>
+          <!-- Reject branch -->
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <div class="flow-node red" style="min-width:110px;">ปฏิเสธ<br><small>REJECTED</small></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div style="background:#dbeafe; border:2px solid var(--blue); border-radius:0.5rem; padding:0.4rem 0.75rem; font-size:0.78rem; color:var(--blue); text-align:center;">
+              &#x2709; ส่งอีเมลแจ้ง<br><strong>นักศึกษา + เหตุผล</strong>
+            </div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node orange" style="font-size:0.8rem; min-width:110px;">นักศึกษาอัปโหลด<br><small>ใหม่ได้</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div style="margin-left:1rem; font-size:0.78rem; color:var(--text-secondary); background:#f9fafb; border:1px solid #e5e7eb; border-radius:0.4rem; padding:0.5rem 0.75rem; display:inline-block;">
+        &#x1F4E7; <strong>อนุมัติ:</strong> ส่งอีเมลเมื่อเอกสาร PENDING หมดทุกฉบับแล้ว (กัน spam) &nbsp;|&nbsp;
+        <strong>ปฏิเสธ:</strong> ส่งอีเมลทันทีทุกครั้ง
+      </div>
+    </div>
+
+    <!-- Flow B: Borrowing -->
+    <div>
+      <h4 style="font-size:0.9rem; font-weight:600; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem;">
+        <span style="background:var(--admin); color:white; padding:0.15rem 0.5rem; border-radius:0.25rem; font-size:0.75rem;">B</span>
+        Flow การยืมเครื่องมือวิจัย
+      </h4>
+
+      <!-- Step 1: Choose instrument -->
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+        <div class="flow-node orange" style="min-width:130px;">นักศึกษาเลือก<br><small>เครื่องมือ</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node orange" style="min-width:130px;">อัปโหลด<br><small>ใบอนุญาต PDF</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:0.1rem;">
+          <div style="background:#f5f3ff; border:2px dashed var(--admin); border-radius:0.5rem; padding:0.4rem 0.75rem; font-size:0.78rem; color:var(--admin); text-align:center;">
+            OCR (Typhoon)<br><small>อ่านใบอนุญาต + กรอกอัตโนมัติ</small>
+          </div>
+          <div style="font-size:0.65rem; color:var(--text-secondary);">ชื่อผู้ขอ, วันที่ขอ, รายละเอียด</div>
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node amber" style="min-width:120px;">PENDING<br><small>รอตรวจสอบ</small></div>
+      </div>
+
+      <!-- Step 2: Admin reviews -->
+      <div style="display:flex; align-items:flex-start; gap:0.5rem; flex-wrap:wrap; margin-left: 6.5rem;">
+        <div class="flow-node purple" style="min-width:120px;">เจ้าหน้าที่<br><small>ตรวจสอบ</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+          <!-- Approve -->
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <div class="flow-node green" style="min-width:110px;">อนุมัติ<br><small>APPROVED</small></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div style="background:var(--green-light); border:2px solid var(--green-border); border-radius:0.5rem; padding:0.4rem 0.75rem; font-size:0.78rem; color:var(--green); text-align:center;">
+              นักศึกษาได้<br><strong>ยืมเครื่องมือ</strong>
+            </div>
+          </div>
+          <!-- Reject -->
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <div class="flow-node red" style="min-width:110px;">ปฏิเสธ<br><small>REJECTED</small></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div style="background:var(--red-light); border:2px solid var(--red-border); border-radius:0.5rem; padding:0.4rem 0.75rem; font-size:0.78rem; color:var(--red); text-align:center;">
+              นักศึกษาเห็น<br><strong>เหตุผลการปฏิเสธ</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connection between A and B -->
+      <div style="margin-top:1rem; font-size:0.78rem; color:var(--text-secondary); background:#f9fafb; border:1px solid #e5e7eb; border-radius:0.4rem; padding:0.5rem 0.75rem; display:inline-block;">
+        &#x1F517; <strong>เชื่อมกับ Flow A:</strong> รายการเครื่องมือมาจากเอกสารที่ถูก <span style="color:var(--green); font-weight:600;">อนุมัติ</span> แล้ว — ระบบสร้าง Instrument record อัตโนมัติ
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Roles -->
+  <div class="section" id="roles">
+    <h2>2. บทบาทผู้ใช้งาน</h2>
+    <div class="role-grid">
+      <div class="role-card student">
+        <h4><span style="font-size:1.25rem">&#x1F393;</span> นักศึกษา (Student)</h4>
+        <ul>
+          <li>ล็อกอินด้วย CMU Account</li>
+          <li>ดูข้อมูลส่วนตัว + วิทยานิพนธ์ (จาก API อัตโนมัติ)</li>
+          <li>อัปโหลดเอกสารเครื่องมือวิจัย (PDF)</li>
+          <li>ดูสถานะเอกสาร (รอตรวจสอบ / อนุมัติ / ปฏิเสธ)</li>
+          <li>ลบเอกสาร (เฉพาะที่รอตรวจสอบ)</li>
+          <li>ดาวน์โหลดใบรับรอง PDF (เมื่ออนุมัติแล้ว)</li>
+          <li>ยืมเครื่องมือวิจัย + อัปโหลดใบอนุญาต</li>
+          <li>รับอีเมลแจ้งเตือนเมื่ออนุมัติ/ปฏิเสธ</li>
+        </ul>
+      </div>
+      <div class="role-card admin">
+        <h4><span style="font-size:1.25rem">&#x1F4CB;</span> เจ้าหน้าที่ (Admin)</h4>
+        <ul>
+          <li>ล็อกอินด้วย CMU Account หรือ Username/Password</li>
+          <li>ดู Dashboard: สถิติ + กิจกรรมล่าสุด</li>
+          <li>จัดการเอกสาร: อนุมัติ / ปฏิเสธ / ลบ</li>
+          <li>อนุมัติทั้งหมด (Bulk Approve)</li>
+          <li>ดู/เปิดไฟล์ PDF ตรวจสอบ</li>
+          <li>รายชื่อนักศึกษา + จำนวนเอกสาร</li>
+          <li>ค้นหา (รหัส / ชื่อ / วิทยานิพนธ์)</li>
+          <li>บันทึกกิจกรรม (Activity Log)</li>
+          <li>จัดการคำขอยืมเครื่องมือ</li>
+          <li>Export ข้อมูล (Excel/CSV)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Status -->
+  <div class="section" id="status">
+    <h2>3. สถานะการพัฒนา <span class="badge badge-done">เสร็จสมบูรณ์ทุกฟีเจอร์</span></h2>
+
+    <div class="phase-group system">
+      <h4>Phase 1 — พื้นฐานระบบ <span class="badge badge-done">เสร็จสมบูรณ์</span></h4>
+      <div class="feature-grid">
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F1. Database + Prisma</strong><small>Schema, Models, Seed script</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F2. CMU OAuth 2.0</strong><small>Login via Microsoft Azure AD</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F3. Route Protection + RBAC</strong><small>Proxy + Layout Guard</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F4. Layout Shell</strong><small>Sidebar: ส้ม (Student) / ม่วง (Admin)</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F5. Theme System</strong><small>Design tokens + สีธีม</small></div></div>
+      </div>
+    </div>
+
+    <div class="phase-group student">
+      <h4>Phase 2 — หน้านักศึกษา <span class="badge badge-done">เสร็จสมบูรณ์</span></h4>
+      <div class="feature-grid">
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F6. Student Dashboard</strong><small>Profile + Thesis + Upload + Documents</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F7. Document Upload</strong><small>PDF upload + ส่งอีเมลแจ้ง Admin</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F8. Document Management</strong><small>ดูสถานะ / ลบ / ดาวน์โหลดใบรับรอง</small></div></div>
+      </div>
+    </div>
+
+    <div class="phase-group admin">
+      <h4>Phase 3 — หน้าเจ้าหน้าที่ <span class="badge badge-done">เสร็จสมบูรณ์</span></h4>
+      <div class="feature-grid">
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F9. Admin Dashboard</strong><small>4 Stat Cards + Recent Activity</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F10. Document Management</strong><small>Approve / Reject / Bulk / Filter / Pagination</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F11. Student List</strong><small>รายชื่อ + สถานะ + จำนวนเอกสาร</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F12. Search</strong><small>ค้นหา รหัส/ชื่อ/วิทยานิพนธ์</small></div></div>
+      </div>
+    </div>
+
+    <div class="phase-group system">
+      <h4>Phase 4-5 — ระบบ + อีเมล + PDF <span class="badge badge-done">เสร็จสมบูรณ์</span></h4>
+      <div class="feature-grid">
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F13. Activity Log</strong><small>Audit trail + Pagination + Date filter</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F14. API /my/documents</strong><small>นักศึกษาตรวจสอบสถานะเอกสาร</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F15. Email Notifications</strong><small>CMU Email API — แจ้ง Admin/Student</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F16. PDF Certificate</strong><small>ใบรับรอง — Sarabun font</small></div></div>
+      </div>
+    </div>
+
+    <div class="phase-group post">
+      <h4>Phase 6 — Post-MVP <span class="badge badge-done">เสร็จสมบูรณ์</span></h4>
+      <div class="feature-grid">
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F17. Student Detail Page</strong><small>/admin/students/[id]</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F18. Export Data</strong><small>Excel/CSV</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F20-A. ระบบยืมเครื่องมือ</strong><small>Instrument catalog + Borrowing + License</small></div></div>
+        <div class="feature-item"><div class="feature-icon done">&#x2713;</div><div class="feature-text"><strong>F20-B. Typhoon OCR</strong><small>อ่านใบอนุญาต + กรอกข้อมูลอัตโนมัติ</small></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Login Flow -->
+  <div class="section" id="login-flow">
+    <h2>4. Flow การล็อกอิน (CMU OAuth 2.0)</h2>
+    <p>ระบบใช้ CMU OAuth 2.0 ผ่าน Microsoft Azure AD — เชื่อมต่อกับบัญชี CMU Account ของมช.</p>
+
+    <div class="flow-scroll">
+      <div class="flow">
+        <div class="flow-node orange">ผู้ใช้กด<br>"เข้าสู่ระบบ"</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node gray">สร้าง CSRF<br>State + Cookie</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node blue">Microsoft<br>Azure AD</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node blue">กรอก<br>CMU Account</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node gray">Exchange Code<br>&rarr; Token</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node blue">เรียก<br>MIS API</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node green">สร้าง Session<br>(HMAC-SHA256)</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 1rem 0;">
+      <p style="font-size: 0.9rem; color: var(--text-secondary);">ตรวจสอบ Role &rarr; Redirect ตามบทบาท:</p>
+      <div class="flow" style="margin-top: 0.5rem;">
+        <div class="flow-node orange">นักศึกษา &rarr; /dashboard</div>
+        <div style="margin: 0 1rem; color: var(--text-secondary);">&amp;</div>
+        <div class="flow-node purple">เจ้าหน้าที่ &rarr; /admin/dashboard</div>
+      </div>
+    </div>
+
+    <h3>ข้อมูลที่ดึงจาก CMU API</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.88rem;">
+      <div class="wire-card">
+        <h5>เก็บใน Database (Profile)</h5>
+        <p style="margin:0">ชื่อ-นามสกุล, อีเมล, รหัสนักศึกษา, cmuItAccount, accountType</p>
+      </div>
+      <div class="wire-card">
+        <h5>ดึงแสดงผลเท่านั้น (ไม่เก็บ)</h5>
+        <p style="margin:0">ข้อมูลวิทยานิพนธ์ (ชื่อ, ภาค, ระดับ, หลักสูตร), สถานะนักศึกษา</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Document Flow -->
+  <div class="section" id="doc-flow">
+    <h2>5. Flow การจัดการเอกสาร</h2>
+
+    <h3>State Machine — สถานะเอกสาร</h3>
+    <div class="state-machine">
+      <div class="flow-node orange" style="margin-bottom: 0.25rem;">
+        นักศึกษาอัปโหลด PDF + ชื่อเครื่องมือ
+      </div>
+      <div class="state-connector-v"></div>
+      <div class="state-box pending">PENDING<br><small>รอตรวจสอบ</small></div>
+      <div class="state-connector-v"></div>
+      <div class="state-row" style="gap: 2rem;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
+          <span class="state-label">เจ้าหน้าที่อนุมัติ</span>
+          <div class="state-connector-v"></div>
+          <div class="state-box approved">APPROVED<br><small>อนุมัติแล้ว</small></div>
+          <div class="state-connector-v"></div>
+          <span class="state-label">นักศึกษาดาวน์โหลดใบรับรอง PDF</span>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
+          <span class="state-label">เจ้าหน้าที่ปฏิเสธ + เหตุผล</span>
+          <div class="state-connector-v"></div>
+          <div class="state-box rejected">REJECTED<br><small>ปฏิเสธแล้ว</small></div>
+          <div class="state-connector-v"></div>
+          <span class="state-label">นักศึกษาอัปโหลดใหม่ได้</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>Upload Flow (นักศึกษา)</h3>
+    <div class="flow-v">
+      <div class="flow-node orange">กรอกชื่อเครื่องมือ + เลือก PDF (รองรับหลายฉบับ)</div>
+      <div class="flow-connector"></div>
+      <div class="flow-node gray">ตรวจสอบ: PDF เท่านั้น, &le; 10 MB, ต้องกรอกชื่อทุกฉบับ</div>
+      <div class="flow-connector"></div>
+      <div class="flow-node blue">ยืนยันผ่าน Confirmation Dialog</div>
+      <div class="flow-connector"></div>
+      <div class="flow-node green">บันทึกไฟล์ + สร้าง Document (PENDING) + ActivityLog</div>
+      <div class="flow-connector"></div>
+      <div class="flow-node purple">ส่งอีเมลแจ้งเจ้าหน้าที่</div>
+    </div>
+
+    <h3>Approve Flow (เจ้าหน้าที่)</h3>
+    <div class="flow-v">
+      <div class="flow-node purple">กด "อนุมัติ" บนเอกสาร PENDING</div>
+      <div class="flow-connector"></div>
+      <div class="flow-node blue">ยืนยันผ่าน Confirmation Dialog</div>
+      <div class="flow-connector"></div>
+      <div class="flow-node green">อัปเดต &rarr; APPROVED + สร้าง Instrument</div>
+      <div class="flow-connector"></div>
+      <div class="flow-node gray">ตรวจสอบ: PENDING หมดแล้ว?</div>
+      <div class="flow-connector"></div>
+      <div class="flow-node orange">ใช่ &rarr; ส่งอีเมลแจ้งนักศึกษา (1 ครั้ง)</div>
+    </div>
+
+    <h3>กฎที่เปลี่ยนแปลงไม่ได้</h3>
+    <div class="feature-grid" style="font-size: 0.88rem;">
+      <div class="wire-card">
+        <strong>APPROVED / REJECTED = สถานะสุดท้าย</strong><br>
+        เปลี่ยนสถานะต่อไม่ได้
+      </div>
+      <div class="wire-card">
+        <strong>นักศึกษาลบได้เฉพาะ PENDING ของตัวเอง</strong><br>
+        เจ้าหน้าที่ลบได้ทุกสถานะ
+      </div>
+      <div class="wire-card">
+        <strong>"อนุมัติทั้งหมด" กระทบเฉพาะ PENDING</strong><br>
+        APPROVED เดิมไม่ถูก approve ซ้ำ
+      </div>
+      <div class="wire-card">
+        <strong>อีเมลแจ้งนักศึกษา: ส่งเมื่อ PENDING หมดแล้ว</strong><br>
+        ปฏิเสธ = ส่งทันทีทุกครั้ง
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Borrow Flow -->
+  <div class="section" id="borrow-flow">
+    <h2>6. Flow การยืมเครื่องมือวิจัย</h2>
+
+    <h3>ที่มาของรายการเครื่องมือ</h3>
+    <div class="flow-scroll">
+      <div class="flow">
+        <div class="flow-node orange">นักศึกษาอัปโหลด<br>เอกสารเครื่องมือ</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node purple">เจ้าหน้าที่<br>อนุมัติ</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node green">สร้าง Instrument<br>(Auto-create)</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node blue">ปรากฏในรายการ<br>เครื่องมือให้เลือกยืม</div>
+      </div>
+    </div>
+
+    <h3>Borrowing State Machine</h3>
+    <div class="state-machine">
+      <div class="flow-node orange">นักศึกษาเลือกเครื่องมือ + อัปโหลดใบอนุญาต PDF</div>
+      <div class="state-connector-v"></div>
+      <div class="state-box pending">PENDING<br><small>รอตรวจสอบ</small></div>
+      <div class="state-connector-v"></div>
+      <div class="state-row" style="gap: 2rem;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
+          <span class="state-label">เจ้าหน้าที่อนุมัติ</span>
+          <div class="state-connector-v"></div>
+          <div class="state-box approved">APPROVED<br><small>อนุมัติแล้ว</small></div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
+          <span class="state-label">เจ้าหน้าที่ปฏิเสธ</span>
+          <div class="state-connector-v"></div>
+          <div class="state-box rejected">REJECTED<br><small>ปฏิเสธแล้ว</small></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>OCR อ่านใบอนุญาตอัตโนมัติ (Typhoon OCR)</h3>
+    <div class="flow-scroll">
+      <div class="flow">
+        <div class="flow-node orange">นักศึกษาอัปโหลด<br>ใบอนุญาต PDF</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node blue">กดปุ่ม OCR</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node purple">Typhoon OCR<br>อ่านข้อมูล</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-node green">กรอกอัตโนมัติ<br><small>ชื่อผู้ขอ, วันที่, รายละเอียด</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Email Flow -->
+  <div class="section" id="email-flow">
+    <h2>7. ระบบแจ้งเตือนอีเมล</h2>
+    <p>ส่งผ่าน CMU Email API — ไม่ขัดขวางการทำงานหลักหากส่งไม่สำเร็จ</p>
+
+    <div class="email-flow">
+      <div class="email-item">
+        <div class="email-icon to-admin">&#x2709;</div>
+        <div>
+          <strong>นักศึกษาอัปโหลดเอกสาร</strong> &rarr; แจ้งเจ้าหน้าที่<br>
+          <span style="font-size:0.8rem; color:var(--text-secondary)">To: supapan.ch@cmu.ac.th | CC: ampika.s@cmu.ac.th | ระบุ: ชื่อ, รหัส, รายการเอกสาร</span>
+        </div>
+      </div>
+      <div class="email-item">
+        <div class="email-icon to-student">&#x2709;</div>
+        <div>
+          <strong>อนุมัติเอกสารทั้งหมด</strong> &rarr; แจ้งนักศึกษา (1 ครั้ง)<br>
+          <span style="font-size:0.8rem; color:var(--text-secondary)">ส่งเมื่อ PENDING หมดแล้วเท่านั้น — กัน spam</span>
+        </div>
+      </div>
+      <div class="email-item">
+        <div class="email-icon to-student">&#x2709;</div>
+        <div>
+          <strong>ปฏิเสธเอกสาร</strong> &rarr; แจ้งนักศึกษาทันที<br>
+          <span style="font-size:0.8rem; color:var(--text-secondary)">ระบุ: ชื่อเอกสาร + เหตุผลที่ปฏิเสธ</span>
+        </div>
+      </div>
+      <div class="email-item">
+        <div class="email-icon to-student">&#x2709;</div>
+        <div>
+          <strong>Bulk Approve (อนุมัติทั้งหมด)</strong> &rarr; แจ้งนักศึกษา 1 ฉบับ<br>
+          <span style="font-size:0.8rem; color:var(--text-secondary)">ระบุรายการเอกสารที่อนุมัติทั้งหมด</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Screens -->
+  <div class="section" id="screens">
+    <h2>8. ตัวอย่างหน้าจอแอป (Wireframe)</h2>
+
+    <div class="mockup-container">
+      <!-- Student Dashboard -->
+      <div class="mockup">
+        <div class="mockup-title" style="color: var(--student);">
+          <span>&#x1F393;</span> Student Dashboard — /dashboard
+        </div>
+        <div class="mockup-body">
+          <div class="wire-layout">
+            <div class="wire-sidebar student-sidebar">
+              <div class="logo-area">Research Tools</div>
+              <div class="nav-item active">&#x1F4D8; วิทยานิพนธ์</div>
+              <div class="nav-item">&#x1F4E6; ยืมเครื่องมือ</div>
+              <div style="flex:1"></div>
+              <div style="font-size:0.6rem; color:var(--text-secondary); padding: 0.3rem 0.5rem;">student@cmu.ac.th<br>ออกจากระบบ</div>
+            </div>
+            <div class="wire-content">
+              <div class="wire-card">
+                <h5>ข้อมูลส่วนตัว</h5>
+                สมชาย ใจดี | 6505123456 | หลักสูตรพยาบาลศาสตร์
+              </div>
+              <div class="wire-card">
+                <h5>ข้อมูลวิทยานิพนธ์</h5>
+                ปัจจัยที่ส่งผลต่อ... (จาก Thesis API)
+              </div>
+              <div class="wire-card">
+                <h5>อัปโหลดเอกสาร</h5>
+                <div class="wire-form-row">
+                  <div class="wire-input">ชื่อเครื่องมือวิจัย</div>
+                </div>
+                <div class="wire-form-row">
+                  <div class="wire-file">เลือกไฟล์ PDF</div>
+                  <button class="wire-upload-btn">อัปโหลด</button>
+                </div>
+              </div>
+              <div class="wire-card">
+                <h5>รายการเอกสาร</h5>
+                <table class="wire-table">
+                  <thead><tr><th>#</th><th>เครื่องมือ</th><th>สถานะ</th><th>วันที่</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td>1</td><td>The Positive Discipline...</td><td><span class="wire-status approved">อนุมัติแล้ว</span></td><td>10/05/69</td><td><span class="wire-btn green">PDF</span></td></tr>
+                    <tr><td>2</td><td>PHQ-9 Questionnaire</td><td><span class="wire-status pending">รอตรวจสอบ</span></td><td>15/05/69</td><td><span class="wire-btn red">ลบ</span></td></tr>
+                    <tr><td>3</td><td>GAD-7 Scale</td><td><span class="wire-status rejected">ปฏิเสธแล้ว</span></td><td>12/05/69</td><td></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Dashboard -->
+      <div class="mockup">
+        <div class="mockup-title" style="color: var(--admin);">
+          <span>&#x1F4CA;</span> Admin Dashboard — /admin/dashboard
+        </div>
+        <div class="mockup-body">
+          <div class="wire-layout">
+            <div class="wire-sidebar admin-sidebar">
+              <div class="logo-area">Research Tools</div>
+              <div class="nav-item active">&#x1F3E0; แดชบอร์ด</div>
+              <div class="nav-item">&#x1F4C4; เอกสาร</div>
+              <div class="nav-item">&#x1F4E6; ยืมเครื่องมือ</div>
+              <div class="nav-item">&#x1F465; นักศึกษา</div>
+              <div class="nav-item">&#x1F6E1; จัดการ Admin</div>
+              <div class="nav-item">&#x1F4DD; บันทึกกิจกรรม</div>
+              <div style="flex:1"></div>
+              <div style="font-size:0.6rem; color:var(--text-secondary); padding: 0.3rem 0.5rem;">admin@cmu.ac.th<br>ออกจากระบบ</div>
+            </div>
+            <div class="wire-content">
+              <div class="wire-stat-grid">
+                <div class="wire-stat"><div class="num" style="color:var(--admin)">48</div><div class="label">นักศึกษาทั้งหมด</div></div>
+                <div class="wire-stat"><div class="num" style="color:var(--blue)">120</div><div class="label">เอกสารทั้งหมด</div></div>
+                <div class="wire-stat"><div class="num" style="color:var(--amber)">15</div><div class="label">รอตรวจสอบ</div></div>
+                <div class="wire-stat"><div class="num" style="color:var(--green)">98</div><div class="label">อนุมัติแล้ว</div></div>
+              </div>
+              <div class="wire-card">
+                <h5>กิจกรรมล่าสุด</h5>
+                <table class="wire-table">
+                  <tbody>
+                    <tr><td>สมชาย อัปโหลดเอกสาร "PHQ-9..."</td><td style="color:var(--text-secondary)">2 นาทีก่อน</td></tr>
+                    <tr><td>เจ้าหน้าที่ อนุมัติเอกสาร "GAD-7..."</td><td style="color:var(--text-secondary)">15 นาทีก่อน</td></tr>
+                    <tr><td>สมหญิง อัปโหลดเอกสาร "BDI-II..."</td><td style="color:var(--text-secondary)">1 ชั่วโมงก่อน</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Documents -->
+      <div class="mockup">
+        <div class="mockup-title" style="color: var(--admin);">
+          <span>&#x1F4C4;</span> Admin Documents — /admin/documents
+        </div>
+        <div class="mockup-body">
+          <div class="wire-layout">
+            <div class="wire-sidebar admin-sidebar">
+              <div class="logo-area">Research Tools</div>
+              <div class="nav-item">&#x1F3E0; แดชบอร์ด</div>
+              <div class="nav-item active">&#x1F4C4; เอกสาร</div>
+              <div class="nav-item">&#x1F4E6; ยืมเครื่องมือ</div>
+              <div class="nav-item">&#x1F465; นักศึกษา</div>
+              <div class="nav-item">&#x1F6E1; จัดการ Admin</div>
+              <div class="nav-item">&#x1F4DD; บันทึกกิจกรรม</div>
+              <div style="flex:1"></div>
+            </div>
+            <div class="wire-content">
+              <div class="wire-stat-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="wire-stat"><div class="num" style="color:var(--amber)">15</div><div class="label">รอตรวจสอบ</div></div>
+                <div class="wire-stat"><div class="num" style="color:var(--green)">98</div><div class="label">อนุมัติแล้ว</div></div>
+                <div class="wire-stat"><div class="num" style="color:var(--blue)">120</div><div class="label">ทั้งหมด</div></div>
+              </div>
+              <div style="display:flex; gap:0.3rem; margin-bottom:0.5rem; font-size:0.6rem;">
+                <span style="padding:0.15rem 0.5rem; border-radius:9999px; border:1px solid #d1d5db;">ทั้งหมด</span>
+                <span style="padding:0.15rem 0.5rem; border-radius:9999px; background:var(--amber); color:white;">รอตรวจสอบ</span>
+                <span style="padding:0.15rem 0.5rem; border-radius:9999px; border:1px solid #d1d5db;">อนุมัติแล้ว</span>
+                <span style="padding:0.15rem 0.5rem; border-radius:9999px; border:1px solid #d1d5db;">ปฏิเสธแล้ว</span>
+              </div>
+              <table class="wire-table">
+                <thead><tr><th>#</th><th>นักศึกษา</th><th>เครื่องมือ</th><th>สถานะ</th><th></th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>1</td><td>สมชาย (65...)</td><td>PHQ-9</td>
+                    <td><span class="wire-status pending">รอตรวจสอบ</span></td>
+                    <td><span class="wire-btn green">อนุมัติ</span> <span class="wire-btn red">ปฏิเสธ</span></td>
+                  </tr>
+                  <tr>
+                    <td>2</td><td>สมหญิง (65...)</td><td>BDI-II</td>
+                    <td><span class="wire-status approved">อนุมัติแล้ว</span></td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div style="text-align:center; font-size:0.6rem; color:var(--text-secondary); padding:0.3rem;">&laquo; 1 2 3 ... 10 &raquo;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Borrow -->
+      <div class="mockup">
+        <div class="mockup-title" style="color: var(--student);">
+          <span>&#x1F4E6;</span> Student Borrow — /borrow
+        </div>
+        <div class="mockup-body">
+          <div class="wire-layout">
+            <div class="wire-sidebar student-sidebar">
+              <div class="logo-area">Research Tools</div>
+              <div class="nav-item">&#x1F4D8; วิทยานิพนธ์</div>
+              <div class="nav-item active">&#x1F4E6; ยืมเครื่องมือ</div>
+              <div style="flex:1"></div>
+            </div>
+            <div class="wire-content">
+              <div class="wire-card">
+                <h5>ฟอร์มขอยืมเครื่องมือวิจัย</h5>
+                <div class="wire-form-row">
+                  <div class="wire-input" style="background:#e5e7eb;">เลือกเครื่องมือ (Dropdown)</div>
+                </div>
+                <div class="wire-form-row">
+                  <div class="wire-input">ชื่อผู้ขอยืม</div>
+                </div>
+                <div class="wire-form-row">
+                  <div class="wire-input">วันที่ขอ</div>
+                </div>
+                <div class="wire-form-row">
+                  <div class="wire-file">เลือกไฟล์ PDF (ใบอนุญาต)</div>
+                  <span style="font-size:0.55rem; color:var(--blue); cursor:pointer;">OCR</span>
+                </div>
+                <div style="text-align:right;"><button class="wire-upload-btn">ส่งคำขอยืม</button></div>
+              </div>
+              <div class="wire-card">
+                <h5>ประวัติการยืมของฉัน</h5>
+                <table class="wire-table">
+                  <thead><tr><th>#</th><th>เครื่องมือ</th><th>สถานะ</th><th>วันที่</th></tr></thead>
+                  <tbody>
+                    <tr><td>1</td><td>PHQ-9</td><td><span class="wire-status approved">อนุมัติแล้ว</span></td><td>01/06/69</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. Roadmap -->
+  <div class="section" id="roadmap">
+    <h2>9. แผนงาน (Roadmap)</h2>
+
+    <div class="roadmap-grid">
+      <div class="roadmap-card done" style="grid-column: 1 / -1;">
+        <h4 style="color:var(--green);">&#x2713; เสร็จสมบูรณ์ทุกฟีเจอร์</h4>
+        <ul>
+          <li>&#x2713; CMU OAuth 2.0 Login</li>
+          <li>&#x2713; Student Dashboard + Upload + Documents</li>
+          <li>&#x2713; Admin Dashboard + Document Management</li>
+          <li>&#x2713; Student List + Search</li>
+          <li>&#x2713; Activity Log + Audit Trail</li>
+          <li>&#x2713; Email Notifications (CMU Email API)</li>
+          <li>&#x2713; PDF Certificate Download</li>
+          <li>&#x2713; Export Data (Excel/CSV)</li>
+          <li>&#x2713; ระบบยืมเครื่องมือวิจัย</li>
+          <li>&#x2713; Typhoon OCR (อ่านใบอนุญาต)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>ระบบจัดการเอกสารเครื่องมือวิจัย — คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่</p>
+    <p style="margin-top: 0.25rem;">อัปเดตล่าสุด: มิถุนายน 2569</p>
+  </div>
+
+</div>
+
+</body>
+</html>
