@@ -21,21 +21,10 @@ type ChatCompletionResponse = {
 const OCR_PROMPT = `อ่านเอกสารนี้แล้วแยกข้อมูลใส่ JSON ตามฟิลด์ด้านล่าง
 ตอบเป็น JSON เท่านั้น ไม่ต้องมีคำอธิบาย ไม่ต้องมี markdown code block
 
-เอกสารอาจเป็น 1 ใน 2 รูปแบบ:
-
-รูปแบบ A — แบบฟอร์ม: มี field label ชัดเจน เช่น "ชื่อผู้ขอ:", "จุดประสงค์การยืม:"
-รูปแบบ B — จดหมายจากสำนักทะเบียน มช.: เป็นหนังสืออย่างเป็นทางการ หัวเรื่อง "แจ้งผลการอนุญาตให้ใช้เครื่องมือวิจัย"
-
 {
-  "requesterName": "ชื่อ-นามสกุลของ 'ผู้ขอยืม' เครื่องมือ พร้อมคำนำหน้า (นาย/นางสาว/นาง)
-    รูปแบบ A: ข้อมูลหลังคำว่า 'ชื่อผู้ขอ' หรือ 'ชื่อผู้ยืม'
-    รูปแบบ B: ชื่อคนที่ขออนุญาต (หลังคำว่า 'ตามที่' หรือหลัง 'อนุญาตให้') ไม่ใช่ชื่อเจ้าของเครื่องมือวิจัย",
-  "requestDate": "วันที่ในเอกสาร แปลงเป็น YYYY-MM-DD (พ.ศ. ให้ลบ 543)
-    รูปแบบ A: หลังคำว่า 'วันที่ขอ'
-    รูปแบบ B: วันที่ของหนังสือ (อยู่ด้านบนของจดหมาย หลังที่อยู่ ก่อน 'เรื่อง')",
-  "additionalDetails": "จุดประสงค์หรือรายละเอียดการยืม
-    รูปแบบ A: ข้อความหลังคำว่า 'จุดประสงค์การยืม' หรือ 'วัตถุประสงค์'
-    รูปแบบ B: ข้อความตั้งแต่หลังชื่อผู้ขอยืมจนถึงท้ายเครื่องหมายคำพูดปิดของชื่อเรื่องวิจัย (รวมตำแหน่ง สังกัด จังหวัด ชื่อเรื่องวิจัย)"
+  "requesterName": "เฉพาะชื่อ-นามสกุล พร้อมคำนำหน้า (นาย/นางสาว/นาง) เท่านั้น ไม่รวมตำแหน่ง สังกัด หรือรายละเอียดอื่นๆ",
+  "requestDate": "วันที่ในเอกสาร แปลงเป็น YYYY-MM-DD (พ.ศ. ให้ลบ 543)",
+  "additionalDetails": "ข้อความตั้งแต่หลังชื่อผู้ขอ หยุดที่เครื่องหมายคำพูดปิดของชื่อเรื่องวิจัย ไม่เอาข้อความหลังเครื่องหมายคำพูดปิด (รวมตำแหน่ง สังกัด จังหวัด ชื่อเรื่องวิจัย)"
 }
 
 ตัวอย่างคำตอบ:
@@ -104,11 +93,16 @@ ${extractedText || "(ไม่พบข้อความจาก PDF)"}`,
     const data = (await response.json()) as ChatCompletionResponse;
     const content = data.choices?.[0]?.message?.content?.trim();
 
+    console.log("[OCR] API raw response:", content?.slice(0, 300));
+
     if (!content) {
       return textResult;
     }
 
     const apiResult = parseOCRResponse(content);
+
+    console.log("[OCR] pdftotext additionalDetails:", textResult.additionalDetails?.slice(0, 80));
+    console.log("[OCR] API additionalDetails:", apiResult.additionalDetails?.slice(0, 80));
 
     // Prefer API result for better Thai text quality
     return {
@@ -358,9 +352,9 @@ function normalizeDetails(value: string | null) {
   return value
     .replace(/\s*\n\s*/g, " ")
     .replace(/\s+/g, " ")
-    .replace(/([฀-๿])\s+(?=[฀-๿])/g, "$1")
     .replace(/^[-: ]+/, "")
     .replace(/\s*(หมายเหตุ|ลงชื่อผู้ขอ|ผู้อนุมัติ)\s*:.*$/i, "")
+    .replace(/\s*มีความประสงค์.*$/i, "")
     .trim() || null;
 }
 
