@@ -19,7 +19,7 @@ import {
   type BorrowingActionState,
 } from "@/actions/borrowing-actions";
 import { StatusBadge } from "@/components/status-badge";
-import { Upload, Trash2, FileText, ScanText, Loader2, ChevronsUpDown, Check } from "lucide-react";
+import { Upload, Trash2, FileText, ScanText, Loader2, ChevronsUpDown, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -229,17 +229,32 @@ export function BorrowClient({
             <div className="space-y-1.5">
               <Label htmlFor="licenseFile">ใบอนุญาต / ใบรับรอง (PDF)</Label>
               <div className="flex flex-col sm:flex-row gap-2">
-                <Input
-                  id="licenseFile"
-                  name="licenseFile"
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setFile(f);
-                  }}
-                  className="rounded flex-1"
-                />
+                <div className="relative flex-1">
+                  <Input
+                    id="licenseFile"
+                    name="licenseFile"
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setFile(f);
+                    }}
+                    className="rounded pr-8"
+                  />
+                  {file && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFile(null);
+                        const input = document.getElementById("licenseFile") as HTMLInputElement;
+                        if (input) input.value = "";
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
                 <Button
                   type="button"
                   variant="outline"
