@@ -50,3 +50,6 @@ next-env.d.ts
 
 # email token cache
 /.cache/
+
+# docs
+/docs/
