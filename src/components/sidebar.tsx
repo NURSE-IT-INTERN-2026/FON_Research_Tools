@@ -66,7 +66,7 @@ export function Sidebar({ navItems, userEmail, headerActions }: NavbarProps) {
           </button>
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/nurse_logo.svg`} alt="Research Tools" width={20} height={20} className="brightness-0 invert" />
+            <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/nurse_logo.svg`} alt="Research Tools" width={20} height={20} style={{ filter: "brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(14deg) brightness(98%) contrast(97%)" }} />
             <span className="font-heading font-bold text-sm tracking-widest uppercase">
               Research Tools
             </span>
