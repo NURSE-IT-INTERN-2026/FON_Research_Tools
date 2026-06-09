@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { AdminLoginClient } from "./login-client";
 
 export default function AdminLoginPage() {
@@ -31,28 +32,18 @@ export default function AdminLoginPage() {
             เข้าสู่ระบบ
           </h2>
           <p className="text-sm text-muted-foreground">
-            สำหรับเจ้าหน้าที่และนักศึกษา (ทดสอบ)
+            สำหรับเจ้าหน้าที่
           </p>
         </div>
         <div className="p-6 pt-0 space-y-4">
           <AdminLoginClient />
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">หรือ</span>
-            </div>
-          </div>
-          <p className="text-center text-xs text-muted-foreground">
-            นักศึกษา?{" "}
-            <Link
-              href="/login"
-              className="text-primary hover:underline font-medium"
-            >
-              เข้าสู่ระบบด้วย CMU Account
-            </Link>
-          </p>
+          <Link
+            href="/"
+            className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            กลับหน้าหลัก
+          </Link>
         </div>
       </div>
     </div>
