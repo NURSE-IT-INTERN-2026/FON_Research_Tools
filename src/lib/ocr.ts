@@ -93,16 +93,11 @@ ${extractedText || "(ไม่พบข้อความจาก PDF)"}`,
     const data = (await response.json()) as ChatCompletionResponse;
     const content = data.choices?.[0]?.message?.content?.trim();
 
-    console.log("[OCR] API raw response:", content?.slice(0, 300));
-
     if (!content) {
       return textResult;
     }
 
     const apiResult = parseOCRResponse(content);
-
-    console.log("[OCR] pdftotext additionalDetails:", textResult.additionalDetails?.slice(0, 80));
-    console.log("[OCR] API additionalDetails:", apiResult.additionalDetails?.slice(0, 80));
 
     // Prefer API result for better Thai text quality
     return {
