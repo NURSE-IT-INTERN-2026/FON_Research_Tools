@@ -203,22 +203,36 @@ export async function approveDocument(
     targetLabel: doc.title,
   });
 
-  // Notify student only when all their documents are approved
+  // Notify student when all their documents have been processed (no PENDING remaining)
   const remainingPending = await db.document.count({
     where: { userId: doc.userId, status: "PENDING" },
   });
   if (remainingPending === 0) {
-    const studentProfile = await db.profile.findUnique({
-      where: { id: doc.userId },
-      select: { email: true, name: true },
-    });
+    const [studentProfile, recentApproved] = await Promise.all([
+      db.profile.findUnique({
+        where: { id: doc.userId },
+        select: { email: true, name: true },
+      }),
+      db.document.findMany({
+        where: {
+          userId: doc.userId,
+          status: "APPROVED",
+          reviewedAt: { gte: doc.createdAt },
+        },
+        select: { title: true },
+        orderBy: { reviewedAt: "asc" },
+      }),
+    ]);
     if (studentProfile?.email) {
       const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
+      const bulletList = recentApproved.map((d) => `• ${d.title}`).join("\n");
       sendEmail({
         subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
         sentTo: studentProfile.email,
-        message: `เรียนนักศึกษา\n\nแจ้งผลการพิจารณาเรียบร้อยแล้ว\n\nขอแสดงความนับถือ\nดูรายละเอียดได้ที่: ${appUrl}/thesis`,
-      }).catch(() => {});
+        message: `เรียนนักศึกษา\n\nเอกสารเครื่องมือวิจัยได้รับการอนุมัติเรียบร้อยแล้ว:\n${bulletList}\n\nขอแสดงความนับถือ\nดูรายละเอียดได้ที่: ${appUrl}/thesis`,
+      }).catch((err) => {
+        console.error("[Email] Failed to send approval notification:", err);
+      });
     }
   }
 
