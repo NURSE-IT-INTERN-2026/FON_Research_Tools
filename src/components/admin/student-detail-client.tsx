@@ -262,6 +262,7 @@ export function StudentDetailClient({
                 doc={doc}
                 selected={selected.has(doc.id)}
                 onToggle={() => toggleDoc(doc.id)}
+                onDeselect={() => setSelected((prev) => { const next = new Set(prev); next.delete(doc.id); return next; })}
               />
             ))}
           </div>
@@ -407,7 +408,7 @@ function Pagination({
 
 /* ---------- Document card ---------- */
 
-function DocumentCard({ doc, selected, onToggle }: { doc: DocumentRow; selected: boolean; onToggle: () => void }) {
+function DocumentCard({ doc, selected, onToggle, onDeselect }: { doc: DocumentRow; selected: boolean; onToggle: () => void; onDeselect: () => void }) {
   const borderColor =
     doc.status === "PENDING"
       ? "border-l-amber-400"
@@ -475,9 +476,9 @@ function DocumentCard({ doc, selected, onToggle }: { doc: DocumentRow; selected:
         <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
           {doc.status === "PENDING" && (
             <>
-              <RejectButton documentId={doc.id} />
+              <RejectButton documentId={doc.id} onDone={onDeselect} />
               <div className="flex-1" />
-              <RemoveButton documentId={doc.id} />
+              <RemoveButton documentId={doc.id} onDone={onDeselect} />
             </>
           )}
           {doc.status === "APPROVED" && (
@@ -508,7 +509,7 @@ function DocumentCard({ doc, selected, onToggle }: { doc: DocumentRow; selected:
 
 /* ---------- Reject ---------- */
 
-function RejectButton({ documentId }: { documentId: string }) {
+function RejectButton({ documentId, onDone }: { documentId: string; onDone?: () => void }) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [pending, startTransition] = useTransition();
@@ -525,6 +526,7 @@ function RejectButton({ documentId }: { documentId: string }) {
         toast.success("ปฏิเสธเอกสารสำเร็จ");
         setOpen(false);
         setNotes("");
+        onDone?.();
       }
     });
   }
@@ -585,7 +587,7 @@ function RejectButton({ documentId }: { documentId: string }) {
 
 /* ---------- Remove ---------- */
 
-function RemoveButton({ documentId }: { documentId: string }) {
+function RemoveButton({ documentId, onDone }: { documentId: string; onDone?: () => void }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     removeDocument,
@@ -601,9 +603,10 @@ function RemoveButton({ documentId }: { documentId: string }) {
     if (state.success && !prevSuccessRef.current) {
       prevSuccessRef.current = true;
       toast.success("ลบเอกสารสำเร็จ");
+      onDone?.();
     }
     if (!state.success) prevSuccessRef.current = false;
-  }, [state.success]);
+  }, [state.success, onDone]);
 
   if (state.success && open) setOpen(false);
 
