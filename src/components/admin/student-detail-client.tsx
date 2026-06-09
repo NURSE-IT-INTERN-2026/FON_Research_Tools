@@ -129,14 +129,16 @@ export function StudentDetailClient({
 
   return (
     <div className="space-y-6">
-      {/* Back link */}
-      <Link
-        href="/admin/students"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        กลับไปรายชื่อนักศึกษา
-      </Link>
+      {/* Back link — sticky below navbar */}
+      <div className="sticky top-14 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur-sm border-b lg:-mx-6 lg:px-6">
+        <Link
+          href="/admin/students"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          กลับไปรายชื่อนักศึกษา
+        </Link>
+      </div>
 
       {/* Student header */}
       <div>

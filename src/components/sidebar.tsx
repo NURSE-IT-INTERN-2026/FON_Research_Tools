@@ -146,16 +146,13 @@ export function Sidebar({ navItems, userEmail, headerActions }: NavbarProps) {
               );
             })}
           </nav>
-          <div className="border-t border-sidebar-border px-4 py-3 flex items-center justify-between">
-            <p className="truncate text-xs text-sidebar-foreground/40 font-mono">
-              {userEmail}
-            </p>
+          <div className="border-t border-sidebar-border px-3 py-3">
             <form action={logout}>
               <button
                 type="submit"
-                className="flex items-center gap-2 px-2.5 py-1.5 text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/10 rounded transition-colors"
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/10 rounded transition-colors"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-4 w-4" />
                 ออกจากระบบ
               </button>
             </form>
