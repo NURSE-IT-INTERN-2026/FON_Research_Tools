@@ -47,6 +47,7 @@ model Profile {
   role         AppRole   @default(STUDENT)
   thesisTitleTh String?
   thesisTitleEn String?
+  level        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
