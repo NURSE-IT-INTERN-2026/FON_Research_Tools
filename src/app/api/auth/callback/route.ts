@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get("error");
 
   if (error) {
-    return redirectWithClearedState(request, `${BASE}/login?error=oauth_error`);
+    return redirectWithClearedState(request, `${BASE}/?error=oauth_error`);
   }
 
   if (!code) {
-    return redirectWithClearedState(request, `${BASE}/login?error=oauth_error`);
+    return redirectWithClearedState(request, `${BASE}/?error=oauth_error`);
   }
 
   // Validate state to prevent CSRF
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   if (!state || state !== storedState) {
     return redirectWithClearedState(
       request,
-      `${BASE}/login?error=oauth_state_mismatch`,
+      `${BASE}/?error=oauth_state_mismatch`,
     );
   }
 
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   } catch {
     return redirectWithClearedState(
       request,
-      `${BASE}/login?error=oauth_token_failed`,
+      `${BASE}/?error=oauth_token_failed`,
     );
   }
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
   } catch {
     return redirectWithClearedState(
       request,
-      `${BASE}/login?error=oauth_userinfo_failed`,
+      `${BASE}/?error=oauth_userinfo_failed`,
     );
   }
 

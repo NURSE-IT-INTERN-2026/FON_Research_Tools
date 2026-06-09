@@ -1,5 +1,11 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import cmuLogo from "@/../public/cmu_logo.png";
+import { OAuthError } from "./oauth-error";
+
+const LOGIN_HREF = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/auth/cmu`;
 
 export default function HomePage() {
   return (
@@ -30,10 +36,18 @@ export default function HomePage() {
           คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
         </p>
 
+        <Suspense>
+          <OAuthError />
+        </Suspense>
+
         <div className="flex flex-col sm:flex-row gap-3 animate-slide-up" style={{ animationDelay: "200ms" }}>
-          <Button asChild size="lg" className="font-heading font-semibold tracking-wide px-8">
-            <Link href="/login">เข้าสู่ระบบด้วย CMU Account</Link>
-          </Button>
+          <a
+            href={LOGIN_HREF}
+            className="inline-flex items-center justify-center gap-2.5 bg-purple-600 hover:bg-purple-700 text-white font-heading font-semibold tracking-wide px-8 h-11 rounded-md transition-colors"
+          >
+            <Image src={cmuLogo} alt="CMU" height={24} className="h-6 w-auto" />
+            เข้าสู่ระบบด้วย CMU Account
+          </a>
           <Button asChild variant="outline" size="lg" className="font-heading font-semibold tracking-wide px-8">
             <Link href="/admin/login">เข้าสู่ระบบเจ้าหน้าที่</Link>
           </Button>
