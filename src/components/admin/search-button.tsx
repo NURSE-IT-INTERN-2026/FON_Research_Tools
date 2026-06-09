@@ -76,7 +76,7 @@ export function SearchButton() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="ค้นหาจากรหัสนักศึกษา, ชื่อ, ชื่อเครื่องมือวิจัย..."
+              placeholder="ค้นหาจากชื่อนักศึกษา, รหัส, ชื่อเครื่องมือวิจัย, ชื่อวิทยานิพนธ์..."
               className="border-0 focus-visible:ring-0 px-3 h-12 text-sm"
               autoFocus
             />
