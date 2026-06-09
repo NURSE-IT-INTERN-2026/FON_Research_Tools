@@ -192,15 +192,23 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
     thesisTitleEn,
   };
 
-  // Profile may already exist (created via admin panel with different id)
-  const existing = await prisma.profile.findUnique({ where: { email } });
+  // Profile may already exist: check by email, studentId, or cmuItAccount
+  const existing = (await prisma.profile.findUnique({ where: { email } })) ||
+    (studentId ? await prisma.profile.findFirst({ where: { studentId } }) : null) ||
+    (await prisma.profile.findFirst({ where: { cmuItAccount: userInfo.cmuitaccount } }));
+
   if (existing) {
-    return prisma.profile.update({ where: { id: existing.id }, data });
+    return prisma.profile.update({
+      where: { id: existing.id },
+      data: {
+        ...data,
+        thesisTitleTh: thesisTitleTh ?? existing.thesisTitleTh,
+        thesisTitleEn: thesisTitleEn ?? existing.thesisTitleEn,
+      },
+    });
   }
 
-  return prisma.profile.upsert({
-    where: { id: userInfo.cmuitaccount },
-    create: { id: userInfo.cmuitaccount, ...data },
-    update: data,
+  return prisma.profile.create({
+    data: { id: userInfo.cmuitaccount, ...data },
   });
 }

@@ -18,6 +18,15 @@ function createSeedPdf(studentId: string, fileName: string, title: string) {
 
 const THAI_FIRST = ["สมชาย", "สมหญิง", "วิชัย", "พิมพ์ใจ", "สุภาพ", "วีรชัย", "นภา", "กนก", "ประเสริฐ", "จิตรา", "สมศักดิ์", "วันดี", "ธงชัย", "รุ่งนภา", "เกรียงศักดิ์", "ปิยะ", "อรุณ", "มาลี", "บุญมี", "เสรี", "ชูศรี", "สมบูรณ์", "ภูมิพัฒน์", "อรนุช", "กิตติ"];
 const THAI_LAST = ["ใจดี", "รักเรียน", "มุ่งมั่น", "สวัสดิ์", "เจริญสุข", "วงศ์สวัสดิ์", "พงษ์ประเสริฐ", "ศรีสุวรรณ", "ธนาพันธุ์", "แก้วมณี", "ชัยชนะ", "รุ่งเรือง", "ภู่เจริญ", "ตรีนิกร", "วิเศษสมบัติ"];
+const REAL_STUDENT_IDS = [
+  "591251007", "611231060", "611251002", "611251006", "611255902",
+  "621231005", "621231033", "621231063", "621251002", "621251003",
+  "621251006", "621251008", "621255802", "621255805", "621255808",
+  "621255812", "621255816", "621255817", "621255818", "621255819",
+  "621255903", "631231015", "631231017", "631231021", "631231025",
+  "631231026", "631231033", "631231038", "631231055", "631231080",
+];
+
 const DOC_TITLES = [
   "แบบสอบถามพฤติกรรมสุขภาพ", "แบบประเมินคุณภาพชีวิต", "แบบวัดความเครียด",
   "แบบสังเกตพฤติกรรมเด็ก", "แบบวัดพัฒนาการ", "แบบประเมินภาวะโภชนาการ",
@@ -48,7 +57,7 @@ async function main() {
   // 30 students (exceeds PAGE_SIZE=20)
   const students = [];
   for (let i = 1; i <= 30; i++) {
-    const studentId = `621251${String(i).padStart(3, "0")}`;
+    const studentId = REAL_STUDENT_IDS[i - 1];
     const first = THAI_FIRST[(i - 1) % THAI_FIRST.length];
     const last = THAI_LAST[(i - 1) % THAI_LAST.length];
     const name = `${first} ${last}`;
@@ -73,7 +82,7 @@ async function main() {
 
   // Student 1: 15 documents (exceeds PAGE_SIZE=10 for detail page)
   for (let i = 0; i < 15; i++) {
-    const sid = "621251001";
+    const sid = REAL_STUDENT_IDS[0];
     const status = i < 6 ? "APPROVED" as const : i < 10 ? "PENDING" as const : "REJECTED" as const;
     docData.push({
       userId: students[0].id,
@@ -95,7 +104,7 @@ async function main() {
     const count = (s % 3) + 1; // 1, 2, or 3 docs
     for (let d = 0; d < count; d++) {
       const status = statuses[(s + d) % 3];
-      const sid = `621251${String(s + 1).padStart(3, "0")}`;
+      const sid = REAL_STUDENT_IDS[s];
       docData.push({
         userId: students[s].id,
         title: `${DOC_TITLES[(s + d) % DOC_TITLES.length]}`,
@@ -115,7 +124,7 @@ async function main() {
 
   // Create PDF files on disk for student 1 (15 docs)
   for (let i = 0; i < 15; i++) {
-    const sid = "621251001";
+    const sid = REAL_STUDENT_IDS[0];
     createSeedPdf(sid, `${sid}_${i + 1}.pdf`, `${DOC_TITLES[i % DOC_TITLES.length]} (รุ่น ${i + 1})`);
   }
 
