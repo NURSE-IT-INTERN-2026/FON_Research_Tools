@@ -20,6 +20,7 @@ import {
   Trash2,
   FileText,
   RefreshCw,
+  ArrowLeft,
 } from "lucide-react";
 import {
   createBorrowingRecord,
@@ -28,6 +29,13 @@ import {
   type BorrowingActionState,
 } from "@/actions/borrowing-actions";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
+
+type OwnerRow = {
+  id: string;
+  name: string;
+  studentId: string;
+  borrowCount: number;
+};
 
 type RecordRow = {
   id: string;
@@ -43,6 +51,7 @@ type RecordRow = {
 };
 
 type BorrowingClientProps = {
+  owners: OwnerRow[];
   records: RecordRow[];
   currentQuery: string;
   page: number;
@@ -68,6 +77,7 @@ const emptyForm = {
 };
 
 export function BorrowingClient({
+  owners,
   records,
   currentQuery,
   page,
@@ -78,6 +88,7 @@ export function BorrowingClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQuery);
+  const [selectedOwner, setSelectedOwner] = useState<OwnerRow | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState<RecordRow | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -91,6 +102,10 @@ export function BorrowingClient({
   const inputRef = useRef<HTMLInputElement>(null);
   const licenseRef = useRef<HTMLInputElement>(null);
   const certificateRef = useRef<HTMLInputElement>(null);
+
+  const ownerRecords = selectedOwner
+    ? records.filter((r) => r.ownerUserId === selectedOwner.id)
+    : [];
 
   const updateSearch = useCallback(
     (value: string) => {
@@ -128,11 +143,20 @@ export function BorrowingClient({
     router.push(`/admin/borrowing?${params.toString()}`);
   }
 
-  function openCreate() {
-    setForm(emptyForm);
+  function openCreate(ownerPrefill?: OwnerRow) {
+    if (ownerPrefill) {
+      setForm({
+        ...emptyForm,
+        ownerUserId: ownerPrefill.id,
+        ownerName: ownerPrefill.name,
+      });
+      setOwnerSearch(ownerPrefill.name);
+    } else {
+      setForm(emptyForm);
+      setOwnerSearch("");
+    }
     setIsEdit(false);
     setActionResult(null);
-    setOwnerSearch("");
     setOwnerResults([]);
     if (licenseRef.current) licenseRef.current.value = "";
     if (certificateRef.current) certificateRef.current.value = "";
@@ -216,7 +240,7 @@ export function BorrowingClient({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <Button onClick={openCreate} className="rounded gap-2">
+        <Button onClick={() => openCreate()} className="rounded gap-2">
           <Plus className="h-4 w-4" />
           เพิ่มรายการยืม
         </Button>
@@ -245,12 +269,12 @@ export function BorrowingClient({
         </div>
 
         <span className="text-sm text-muted-foreground">
-          ทั้งหมด {totalCount} รายการ
+          ทั้งหมด {totalCount} คน
         </span>
       </div>
 
-      {/* Table */}
-      {records.length === 0 ? (
+      {/* Owner table */}
+      {owners.length === 0 ? (
         <div className="rounded border border-dashed p-10 text-center text-muted-foreground">
           ยังไม่มีรายการยืม
         </div>
@@ -267,101 +291,31 @@ export function BorrowingClient({
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     เจ้าของเครื่องมือ
                   </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    ผู้ขอใช้
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    จากองกรค์
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    วันที่อนุมัติ
-                  </th>
-                  <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    แนบไฟล์
-                  </th>
                   <th className="px-4 py-3 text-center font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    จัดการ
+                    จำนวนครั้ง
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {records.map((record, i) => (
+                {owners.map((owner, i) => (
                   <tr
-                    key={record.id}
-                    className="border-t transition-colors hover:bg-muted/30"
+                    key={owner.id}
+                    className="border-t hover:bg-muted/30 cursor-pointer transition-colors"
+                    onClick={() => setSelectedOwner(owner)}
                   >
                     <td className="px-4 py-3 text-muted-foreground">
-                      {(page - 1) * 10 + i + 1}
+                      {(page - 1) * PAGE_SIZE + i + 1}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium">{record.ownerName}</div>
+                      <div className="font-medium">{owner.name}</div>
                       <div className="text-xs text-muted-foreground font-mono">
-                        {record.ownerStudentId}
+                        {owner.studentId}
                       </div>
                     </td>
-                    <td className="px-4 py-3">{record.requesterName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {record.source || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(record.requestDate)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        {record.hasLicense && (
-                          <a
-                            href={`/researchtool/api/borrowing/${record.id}/license?type=license`}
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                          >
-                            <FileText className="h-3 w-3" />
-                            ใบอนุญาต
-                          </a>
-                        )}
-                        {record.hasCertificate && (
-                          <a
-                            href={`/researchtool/api/borrowing/${record.id}/license?type=certificate`}
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                          >
-                            <FileText className="h-3 w-3" />
-                            ใบรับรอง
-                          </a>
-                        )}
-                        {!record.hasLicense && !record.hasCertificate && (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowDetail(record)}
-                          className="h-8 w-8 p-0"
-                          title="ดูรายละเอียด"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEdit(record)}
-                          className="h-8 w-8 p-0"
-                          title="แก้ไข"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(record.id)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          title="ลบ"
-                          disabled={pending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex items-center justify-center h-6 min-w-6 rounded-full bg-muted text-xs font-medium">
+                        {owner.borrowCount}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -371,39 +325,23 @@ export function BorrowingClient({
 
           {/* Mobile */}
           <div className="md:hidden space-y-3">
-            {records.map((record) => (
-              <div key={record.id} className="rounded border bg-card p-4">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-sm">{record.ownerName}</p>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEdit(record)}
-                      className="h-7 w-7 p-0"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(record.id)}
-                      className="h-7 w-7 p-0 text-destructive"
-                      disabled={pending}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+            {owners.map((owner) => (
+              <button
+                key={owner.id}
+                type="button"
+                onClick={() => setSelectedOwner(owner)}
+                className="w-full rounded border bg-card p-4 text-left flex items-center gap-3 hover:bg-muted/30 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{owner.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {owner.studentId}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                  {record.ownerStudentId}
-                </p>
-                <p className="text-xs mt-1">ผู้ขอ: {record.requesterName}</p>
-                <p className="text-xs text-muted-foreground">
-                  วันที่: {formatDate(record.requestDate)} | จากองกรค์:{" "}
-                  {record.source || "—"}
-                </p>
-              </div>
+                <span className="inline-flex items-center justify-center h-6 min-w-6 rounded-full bg-muted text-xs font-medium shrink-0">
+                  {owner.borrowCount}
+                </span>
+              </button>
             ))}
           </div>
         </>
@@ -413,7 +351,162 @@ export function BorrowingClient({
         <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
       )}
 
-      {/* Detail Dialog */}
+      {/* Owner Detail Dialog (full-width) */}
+      <Dialog open={!!selectedOwner} onOpenChange={(open) => !open && setSelectedOwner(null)}>
+        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedOwner(null)}
+                className="h-8 w-8 p-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div>
+                <DialogTitle className="text-left">
+                  {selectedOwner?.name}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                  {selectedOwner?.studentId}
+                </p>
+              </div>
+              <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                ถูกยืม
+                <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-muted text-xs font-medium">
+                  {selectedOwner?.borrowCount}
+                </span>
+                ครั้ง
+              </span>
+            </div>
+          </DialogHeader>
+
+          {selectedOwner && (
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => openCreate(selectedOwner)}
+                  size="sm"
+                  className="rounded gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  เพิ่มรายการยืม
+                </Button>
+              </div>
+
+              {ownerRecords.length === 0 ? (
+                <div className="rounded border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  ยังไม่มีรายการยืม
+                </div>
+              ) : (
+                <div className="rounded border bg-card overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="px-3 py-2.5 text-left text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground">
+                          ลำดับ
+                        </th>
+                        <th className="px-3 py-2.5 text-left text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground">
+                          ผู้ขอใช้
+                        </th>
+                        <th className="px-3 py-2.5 text-left text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground">
+                          จากองกรค์
+                        </th>
+                        <th className="px-3 py-2.5 text-left text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground">
+                          วันที่อนุมัติ
+                        </th>
+                        <th className="px-3 py-2.5 text-left text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground">
+                          แนบไฟล์
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground">
+                          จัดการ
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ownerRecords.map((record, i) => (
+                        <tr key={record.id} className="border-t hover:bg-muted/30">
+                          <td className="px-3 py-2.5 text-muted-foreground">{i + 1}</td>
+                          <td className="px-3 py-2.5">{record.requesterName}</td>
+                          <td className="px-3 py-2.5 text-muted-foreground">
+                            {record.source || "—"}
+                          </td>
+                          <td className="px-3 py-2.5 text-muted-foreground">
+                            {formatDate(record.requestDate)}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex gap-2">
+                              {record.hasLicense && (
+                                <a
+                                  href={`/researchtool/api/borrowing/${record.id}/license?type=license`}
+                                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  ใบอนุญาต
+                                </a>
+                              )}
+                              {record.hasCertificate && (
+                                <a
+                                  href={`/researchtool/api/borrowing/${record.id}/license?type=certificate`}
+                                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  ใบรับรอง
+                                </a>
+                              )}
+                              {!record.hasLicense && !record.hasCertificate && (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowDetail(record)}
+                                className="h-7 w-7 p-0"
+                                title="ดูรายละเอียด"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEdit(record)}
+                                className="h-7 w-7 p-0"
+                                title="แก้ไข"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(record.id)}
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                title="ลบ"
+                                disabled={pending}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Record Detail Dialog */}
       <Dialog open={!!showDetail} onOpenChange={(open) => !open && setShowDetail(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -486,7 +579,6 @@ export function BorrowingClient({
             {isEdit && <input type="hidden" name="recordId" value={form.recordId} />}
             <input type="hidden" name="ownerUserId" value={form.ownerUserId} />
 
-            {/* เจ้าของเครื่องมือ — search & select */}
             <div>
               <label className="text-sm font-medium mb-1 block">
                 เจ้าของเครื่องมือ <span className="text-destructive">*</span>
@@ -498,6 +590,7 @@ export function BorrowingClient({
                   onChange={(e) => handleOwnerSearch(e.target.value)}
                   placeholder="ค้นหาชื่อหรือรหัสนักศึกษา..."
                   className="pl-9"
+                  readOnly={!!form.ownerUserId && !isEdit}
                 />
               </div>
               {ownerSearching && (
@@ -525,7 +618,6 @@ export function BorrowingClient({
               )}
             </div>
 
-            {/* ผู้ขอใช้ */}
             <div>
               <label className="text-sm font-medium mb-1 block">
                 ผู้ขอใช้ <span className="text-destructive">*</span>
@@ -541,7 +633,6 @@ export function BorrowingClient({
               />
             </div>
 
-            {/* จากองกรค์ */}
             <div>
               <label className="text-sm font-medium mb-1 block">
                 จากองกรค์ <span className="text-destructive">*</span>
@@ -555,7 +646,6 @@ export function BorrowingClient({
               />
             </div>
 
-            {/* วันที่อนุมัติ */}
             <div>
               <label className="text-sm font-medium mb-1 block">วันที่อนุมัติ</label>
               <AppDatePicker
@@ -565,7 +655,6 @@ export function BorrowingClient({
               />
             </div>
 
-            {/* แนบไฟล์ */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium mb-1 block">
@@ -617,6 +706,8 @@ export function BorrowingClient({
     </div>
   );
 }
+
+const PAGE_SIZE = 10;
 
 function Pagination({
   page,

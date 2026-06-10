@@ -23,12 +23,35 @@ export default async function BorrowingPage({
       }
     : {};
 
-  const [totalCount, rows] = await Promise.all([
-    db.borrowingRecord.count(),
+  // Get distinct owners ordered by latest activity
+  const distinctOwners = await db.borrowingRecord.findMany({
+    where,
+    select: { ownerUserId: true },
+    distinct: ["ownerUserId"],
+    orderBy: { createdAt: "desc" },
+  });
+
+  const totalCount = distinctOwners.length;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
+  const safePage = Math.min(page, totalPages);
+  const hasMore = safePage < totalPages;
+  const pageOwnerIds = distinctOwners
+    .slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+    .map((o) => o.ownerUserId);
+
+  // Fetch profiles + counts + all records for page owners
+  const [profiles, counts, records] = await Promise.all([
+    db.profile.findMany({
+      where: { id: { in: pageOwnerIds } },
+      select: { id: true, name: true, studentId: true },
+    }),
+    db.borrowingRecord.groupBy({
+      by: ["ownerUserId"],
+      where: { ownerUserId: { in: pageOwnerIds } },
+      _count: { id: true },
+    }),
     db.borrowingRecord.findMany({
-      where,
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE + 1,
+      where: { ownerUserId: { in: pageOwnerIds } },
       orderBy: { createdAt: "desc" },
       include: {
         owner: { select: { id: true, name: true, studentId: true } },
@@ -36,11 +59,15 @@ export default async function BorrowingPage({
     }),
   ]);
 
-  const filteredCount = q ? await db.borrowingRecord.count({ where }) : totalCount;
-  const hasMore = rows.length > PAGE_SIZE;
-  const records = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
-  const totalPages = Math.ceil(filteredCount / PAGE_SIZE) || 1;
-  const safePage = Math.min(page, totalPages);
+  const countMap = Object.fromEntries(counts.map((c) => [c.ownerUserId, c._count.id]));
+  const profileMap = Object.fromEntries(profiles.map((p) => [p.id, p]));
+
+  const owners = pageOwnerIds.map((id) => ({
+    id,
+    name: profileMap[id]?.name ?? "—",
+    studentId: profileMap[id]?.studentId ?? "—",
+    borrowCount: countMap[id] ?? 0,
+  }));
 
   const serialized = records.map((r) => ({
     id: r.id,
@@ -64,6 +91,7 @@ export default async function BorrowingPage({
       </div>
 
       <BorrowingClient
+        owners={owners}
         records={serialized}
         currentQuery={q ?? ""}
         page={safePage}
