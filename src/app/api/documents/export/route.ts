@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import db from "@/lib/db";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "รอตรวจสอบ",
   APPROVED: "อนุมัติแล้ว",
   REJECTED: "ปฏิเสธแล้ว",
 };
+
+const COLUMNS: Partial<ExcelJS.Column>[] = [
+  { header: "ลำดับ", key: "index", width: 6 },
+  { header: "ชื่อนักศึกษา", key: "name", width: 25 },
+  { header: "รหัสนักศึกษา", key: "studentId", width: 15 },
+  { header: "ชื่อเครื่องมือวิจัย", key: "title", width: 35 },
+  { header: "สถานะ", key: "status", width: 14 },
+  { header: "วันที่อัปโหลด", key: "uploadedAt", width: 16 },
+  { header: "วันที่ดำเนินการ", key: "reviewedAt", width: 16 },
+  { header: "ผู้ดำเนินการ", key: "reviewedBy", width: 20 },
+  { header: "หมายเหตุ", key: "notes", width: 30 },
+];
 
 export async function GET(request: NextRequest) {
   await requireRole("ADMIN");
@@ -41,37 +53,28 @@ export async function GET(request: NextRequest) {
   });
 
   const data = rows.map((doc, i) => ({
-    "ลำดับ": i + 1,
-    "ชื่อนักศึกษา": doc.profile.name,
-    "รหัสนักศึกษา": doc.profile.studentId ?? "",
-    "ชื่อเครื่องมือวิจัย": doc.title,
-    "สถานะ": STATUS_LABEL[doc.status] ?? doc.status,
-    "วันที่อัปโหลด": doc.createdAt.toLocaleDateString("th-TH"),
-    "วันที่ดำเนินการ": doc.reviewedAt?.toLocaleDateString("th-TH") ?? "",
-    "ผู้ดำเนินการ": doc.reviewedBy ?? "",
-    "หมายเหตุ": doc.adminNotes ?? "",
+    index: i + 1,
+    name: doc.profile.name,
+    studentId: doc.profile.studentId ?? "",
+    title: doc.title,
+    status: STATUS_LABEL[doc.status] ?? doc.status,
+    uploadedAt: doc.createdAt.toLocaleDateString("th-TH"),
+    reviewedAt: doc.reviewedAt?.toLocaleDateString("th-TH") ?? "",
+    reviewedBy: doc.reviewedBy ?? "",
+    notes: doc.adminNotes ?? "",
   }));
-
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(data);
-  ws["!cols"] = [
-    { wch: 6 },   // ลำดับ
-    { wch: 25 },  // ชื่อนักศึกษา
-    { wch: 15 },  // รหัสนักศึกษา
-    { wch: 35 },  // ชื่อเครื่องมือวิจัย
-    { wch: 14 },  // สถานะ
-    { wch: 16 },  // วันที่อัปโหลด
-    { wch: 16 },  // วันที่ดำเนินการ
-    { wch: 20 },  // ผู้ดำเนินการ
-    { wch: 30 },  // หมายเหตุ
-  ];
-  XLSX.utils.book_append_sheet(wb, ws, "เอกสาร");
 
   const suffix = statusFilter ? `_${STATUS_LABEL[statusFilter] ?? statusFilter}` : "_ทั้งหมด";
 
   if (format === "csv") {
-    const csv = XLSX.utils.sheet_to_csv(ws);
-    const buf = new TextEncoder().encode("﻿" + csv);
+    const headers = COLUMNS.map(c => c.header as string);
+    const csvRows = [headers.join(",")];
+    for (const row of data) {
+      csvRows.push(
+        Object.values(row).map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")
+      );
+    }
+    const buf = new TextEncoder().encode("﻿" + csvRows.join("\r\n"));
     return new NextResponse(buf, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
@@ -80,7 +83,14 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("เอกสาร");
+  ws.columns = COLUMNS;
+  for (const row of data) {
+    ws.addRow(row);
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
   return new NextResponse(buf, {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
