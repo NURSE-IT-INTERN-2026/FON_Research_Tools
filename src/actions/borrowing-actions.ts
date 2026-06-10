@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAuth, requireRole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 import db from "@/lib/db";
 import { writeFile, mkdir, unlink } from "node:fs/promises";
@@ -16,134 +16,177 @@ export type BorrowingActionState = {
   error?: string;
 };
 
-export async function submitBorrowRequest(
-  _prev: BorrowingActionState,
-  formData: FormData,
-): Promise<BorrowingActionState> {
-  const { userId } = await requireRole("STUDENT");
-
-  const instrumentId = (formData.get("instrumentId") as string)?.trim();
-  const requesterName = (formData.get("requesterName") as string)?.trim();
-  const requestDateStr = (formData.get("requestDate") as string)?.trim();
-  const additionalDetails = (formData.get("additionalDetails") as string)?.trim();
-  const file = formData.get("licenseFile");
-
-  if (!instrumentId) return { error: "กรุณาเลือกเครื่องมือวิจัย" };
-  if (!requesterName) return { error: "กรุณากรอกชื่อผู้ขอ" };
-  if (!requestDateStr) return { error: "กรุณากรอกวันที่ขอ" };
-
-  const instrument = await db.instrument.findUnique({ where: { id: instrumentId } });
-  if (!instrument) return { error: "ไม่พบเครื่องมือวิจัยที่เลือก" };
-
-  if (!file || !(file instanceof File) || file.size === 0)
-    return { error: "กรุณาเลือกไฟล์ใบอนุญาต (PDF)" };
-  if (file.type !== "application/pdf")
-    return { error: "อัปโหลดไฟล์ PDF เท่านั้น" };
-  if (file.size > MAX_FILE_SIZE)
-    return { error: "ไฟล์มีขนาดเกิน 10 MB" };
-
-  const record = await db.borrowingRecord.create({
-    data: {
-      instrumentId,
-      userId,
-      requesterName,
-      requestDate: new Date(requestDateStr),
-      additionalDetails: additionalDetails || null,
-    },
-  });
-
+async function saveFile(file: File, suffix: string, recordId: string) {
   if (!existsSync(UPLOAD_DIR)) {
     await mkdir(UPLOAD_DIR, { recursive: true });
   }
-
-  const licenseFileName = `${record.id}.pdf`;
-  const filePath = join(UPLOAD_DIR, licenseFileName);
+  const fileName = `${recordId}_${suffix}.pdf`;
+  const filePath = join(UPLOAD_DIR, fileName);
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(filePath, buffer);
-
-  await db.borrowingRecord.update({
-    where: { id: record.id },
-    data: {
-      licenseFileName,
-      licenseOriginalName: file.name,
-      licenseFileSize: file.size,
-    },
-  });
-
-  await logActivity({
-    action: "BORROW_SUBMIT",
-    userId,
-    targetType: "BorrowingRecord",
-    targetId: record.id,
-    targetLabel: `${requesterName} → ${instrument.name}`,
-  });
-
-  revalidatePath("/borrow");
-  return { success: true };
+  return { fileName, originalName: file.name, fileSize: file.size };
 }
 
-export async function approveBorrowing(
-  recordId: string,
+export async function createBorrowingRecord(
+  _prev: BorrowingActionState,
+  formData: FormData,
 ): Promise<BorrowingActionState> {
   const ctx = await requireRole("ADMIN");
 
-  const record = await db.borrowingRecord.findUnique({
-    where: { id: recordId },
-    include: { instrument: true },
-  });
-  if (!record) return { error: "ไม่พบคำขอยืม" };
-  if (record.status !== "PENDING") return { error: "คำขอนี้ถูกดำเนินการแล้ว" };
+  const ownerUserId = (formData.get("ownerUserId") as string)?.trim();
+  const requesterName = (formData.get("requesterName") as string)?.trim();
+  const requestDateStr = (formData.get("requestDate") as string)?.trim();
+  const source = (formData.get("source") as string)?.trim();
+  const licenseFile = formData.get("licenseFile");
+  const certificateFile = formData.get("certificateFile");
 
-  await db.borrowingRecord.update({
-    where: { id: recordId },
+  if (!ownerUserId) return { error: "กรุณาเลือกเจ้าของเครื่องมือ" };
+  if (!requesterName) return { error: "กรุณากรอกชื่อผู้ขอใช้" };
+  if (!source) return { error: "กรุณากรอกเรียนจากที่ไหน" };
+
+  const owner = await db.profile.findUnique({ where: { id: ownerUserId } });
+  if (!owner) return { error: "ไม่พบเจ้าของเครื่องมือในระบบ" };
+
+  const record = await db.borrowingRecord.create({
     data: {
-      status: "APPROVED",
-      reviewedBy: ctx.userId,
-      reviewedAt: new Date(),
+      ownerUserId,
+      requesterName,
+      requestDate: requestDateStr ? new Date(requestDateStr) : null,
+      source,
+      createdBy: ctx.userId,
     },
   });
 
+  // Save license file (ใบอนุญาตจากสำนักทะเบียน)
+  if (licenseFile && licenseFile instanceof File && licenseFile.size > 0) {
+    if (licenseFile.type !== "application/pdf")
+      return { error: "ใบอนุญาตต้องเป็นไฟล์ PDF เท่านั้น" };
+    if (licenseFile.size > MAX_FILE_SIZE)
+      return { error: "ไฟล์ใบอนุญาตมีขนาดเกิน 10 MB" };
+
+    const saved = await saveFile(licenseFile, "license", record.id);
+    await db.borrowingRecord.update({
+      where: { id: record.id },
+      data: {
+        licenseFileName: saved.fileName,
+        licenseOriginalName: saved.originalName,
+        licenseFileSize: saved.fileSize,
+      },
+    });
+  }
+
+  // Save certificate file (ใบรับรอง)
+  if (certificateFile && certificateFile instanceof File && certificateFile.size > 0) {
+    if (certificateFile.type !== "application/pdf")
+      return { error: "ใบรับรองต้องเป็นไฟล์ PDF เท่านั้น" };
+    if (certificateFile.size > MAX_FILE_SIZE)
+      return { error: "ไฟล์ใบรับรองมีขนาดเกิน 10 MB" };
+
+    const saved = await saveFile(certificateFile, "certificate", record.id);
+    await db.borrowingRecord.update({
+      where: { id: record.id },
+      data: {
+        certificateFileName: saved.fileName,
+        certificateOriginalName: saved.originalName,
+        certificateFileSize: saved.fileSize,
+      },
+    });
+  }
+
   await logActivity({
-    action: "BORROW_APPROVE",
+    action: "BORROW_SUBMIT",
     userId: ctx.userId,
     targetType: "BorrowingRecord",
-    targetId: recordId,
-    targetLabel: `${record.requesterName} → ${record.instrument.name}`,
+    targetId: record.id,
+    targetLabel: `${requesterName} → ${owner.name}`,
   });
 
   revalidatePath("/admin/borrowing");
   return { success: true };
 }
 
-export async function rejectBorrowing(
-  recordId: string,
-  notes: string,
+export async function updateBorrowingRecord(
+  _prev: BorrowingActionState,
+  formData: FormData,
 ): Promise<BorrowingActionState> {
   const ctx = await requireRole("ADMIN");
 
-  const record = await db.borrowingRecord.findUnique({
-    where: { id: recordId },
-    include: { instrument: true },
-  });
-  if (!record) return { error: "ไม่พบคำขอยืม" };
-  if (record.status !== "PENDING") return { error: "คำขอนี้ถูกดำเนินการแล้ว" };
+  const recordId = formData.get("recordId") as string;
+  const ownerUserId = (formData.get("ownerUserId") as string)?.trim();
+  const requesterName = (formData.get("requesterName") as string)?.trim();
+  const requestDateStr = (formData.get("requestDate") as string)?.trim();
+  const source = (formData.get("source") as string)?.trim();
+  const licenseFile = formData.get("licenseFile");
+  const certificateFile = formData.get("certificateFile");
+
+  if (!recordId) return { error: "ไม่พบรายการ" };
+  if (!ownerUserId) return { error: "กรุณาเลือกเจ้าของเครื่องมือ" };
+  if (!requesterName) return { error: "กรุณากรอกชื่อผู้ขอใช้" };
+  if (!source) return { error: "กรุณากรอกเรียนจากที่ไหน" };
+
+  const record = await db.borrowingRecord.findUnique({ where: { id: recordId } });
+  if (!record) return { error: "ไม่พบรายการ" };
 
   await db.borrowingRecord.update({
     where: { id: recordId },
     data: {
-      status: "REJECTED",
-      reviewedBy: ctx.userId,
-      reviewedAt: new Date(),
-      adminNotes: notes,
+      ownerUserId,
+      requesterName,
+      requestDate: requestDateStr ? new Date(requestDateStr) : null,
+      source,
     },
   });
 
+  // Update license file
+  if (licenseFile && licenseFile instanceof File && licenseFile.size > 0) {
+    if (licenseFile.type !== "application/pdf")
+      return { error: "ใบอนุญาตต้องเป็นไฟล์ PDF เท่านั้น" };
+    if (licenseFile.size > MAX_FILE_SIZE)
+      return { error: "ไฟล์ใบอนุญาตมีขนาดเกิน 10 MB" };
+
+    if (record.licenseFileName) {
+      const oldPath = join(UPLOAD_DIR, record.licenseFileName);
+      if (existsSync(oldPath)) await unlink(oldPath);
+    }
+    const saved = await saveFile(licenseFile, "license", recordId);
+    await db.borrowingRecord.update({
+      where: { id: recordId },
+      data: {
+        licenseFileName: saved.fileName,
+        licenseOriginalName: saved.originalName,
+        licenseFileSize: saved.fileSize,
+      },
+    });
+  }
+
+  // Update certificate file
+  if (certificateFile && certificateFile instanceof File && certificateFile.size > 0) {
+    if (certificateFile.type !== "application/pdf")
+      return { error: "ใบรับรองต้องเป็นไฟล์ PDF เท่านั้น" };
+    if (certificateFile.size > MAX_FILE_SIZE)
+      return { error: "ไฟล์ใบรับรองมีขนาดเกิน 10 MB" };
+
+    if (record.certificateFileName) {
+      const oldPath = join(UPLOAD_DIR, record.certificateFileName);
+      if (existsSync(oldPath)) await unlink(oldPath);
+    }
+    const saved = await saveFile(certificateFile, "certificate", recordId);
+    await db.borrowingRecord.update({
+      where: { id: recordId },
+      data: {
+        certificateFileName: saved.fileName,
+        certificateOriginalName: saved.originalName,
+        certificateFileSize: saved.fileSize,
+      },
+    });
+  }
+
   await logActivity({
-    action: "BORROW_REJECT",
+    action: "BORROW_SUBMIT",
     userId: ctx.userId,
     targetType: "BorrowingRecord",
     targetId: recordId,
-    targetLabel: `${record.requesterName} → ${record.instrument.name}`,
+    targetLabel: `แก้ไข: ${requesterName}`,
   });
 
   revalidatePath("/admin/borrowing");
@@ -154,34 +197,25 @@ export async function removeBorrowing(
   _prev: BorrowingActionState,
   formData: FormData,
 ): Promise<BorrowingActionState> {
-  const { userId } = await requireAuth();
+  const { userId } = await requireRole("ADMIN");
   const recordId = formData.get("recordId") as string;
 
-  if (!recordId) return { error: "ไม่พบคำขอยืม" };
+  if (!recordId) return { error: "ไม่พบรายการ" };
 
   const record = await db.borrowingRecord.findUnique({
     where: { id: recordId },
-    include: { instrument: true },
+    include: { owner: true },
   });
-  if (!record) return { error: "ไม่พบคำขอยืม" };
+  if (!record) return { error: "ไม่พบรายการ" };
 
-  const actor = await db.profile.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-  const isAdmin = actor?.role === "ADMIN";
-  const isOwner = record.userId === userId;
-
-  if (!isAdmin && !isOwner) return { error: "ไม่มีสิทธิ์ลบคำขอนี้" };
-  if (!isAdmin && record.status !== "PENDING")
-    return { error: "ลบได้เฉพาะคำขอที่รอตรวจสอบ" };
-
-  // Delete license file
+  // Delete files
   if (record.licenseFileName) {
     const filePath = join(UPLOAD_DIR, record.licenseFileName);
-    if (existsSync(filePath)) {
-      await unlink(filePath);
-    }
+    if (existsSync(filePath)) await unlink(filePath);
+  }
+  if (record.certificateFileName) {
+    const filePath = join(UPLOAD_DIR, record.certificateFileName);
+    if (existsSync(filePath)) await unlink(filePath);
   }
 
   await db.borrowingRecord.delete({ where: { id: recordId } });
@@ -191,10 +225,9 @@ export async function removeBorrowing(
     userId,
     targetType: "BorrowingRecord",
     targetId: recordId,
-    targetLabel: `${record.requesterName ?? "—"} → ${record.instrument.name}`,
+    targetLabel: `ลบ: ${record.requesterName} → ${record.owner.name}`,
   });
 
-  revalidatePath("/borrow");
   revalidatePath("/admin/borrowing");
   return { success: true };
 }

@@ -7,37 +7,41 @@ import db from "@/lib/db";
 const UPLOAD_DIR = join(process.cwd(), "uploads", "borrowing");
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  const type = request.nextUrl.searchParams.get("type") || "license";
 
-  const token = _request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = verifySessionToken(token);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const record = await db.borrowingRecord.findUnique({ where: { id } });
   if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!record.licenseFileName) return NextResponse.json({ error: "No license file" }, { status: 404 });
 
   const userProfile = await db.profile.findUnique({
     where: { id: session.userId },
     select: { role: true },
   });
-  const isAdmin = userProfile?.role === "ADMIN";
-  const isOwner = record.userId === session.userId;
-  if (!isAdmin && !isOwner) {
+  if (userProfile?.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const filePath = join(UPLOAD_DIR, record.licenseFileName);
+  const isLicense = type === "license";
+  const fileName = isLicense ? record.licenseFileName : record.certificateFileName;
+  const originalName = isLicense ? record.licenseOriginalName : record.certificateOriginalName;
+
+  if (!fileName) return NextResponse.json({ error: "No file" }, { status: 404 });
+
+  const filePath = join(UPLOAD_DIR, fileName);
 
   try {
     const fileBuffer = await readFile(filePath);
     return new NextResponse(fileBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(record.licenseOriginalName ?? "license.pdf")}"`,
+        "Content-Disposition": `attachment; filename="${encodeURIComponent(originalName ?? `${type}.pdf`)}"`,
       },
     });
   } catch {

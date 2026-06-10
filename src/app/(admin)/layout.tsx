@@ -7,7 +7,7 @@ import { SearchButton } from "@/components/admin/search-button";
 const ADMIN_NAV: NavItem[] = [
   { label: "แดชบอร์ด", href: "/admin/dashboard", icon: "LayoutDashboard" },
   { label: "เอกสารเครื่องมือวิจัย", href: "/admin/documents", icon: "FileText" },
-  { label: "คำขอยืมเครื่องมือ", href: "/admin/borrowing", icon: "Package" },
+  { label: "บันทึกรายการยืมเครื่องมือ", href: "/admin/borrowing", icon: "Package" },
   { label: "รายชื่อนักศึกษา", href: "/admin/students", icon: "Users" },
   { label: "จัดการผู้ดูแล", href: "/admin/admins", icon: "Shield" },
   { label: "บันทึกกิจกรรม", href: "/admin/activity-log", icon: "Activity" },

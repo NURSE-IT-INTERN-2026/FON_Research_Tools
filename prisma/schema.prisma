@@ -27,15 +27,7 @@ enum ActivityAction {
   DOCUMENT_REMOVE
   ADMIN_CREATED
   BORROW_SUBMIT
-  BORROW_APPROVE
-  BORROW_REJECT
   BORROW_REMOVE
-}
-
-enum BorrowingStatus {
-  PENDING
-  APPROVED
-  REJECTED
 }
 
 model Profile {
@@ -53,6 +45,7 @@ model Profile {
 
   documents        Document[]
   borrowingRecords BorrowingRecord[]
+  createdBorrows   BorrowingRecord[] @relation("CreatedBy")
   activityLogs     ActivityLog[]
 }
 
@@ -67,12 +60,10 @@ model Document {
   reviewedBy   String?
   reviewedAt   DateTime?
   adminNotes   String?
-  instrumentId String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
   profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  instrument Instrument? @relation(fields: [instrumentId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -97,38 +88,25 @@ model ActivityLog {
   @@index([createdAt])
 }
 
-model Instrument {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  documents        Document[]
-  borrowingRecords BorrowingRecord[]
-}
-
 model BorrowingRecord {
-  id                  String          @id @default(cuid())
-  instrumentId        String
-  userId              String
-  requesterName       String?
-  requestDate         DateTime?
-  additionalDetails   String?
-  licenseFileName     String?
-  licenseOriginalName String?
-  licenseFileSize     Int?
-  status              BorrowingStatus @default(PENDING)
-  reviewedBy          String?
-  reviewedAt          DateTime?
-  adminNotes          String?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id                      String    @id @default(cuid())
+  ownerUserId             String
+  requesterName           String
+  requestDate             DateTime?
+  source                  String?
+  licenseFileName         String?
+  licenseOriginalName     String?
+  licenseFileSize         Int?
+  certificateFileName     String?
+  certificateOriginalName String?
+  certificateFileSize     Int?
+  createdBy               String
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  instrument Instrument @relation(fields: [instrumentId], references: [id])
-  profile    Profile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  owner     Profile @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  creator   Profile @relation("CreatedBy", fields: [createdBy], references: [id])
 
-  @@index([instrumentId])
-  @@index([userId])
-  @@index([status])
+  @@index([ownerUserId])
   @@index([createdAt])
 }
