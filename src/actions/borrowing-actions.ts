@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
-import { logActivity } from "@/lib/activity-log";
 import db from "@/lib/db";
 import { writeFile, mkdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -93,14 +92,6 @@ export async function createBorrowingRecord(
     });
   }
 
-  await logActivity({
-    action: "BORROW_SUBMIT",
-    userId: ctx.userId,
-    targetType: "BorrowingRecord",
-    targetId: record.id,
-    targetLabel: `${requesterName} → ${owner.name}`,
-  });
-
   revalidatePath("/admin/borrowing");
   return { success: true };
 }
@@ -109,7 +100,7 @@ export async function updateBorrowingRecord(
   _prev: BorrowingActionState,
   formData: FormData,
 ): Promise<BorrowingActionState> {
-  const ctx = await requireRole("ADMIN");
+  await requireRole("ADMIN");
 
   const recordId = formData.get("recordId") as string;
   const ownerUserId = (formData.get("ownerUserId") as string)?.trim();
@@ -181,14 +172,6 @@ export async function updateBorrowingRecord(
     });
   }
 
-  await logActivity({
-    action: "BORROW_SUBMIT",
-    userId: ctx.userId,
-    targetType: "BorrowingRecord",
-    targetId: recordId,
-    targetLabel: `แก้ไข: ${requesterName}`,
-  });
-
   revalidatePath("/admin/borrowing");
   return { success: true };
 }
@@ -197,7 +180,7 @@ export async function removeBorrowing(
   _prev: BorrowingActionState,
   formData: FormData,
 ): Promise<BorrowingActionState> {
-  const { userId } = await requireRole("ADMIN");
+  await requireRole("ADMIN");
   const recordId = formData.get("recordId") as string;
 
   if (!recordId) return { error: "ไม่พบรายการ" };
@@ -219,14 +202,6 @@ export async function removeBorrowing(
   }
 
   await db.borrowingRecord.delete({ where: { id: recordId } });
-
-  await logActivity({
-    action: "BORROW_REMOVE",
-    userId,
-    targetType: "BorrowingRecord",
-    targetId: recordId,
-    targetLabel: `ลบ: ${record.requesterName} → ${record.owner.name}`,
-  });
 
   revalidatePath("/admin/borrowing");
   return { success: true };

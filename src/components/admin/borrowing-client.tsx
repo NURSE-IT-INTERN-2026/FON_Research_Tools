@@ -31,6 +31,7 @@ import { AppDatePicker } from "@/components/ui/app-date-picker";
 
 type RecordRow = {
   id: string;
+  ownerUserId: string;
   ownerName: string;
   ownerStudentId: string;
   requesterName: string;
@@ -141,7 +142,7 @@ export function BorrowingClient({
   function openEdit(record: RecordRow) {
     setForm({
       recordId: record.id,
-      ownerUserId: "",
+      ownerUserId: record.ownerUserId,
       ownerName: record.ownerName,
       requesterName: record.requesterName,
       requestDate: record.requestDate
@@ -270,7 +271,7 @@ export function BorrowingClient({
                     ผู้ขอใช้
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                    เรียนจาก
+                    จากองกรค์
                   </th>
                   <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                     วันที่อนุมัติ
@@ -399,7 +400,7 @@ export function BorrowingClient({
                 </p>
                 <p className="text-xs mt-1">ผู้ขอ: {record.requesterName}</p>
                 <p className="text-xs text-muted-foreground">
-                  วันที่: {formatDate(record.requestDate)} | เรียนจาก:{" "}
+                  วันที่: {formatDate(record.requestDate)} | จากองกรค์:{" "}
                   {record.source || "—"}
                 </p>
               </div>
@@ -427,7 +428,7 @@ export function BorrowingClient({
                 <span className="font-mono">{showDetail.ownerStudentId}</span>
                 <span className="text-muted-foreground">ผู้ขอใช้:</span>
                 <span>{showDetail.requesterName}</span>
-                <span className="text-muted-foreground">เรียนจาก:</span>
+                <span className="text-muted-foreground">จากองกรค์:</span>
                 <span>{showDetail.source || "—"}</span>
                 <span className="text-muted-foreground">วันที่อนุมัติ:</span>
                 <span>{formatDate(showDetail.requestDate)}</span>
@@ -540,10 +541,10 @@ export function BorrowingClient({
               />
             </div>
 
-            {/* เรียนจากที่ไหน */}
+            {/* จากองกรค์ */}
             <div>
               <label className="text-sm font-medium mb-1 block">
-                เรียนจากที่ไหน <span className="text-destructive">*</span>
+                จากองกรค์ <span className="text-destructive">*</span>
               </label>
               <Input
                 name="source"

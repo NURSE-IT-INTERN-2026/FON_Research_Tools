@@ -2,6 +2,7 @@
 
 import { verifyCredentials } from "@/lib/auth/admin-credentials";
 import { createSession } from "@/lib/auth/session";
+import { logActivity } from "@/lib/activity-log";
 import { redirect } from "next/navigation";
 
 export type AdminLoginState = {
@@ -26,5 +27,11 @@ export async function adminLogin(
   }
 
   await createSession(user);
+  await logActivity({
+    action: "USER_LOGIN",
+    userId: user.userId,
+    targetType: "Session",
+    targetLabel: `เข้าสู่ระบบ (${user.role})`,
+  });
   redirect(user.role === "ADMIN" ? "/admin/dashboard" : "/thesis");
 }

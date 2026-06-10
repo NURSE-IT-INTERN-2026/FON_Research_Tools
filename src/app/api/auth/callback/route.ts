@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth/cmu-oauth";
 import { createSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { logActivity } from "@/lib/activity-log";
 
 const BASE = "/researchtool";
 
@@ -75,6 +76,13 @@ export async function GET(request: NextRequest) {
     email: profile.email,
     role,
     name: profile.name,
+  });
+
+  await logActivity({
+    action: "USER_LOGIN",
+    userId: profile.id,
+    targetType: "Session",
+    targetLabel: `เข้าสู่ระบบ (${role})`,
   });
 
   return redirectWithClearedState(

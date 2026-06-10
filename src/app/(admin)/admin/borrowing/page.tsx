@@ -31,7 +31,7 @@ export default async function BorrowingPage({
       take: PAGE_SIZE + 1,
       orderBy: { createdAt: "desc" },
       include: {
-        owner: { select: { name: true, studentId: true } },
+        owner: { select: { id: true, name: true, studentId: true } },
       },
     }),
   ]);
@@ -44,6 +44,7 @@ export default async function BorrowingPage({
 
   const serialized = records.map((r) => ({
     id: r.id,
+    ownerUserId: r.owner.id,
     ownerName: r.owner.name,
     ownerStudentId: r.owner.studentId ?? "—",
     requesterName: r.requesterName,
