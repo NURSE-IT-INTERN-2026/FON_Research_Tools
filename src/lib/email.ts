@@ -2,7 +2,11 @@ import { join } from "node:path";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync, chmodSync } from "node:fs";
 
-const EMAIL_API_BASE = process.env.EMAIL_API_BASE ?? "https://mis.nurse.cmu.ac.th/thesis";
+const EMAIL_API_BASE = (() => {
+  const url = process.env.EMAIL_API_BASE;
+  if (!url) throw new Error("EMAIL_API_BASE env var is required");
+  return url;
+})();
 const TOKEN_CACHE_PATH = join(process.cwd(), ".cache", "email-token.json");
 
 type TokenCache = {
@@ -30,7 +34,11 @@ async function getEmailToken(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      client_id: process.env.EMAIL_CLIENT_ID ?? "nurse-email-api",
+      client_id: (() => {
+        const id = process.env.EMAIL_CLIENT_ID;
+        if (!id) throw new Error("EMAIL_CLIENT_ID env var is required");
+        return id;
+      })(),
       client_secret: (() => {
         const secret = process.env.EMAIL_CLIENT_SECRET;
         if (!secret) throw new Error("EMAIL_CLIENT_SECRET is required");
@@ -104,8 +112,9 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
 
 export function getAdminEmails() {
   const devEmail = process.env.DEV_NOTIFICATION_EMAIL;
-  return {
-    to: devEmail ?? "supapan.ch@cmu.ac.th",
-    cc: devEmail ?? "ampika.s@cmu.ac.th",
-  };
+  if (devEmail) return { to: devEmail, cc: devEmail };
+  const to = process.env.ADMIN_EMAIL_TO;
+  const cc = process.env.ADMIN_EMAIL_CC;
+  if (!to) throw new Error("ADMIN_EMAIL_TO or DEV_NOTIFICATION_EMAIL env var is required");
+  return { to, cc: cc ?? "" };
 }

@@ -4,6 +4,7 @@ import db from "@/lib/db";
 
 const THESIS_API_URL = process.env.THESIS_API_URL;
 const THESIS_API_TOKEN = process.env.THESIS_API_TOKEN;
+const PLACEHOLDER_EMAIL_DOMAIN = process.env.PLACEHOLDER_EMAIL_DOMAIN ?? "placeholder.cmu.ac.th";
 
 export async function POST() {
   await requireRole("ADMIN");
@@ -55,7 +56,7 @@ export async function POST() {
 
   for (const s of students) {
     const hasTitle = s.title_th && s.title_th !== "N/A";
-    const email = s.cmu_account || `${s.student_id}@placeholder.cmu.ac.th`;
+    const email = s.cmu_account || `${s.student_id}@${PLACEHOLDER_EMAIL_DOMAIN}`;
     const name = s.cmu_account
       ? s.cmu_account.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
       : s.student_id;

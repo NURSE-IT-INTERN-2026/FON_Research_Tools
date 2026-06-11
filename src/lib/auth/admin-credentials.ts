@@ -1,7 +1,7 @@
 import db from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME ?? "admin";
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH
   ? Buffer.from(process.env.ADMIN_PASSWORD_HASH, "base64").toString("utf-8")
   : undefined;

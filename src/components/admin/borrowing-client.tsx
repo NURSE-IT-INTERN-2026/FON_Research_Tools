@@ -30,6 +30,8 @@ import {
 } from "@/actions/borrowing-actions";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 type OwnerRow = {
   id: string;
   name: string;
@@ -192,7 +194,7 @@ export function BorrowingClient({
     setOwnerSearching(true);
     try {
       const res = await fetch(
-        `/researchtool/api/students/search?q=${encodeURIComponent(query)}`,
+        `${BASE_PATH}/api/students/search?q=${encodeURIComponent(query)}`,
       );
       if (res.ok) {
         const data = await res.json();
@@ -440,7 +442,7 @@ export function BorrowingClient({
                             <div className="flex gap-2">
                               {record.hasLicense && (
                                 <a
-                                  href={`/researchtool/api/borrowing/${record.id}/license?type=license`}
+                                  href={`${BASE_PATH}/api/borrowing/${record.id}/license?type=license`}
                                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -450,7 +452,7 @@ export function BorrowingClient({
                               )}
                               {record.hasCertificate && (
                                 <a
-                                  href={`/researchtool/api/borrowing/${record.id}/license?type=certificate`}
+                                  href={`${BASE_PATH}/api/borrowing/${record.id}/license?type=certificate`}
                                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -533,7 +535,7 @@ export function BorrowingClient({
                 <div className="flex gap-3">
                   {showDetail.hasLicense ? (
                     <a
-                      href={`/researchtool/api/borrowing/${showDetail.id}/license?type=license`}
+                      href={`${BASE_PATH}/api/borrowing/${showDetail.id}/license?type=license`}
                       className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                     >
                       <FileText className="h-4 w-4" />
@@ -544,7 +546,7 @@ export function BorrowingClient({
                   )}
                   {showDetail.hasCertificate ? (
                     <a
-                      href={`/researchtool/api/borrowing/${showDetail.id}/license?type=certificate`}
+                      href={`${BASE_PATH}/api/borrowing/${showDetail.id}/license?type=certificate`}
                       className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                     >
                       <FileText className="h-4 w-4" />

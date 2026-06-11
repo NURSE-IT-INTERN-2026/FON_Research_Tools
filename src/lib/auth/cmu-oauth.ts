@@ -7,6 +7,21 @@ const REDIRECT_URI = process.env.REDIRECT_URL;
 const SCOPE = process.env.SCOPE;
 const TOKEN_URL = process.env.CMU_GET_TOKEN;
 const BASIC_INFO_URL = process.env.CMU_BASIC_INFO;
+const EMAIL_DOMAIN = process.env.EMAIL_DOMAIN ?? "cmu.ac.th";
+
+const REQUIRED_OAUTH_VARS = [
+  ["CMU_TENANT_ID", TENANT_ID],
+  ["CLIENT_ID", CLIENT_ID],
+  ["CLIENT_SECRET", CLIENT_SECRET],
+  ["REDIRECT_URL", REDIRECT_URI],
+  ["SCOPE", SCOPE],
+  ["CMU_GET_TOKEN", TOKEN_URL],
+  ["CMU_BASIC_INFO", BASIC_INFO_URL],
+] as const;
+
+for (const [name, value] of REQUIRED_OAUTH_VARS) {
+  if (!value) throw new Error(`Missing required env var: ${name}`);
+}
 
 // --- Mock thesis data for dev testing ---
 const MOCK_THESIS = {
@@ -44,10 +59,10 @@ export type ThesisData = {
 
 export function getAuthorizationUrl(state: string) {
   const params = new URLSearchParams({
-    client_id: CLIENT_ID!,
+    client_id: CLIENT_ID as string,
     response_type: "code",
-    redirect_uri: REDIRECT_URI!,
-    scope: SCOPE!,
+    redirect_uri: REDIRECT_URI as string,
+    scope: SCOPE as string,
     response_mode: "query",
     state,
   });
@@ -55,16 +70,16 @@ export function getAuthorizationUrl(state: string) {
 }
 
 export async function exchangeCodeForToken(code: string) {
-  const res = await fetch(TOKEN_URL!, {
+  const res = await fetch(TOKEN_URL as string, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "authorization_code",
-      client_id: CLIENT_ID!,
-      client_secret: CLIENT_SECRET!,
+      client_id: CLIENT_ID as string,
+      client_secret: CLIENT_SECRET as string,
       code,
-      redirect_uri: REDIRECT_URI!,
-      scope: SCOPE!,
+      redirect_uri: REDIRECT_URI as string,
+      scope: SCOPE as string,
     }),
   });
 
@@ -78,7 +93,7 @@ export async function exchangeCodeForToken(code: string) {
 }
 
 export async function getUserBasicInfo(accessToken: string) {
-  const res = await fetch(BASIC_INFO_URL!, {
+  const res = await fetch(BASIC_INFO_URL as string, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
@@ -151,7 +166,7 @@ export async function determineRole(
   if (cmuitaccount) {
     const email = cmuitaccount.includes("@")
       ? cmuitaccount.toLowerCase()
-      : `${cmuitaccount.toLowerCase()}@cmu.ac.th`;
+      : `${cmuitaccount.toLowerCase()}@${EMAIL_DOMAIN}`;
 
     const existing = await prisma.profile.findFirst({
       where: { role: "ADMIN", email },
@@ -169,7 +184,7 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
     userInfo.email ||
     (userInfo.cmuitaccount.includes("@")
       ? userInfo.cmuitaccount
-      : `${userInfo.cmuitaccount}@cmu.ac.th`);
+      : `${userInfo.cmuitaccount}@${EMAIL_DOMAIN}`);
   const studentId = userInfo.student_id || null;
 
   let thesisTitleTh: string | null = null;

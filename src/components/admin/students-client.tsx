@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, RefreshCw, Users, FileText, FileQuestion, GraduationCap } from "lucide-react";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 type StudentRow = {
   id: string;
   name: string;
@@ -132,7 +134,7 @@ export function StudentsClient({
     setSyncError(null);
 
     try {
-      const res = await fetch("/researchtool/api/students/sync", { method: "POST" });
+      const res = await fetch(`${BASE_PATH}/api/students/sync`, { method: "POST" });
       const data = await res.json();
 
       if (!res.ok) {

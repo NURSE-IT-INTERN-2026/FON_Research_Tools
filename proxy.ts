@@ -6,7 +6,7 @@ import {
 } from "@/lib/auth/session-token";
 
 // basePath for redirect URLs (new URL() replaces entire pathname, so must include it)
-const BASE = "/researchtool";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/researchtool";
 
 // Path matching uses paths WITHOUT basePath — Next.js proxy strips basePath from pathname
 const PUBLIC_ROUTES = ["/", "/unauthorized", "/admin/login"];

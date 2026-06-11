@@ -104,7 +104,8 @@ export async function uploadDocuments(
     const studentName = profile?.name ?? "นักศึกษา";
     const studentId = profile?.studentId ?? "—";
     const bulletList = uploadedTitles.map((t) => `• ${t}`).join("\n");
-    const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
+    const appUrl = process.env.APP_URL;
+    if (!appUrl) throw new Error("APP_URL env var is required");
 
     sendEmail({
       subject: "แจ้งเตือน: นักศึกษาอัปโหลดเอกสารเครื่องมือวิจัย",
@@ -211,7 +212,8 @@ export async function approveDocument(
       }),
     ]);
     if (studentProfile?.email) {
-      const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
+      const appUrl = process.env.APP_URL;
+      if (!appUrl) throw new Error("APP_URL env var is required");
       const bulletList = recentApproved.map((d) => `• ${d.title}`).join("\n");
       sendEmail({
         subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
@@ -262,7 +264,8 @@ export async function rejectDocument(
     select: { email: true, name: true },
   });
   if (studentProfile?.email) {
-    const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
+    const appUrl = process.env.APP_URL;
+    if (!appUrl) throw new Error("APP_URL env var is required");
     sendEmail({
       subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
       sentTo: studentProfile.email,
@@ -313,7 +316,8 @@ export async function approveAllStudentPending(
     select: { email: true, name: true },
   });
   if (studentProfile?.email) {
-    const appUrl = process.env.APP_URL ?? "http://localhost:4141/researchtool";
+    const appUrl = process.env.APP_URL;
+    if (!appUrl) throw new Error("APP_URL env var is required");
     sendEmail({
       subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
       sentTo: studentProfile.email,

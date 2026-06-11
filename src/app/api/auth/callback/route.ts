@@ -9,7 +9,7 @@ import { createSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { logActivity } from "@/lib/activity-log";
 
-const BASE = "/researchtool";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/researchtool";
 
 function redirectWithClearedState(
   request: NextRequest,
