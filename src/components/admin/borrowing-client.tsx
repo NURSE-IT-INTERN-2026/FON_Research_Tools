@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -383,6 +384,9 @@ export function BorrowingClient({
                 ครั้ง
               </span>
             </div>
+            <DialogDescription className="sr-only">
+              ประวัติการถูกยืมเครื่องมือวิจัยของเจ้าของรายนี้
+            </DialogDescription>
           </DialogHeader>
 
           {selectedOwner && (
@@ -513,6 +517,9 @@ export function BorrowingClient({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>รายละเอียดการยืม</DialogTitle>
+            <DialogDescription className="sr-only">
+              ข้อมูลรายละเอียดของรายการยืม
+            </DialogDescription>
           </DialogHeader>
           {showDetail && (
             <div className="space-y-3 text-sm">
@@ -569,6 +576,9 @@ export function BorrowingClient({
             <DialogTitle>
               {isEdit ? "แก้ไขรายการยืม" : "เพิ่มรายการยืมเครื่องมือวิจัย"}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              ฟอร์มสำหรับเพิ่มหรือแก้ไขข้อมูลการยืมเครื่องมือวิจัย
+            </DialogDescription>
           </DialogHeader>
 
           {actionResult?.error && (
