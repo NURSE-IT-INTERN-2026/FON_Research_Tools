@@ -43,8 +43,6 @@ export async function GET(
     select: { title: true, reviewedAt: true },
   });
 
-  const latestApprovalDate = approvedDocs[approvedDocs.length - 1]?.reviewedAt ?? doc.reviewedAt!;
-
   const pdfDoc = new PDFDocument({ size: "A4", margin: 60 });
   pdfDoc.registerFont("Sarabun", FONT_REGULAR);
   pdfDoc.registerFont("SarabunBold", FONT_BOLD);
@@ -77,20 +75,16 @@ export async function GET(
   pdfDoc.moveDown(0.3);
 
   approvedDocs.forEach((d, i) => {
+    const approvedDateStr = (d.reviewedAt ?? new Date()).toLocaleDateString("th-TH", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
     pdfDoc.font("Sarabun").fontSize(12).text(`${i + 1}. ${d.title}`);
+    pdfDoc.font("Sarabun").fontSize(11).fillColor("#555").text(`   อนุมัติเมื่อ ${approvedDateStr}`);
+    pdfDoc.fillColor("#000");
   });
   pdfDoc.moveDown(1.5);
-
-  // Confirmation with date
-  const dateStr = latestApprovalDate.toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  pdfDoc.font("Sarabun").fontSize(12).text(
-    `ได้บันทึกข้อมูลเครื่องมือวิจัยแล้วเมื่อวันที่ ${dateStr}`,
-  );
 
   pdfDoc.end();
 

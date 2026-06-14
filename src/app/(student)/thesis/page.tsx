@@ -44,26 +44,32 @@ export default async function ThesisPage() {
       <div>
         <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">
           วิทยานิพนธ์ของฉัน
+          <span className="block text-sm font-normal text-muted-foreground mt-1">
+            My Thesis
+          </span>
         </h1>
-        
+
       </div>
 
       {/* Section 1: Profile info */}
       <div className="rounded border bg-card p-5 space-y-3">
         <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
           ข้อมูลส่วนตัว
+          <span className="block normal-case font-normal text-xs text-muted-foreground/70 mt-0.5">
+            Personal Information
+          </span>
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div>
-            <span className="text-muted-foreground">ชื่อ-นามสกุล</span>
+            <span className="text-muted-foreground">ชื่อ-นามสกุล · Full Name</span>
             <p className="font-medium">{profile?.name ?? "—"}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">รหัสนักศึกษา</span>
+            <span className="text-muted-foreground">รหัสนักศึกษา · Student ID</span>
             <p className="font-medium">{profile?.studentId ?? "—"}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">อีเมล</span>
+            <span className="text-muted-foreground">อีเมล · Email</span>
             <p className="font-medium">{profile?.email ?? "—"}</p>
           </div>
         </div>
@@ -73,39 +79,48 @@ export default async function ThesisPage() {
       <div className="rounded border bg-card p-5 space-y-3">
         <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
           ข้อมูลวิทยานิพนธ์
+          <span className="block normal-case font-normal text-xs text-muted-foreground/70 mt-0.5">
+            Thesis Information
+          </span>
         </h2>
         {thesis ? (
           <div className="grid grid-cols-1 gap-3 text-sm">
             <div>
-              <span className="text-muted-foreground">ชื่อวิทยานิพนธ์ (ไทย)</span>
+              <span className="text-muted-foreground">ชื่อวิทยานิพนธ์ (ไทย) · Thesis Title (Thai)</span>
               <p className="font-medium">{thesis.title_th}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">ชื่อวิทยานิพนธ์ (English)</span>
+              <span className="text-muted-foreground">ชื่อวิทยานิพนธ์ (English) · Thesis Title (English)</span>
               <p className="font-medium">{thesis.title_en}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <span className="text-muted-foreground">หลักสูตร</span>
+                <span className="text-muted-foreground">หลักสูตร · Curriculum</span>
                 <p className="font-medium">{thesis.curriculum}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">สาขา</span>
+                <span className="text-muted-foreground">สาขา · Major</span>
                 <p className="font-medium">{thesis.major_th}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">ระดับ</span>
+                <span className="text-muted-foreground">ระดับ · Level</span>
                 <p className="font-medium">{thesis.level_name_th}</p>
               </div>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">ไม่พบข้อมูลวิทยานิพนธ์</p>
+          <p className="text-sm text-muted-foreground">
+            ไม่พบข้อมูลวิทยานิพนธ์
+            <span className="block text-xs mt-0.5">Thesis information not found</span>
+          </p>
         )}
       </div>
 
       {/* Section 3 + 4: Upload + Document list (Client Component) */}
-      <ThesisClient documents={serialized} />
+      <ThesisClient
+        documents={serialized}
+        studentId={profile?.studentId ?? null}
+      />
     </div>
   );
 }

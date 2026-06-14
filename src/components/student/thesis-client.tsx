@@ -36,7 +36,13 @@ type DocumentRow = {
   reviewedBy: string | null;
 };
 
-export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
+export function ThesisClient({
+  documents,
+  studentId,
+}: {
+  documents: DocumentRow[];
+  studentId: string | null;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const [rows, setRows] = useState([0]);
@@ -84,7 +90,8 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
   }
 
   const totalSize = rows.reduce((sum, id) => sum + (files[id]?.size ?? 0), 0);
-  const maxTotal = 10 * 1024 * 1024;
+  const maxTotal = 50 * 1024 * 1024;
+  const approvedCount = documents.filter((d) => d.status === "APPROVED").length;
   const sizeLabel =
     totalSize === 0
       ? ""
@@ -116,6 +123,9 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
       <div className="rounded border bg-card p-4 md:p-5 space-y-4">
         <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
           อัปโหลดเอกสาร
+          <span className="block normal-case font-normal text-xs text-muted-foreground/70 mt-0.5">
+            Upload Documents
+          </span>
         </h2>
         <form ref={formRef} action={formAction} className="space-y-3">
           <input type="hidden" name="rowIds" value={rows.join(",")} />
@@ -127,7 +137,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
               <div className="relative flex-1">
                 <Input
                   name={`title_${rowId}`}
-                  placeholder="ชื่อเครื่องมือวิจัย"
+                  placeholder="ชื่อเครื่องมือวิจัย / Research Instrument Name"
                   value={titles[rowId] ?? ""}
                   onChange={(e) =>
                     setTitles((t) => ({ ...t, [rowId]: e.target.value }))
@@ -180,7 +190,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
             </div>
           ))}
           <span className="text-xs text-muted-foreground">
-            PDF เท่านั้น ขนาดสูงสุด 10 MB{sizeLabel ? ` · ${sizeLabel}` : ""}
+            PDF เท่านั้น ขนาดสูงสุด 50 MB · PDF only, max 50 MB{sizeLabel ? ` · ${sizeLabel}` : ""}
           </span>
           <div className="flex flex-col sm:flex-row gap-2 pt-1">
             <Button
@@ -190,7 +200,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
               className="rounded font-semibold w-full sm:w-auto"
             >
               <Upload className="mr-1.5 h-4 w-4" />
-              {pending ? "กำลังอัปโหลด..." : "อัปโหลด"}
+              {pending ? "กำลังอัปโหลด..." : "อัปโหลด / Upload"}
             </Button>
             <Button
               type="button"
@@ -199,7 +209,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
               className="rounded w-full sm:w-auto"
             >
               <Plus className="mr-1.5 h-4 w-4" />
-              เพิ่มเอกสาร
+              เพิ่มเอกสาร / Add
             </Button>
           </div>
         </form>
@@ -209,9 +219,12 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
             <DialogHeader>
               <DialogTitle className="font-heading font-bold tracking-tight">
                 ยืนยันการอัปโหลด
+                <span className="block text-sm font-normal text-muted-foreground mt-0.5">
+                  Confirm Upload
+                </span>
               </DialogTitle>
               <DialogDescription>
-                ต้องการอัปโหลดเอกสาร {rows.length} รายการหรือไม่?
+                ต้องการอัปโหลดเอกสาร {rows.length} รายการหรือไม่? · Upload {rows.length} document(s)?
               </DialogDescription>
             </DialogHeader>
             <ul className="text-sm space-y-1 py-2">
@@ -228,7 +241,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                 onClick={() => setConfirmOpen(false)}
                 className="rounded"
               >
-                ยกเลิก
+                ยกเลิก / Cancel
               </Button>
               <Button
                 type="button"
@@ -239,7 +252,7 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                 }}
                 className="rounded font-semibold"
               >
-                {pending ? "กำลังอัปโหลด..." : "ยืนยันอัปโหลด"}
+                {pending ? "กำลังอัปโหลด..." : "ยืนยันอัปโหลด / Confirm"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -248,13 +261,30 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
 
       {/* Document list */}
       <div className="rounded border bg-card p-4 md:p-5 space-y-4">
-        <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
-          รายการเอกสาร
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
+            รายการเอกสาร
+            <span className="block normal-case font-normal text-xs text-muted-foreground/70 mt-0.5">
+              Document List
+            </span>
+          </h2>
+          {approvedCount > 0 && studentId && (
+            <a
+              href={`${basePath}/api/students/${studentId}/certificate`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-primary hover:underline text-xs rounded-md border border-primary/20 hover:bg-primary/5 px-3 py-1.5 font-medium transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              ใบรับรอง / Certificate ({approvedCount})
+            </a>
+          )}
+        </div>
 
         {documents.length === 0 ? (
           <div className="rounded border border-dashed p-8 text-center text-muted-foreground text-sm">
             ยังไม่มีเอกสาร
+            <span className="block text-xs mt-1">No documents yet</span>
           </div>
         ) : (
           <>
@@ -264,28 +294,28 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                 <thead>
                   <tr className="border-b bg-muted/50">
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      ลำดับ
+                      ลำดับ<span className="block normal-case font-normal text-[10px] text-muted-foreground/70">No.</span>
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      ชื่อเครื่องมือวิจัย
+                      ชื่อเครื่องมือวิจัย<span className="block normal-case font-normal text-[10px] text-muted-foreground/70">Instrument</span>
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      ไฟล์
+                      ไฟล์<span className="block normal-case font-normal text-[10px] text-muted-foreground/70">File</span>
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      สถานะ
+                      สถานะ<span className="block normal-case font-normal text-[10px] text-muted-foreground/70">Status</span>
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      วันที่ยื่น
+                      วันที่ยื่น<span className="block normal-case font-normal text-[10px] text-muted-foreground/70">Submitted</span>
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      วันที่ดำเนินการ
+                      วันที่ดำเนินการ<span className="block normal-case font-normal text-[10px] text-muted-foreground/70">Processed</span>
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      ผู้ดำเนินการ
+                      ผู้ดำเนินการ<span className="block normal-case font-normal text-[10px] text-muted-foreground/70">Reviewer</span>
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      การดำเนินการ
+                      การดำเนินการ<span className="block normal-case font-normal text-[10px] text-muted-foreground/70">Actions</span>
                     </th>
                   </tr>
                 </thead>
@@ -324,22 +354,12 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                         {doc.status === "PENDING" && (
                           <RemoveButton documentId={doc.id} />
                         )}
-                        {doc.status === "APPROVED" && (
-                          <a
-                            href={`${basePath}/api/documents/${doc.id}/certificate`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
-                          >
-                            <Download className="h-3.5 w-3.5" />
-                            ใบรับรอง
-                          </a>
-                        )}
                         {doc.status === "REJECTED" && (
                           <div className="flex items-start justify-between gap-2">
                             {doc.adminNotes ? (
                               <span className="text-xs text-destructive line-clamp-2" title={doc.adminNotes}>
                                 เหตุผล: {doc.adminNotes}
+                                <span className="block">Reason: {doc.adminNotes}</span>
                               </span>
                             ) : (
                               <span />
@@ -375,16 +395,16 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                     <div>
-                      <span className="text-muted-foreground">วันที่ยื่น</span>
+                      <span className="text-muted-foreground">วันที่ยื่น · Submitted</span>
                       <p>{formatDateTime(doc.createdAt)}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">วันที่ดำเนินการ</span>
+                      <span className="text-muted-foreground">วันที่ดำเนินการ · Processed</span>
                       <p>{doc.reviewedAt ? formatDateTime(doc.reviewedAt) : "—"}</p>
                     </div>
                     {doc.reviewedBy && (
                       <div>
-                        <span className="text-muted-foreground">ผู้ดำเนินการ</span>
+                        <span className="text-muted-foreground">ผู้ดำเนินการ · Reviewer</span>
                         <p>{doc.reviewedBy}</p>
                       </div>
                     )}
@@ -392,22 +412,12 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                   {doc.status === "REJECTED" && doc.adminNotes && (
                     <p className="text-xs text-destructive">
                       เหตุผล: {doc.adminNotes}
+                      <span className="block">Reason: {doc.adminNotes}</span>
                     </p>
                   )}
                   <div className="flex justify-end pt-1">
                     {doc.status === "PENDING" && (
                       <RemoveButton documentId={doc.id} />
-                    )}
-                    {doc.status === "APPROVED" && (
-                      <a
-                        href={`${basePath}/api/documents/${doc.id}/certificate`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        ใบรับรอง
-                      </a>
                     )}
                     {doc.status === "REJECTED" && (
                       <RemoveButton documentId={doc.id} />
@@ -457,16 +467,19 @@ function RemoveButton({ documentId }: { documentId: string }) {
         className="text-destructive hover:text-destructive rounded h-8"
       >
         <Trash2 className="h-3.5 w-3.5 mr-1" />
-        ลบ
+        ลบ / Delete
       </Button>
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="sm:max-w-md rounded">
           <DialogHeader>
             <DialogTitle className="font-heading font-bold tracking-tight">
               ยืนยันการลบ
+              <span className="block text-sm font-normal text-muted-foreground mt-0.5">
+                Confirm Delete
+              </span>
             </DialogTitle>
             <DialogDescription>
-              ต้องการลบเอกสารนี้หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+              ต้องการลบเอกสารนี้หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้ · Delete this document? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -476,7 +489,7 @@ function RemoveButton({ documentId }: { documentId: string }) {
               onClick={() => setConfirmOpen(false)}
               className="rounded"
             >
-              ยกเลิก
+              ยกเลิก / Cancel
             </Button>
             <form action={formAction}>
               <input type="hidden" name="documentId" value={documentId} />
@@ -486,7 +499,7 @@ function RemoveButton({ documentId }: { documentId: string }) {
                 variant="destructive"
                 className="rounded font-semibold"
               >
-                {pending ? "กำลังลบ..." : "ลบ"}
+                {pending ? "กำลังลบ..." : "ลบ / Delete"}
               </Button>
             </form>
           </DialogFooter>

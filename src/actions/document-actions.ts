@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 
 const UPLOAD_DIR = join(process.cwd(), "uploads");
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
 export type UploadDocumentState = {
   success?: boolean;
@@ -49,7 +49,7 @@ export async function uploadDocuments(
     if (!row.title) return { error: `แถวที่ ${rowNum}: กรุณากรอกชื่อเครื่องมือวิจัย` };
     if (!row.file) return { error: `แถวที่ ${rowNum}: กรุณาเลือกไฟล์ PDF` };
     if (row.file.type !== "application/pdf") return { error: `แถวที่ ${rowNum}: อัปโหลดไฟล์ PDF เท่านั้น` };
-    if (row.file.size > MAX_FILE_SIZE) return { error: `แถวที่ ${rowNum}: ไฟล์มีขนาดเกิน 10 MB` };
+    if (row.file.size > MAX_FILE_SIZE) return { error: `แถวที่ ${rowNum}: ไฟล์มีขนาดเกิน 50 MB` };
   }
 
   const profile = await db.profile.findUnique({
