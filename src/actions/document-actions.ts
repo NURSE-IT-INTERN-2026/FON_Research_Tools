@@ -108,7 +108,7 @@ export async function uploadDocuments(
     if (!appUrl) throw new Error("APP_URL env var is required");
 
     sendEmail({
-      subject: "แจ้งเตือน: นักศึกษาอัปโหลดเอกสารเครื่องมือวิจัย",
+      subject: "นักศึกษาอัปโหลดเอกสารเครื่องมือวิจัย",
       sentTo: adminEmails.to,
       ccTo: adminEmails.cc,
       message: `นักศึกษาได้อัปโหลดเอกสารเครื่องมือวิจัย\n\nชื่อ: ${studentName}\nรหัสนักศึกษา: ${studentId}\n\nเอกสารที่อัปโหลด:\n${bulletList}\n\nตรวจสอบเอกสาร: ${appUrl}`,
@@ -191,38 +191,21 @@ export async function approveDocument(
     targetLabel: doc.title,
   });
 
-  // Notify student when all their documents have been processed (no PENDING remaining)
-  const remainingPending = await db.document.count({
-    where: { userId: doc.userId, status: "PENDING" },
+  // Notify student immediately on each approval
+  const studentProfile = await db.profile.findUnique({
+    where: { id: doc.userId },
+    select: { email: true, name: true },
   });
-  if (remainingPending === 0) {
-    const [studentProfile, recentApproved] = await Promise.all([
-      db.profile.findUnique({
-        where: { id: doc.userId },
-        select: { email: true, name: true },
-      }),
-      db.document.findMany({
-        where: {
-          userId: doc.userId,
-          status: "APPROVED",
-          reviewedAt: { gte: doc.createdAt },
-        },
-        select: { title: true },
-        orderBy: { reviewedAt: "asc" },
-      }),
-    ]);
-    if (studentProfile?.email) {
-      const appUrl = process.env.APP_URL;
-      if (!appUrl) throw new Error("APP_URL env var is required");
-      const bulletList = recentApproved.map((d) => `• ${d.title}`).join("\n");
-      sendEmail({
-        subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
-        sentTo: studentProfile.email,
-        message: `เรียนนักศึกษา\n\nเอกสารเครื่องมือวิจัยได้รับการอนุมัติเรียบร้อยแล้ว:\n${bulletList}\n\nขอแสดงความนับถือ\nดูรายละเอียดได้ที่: ${appUrl}/thesis`,
-      }).catch((err) => {
-        console.error("[Email] Failed to send approval notification:", err);
-      });
-    }
+  if (studentProfile?.email) {
+    const appUrl = process.env.APP_URL;
+    if (!appUrl) throw new Error("APP_URL env var is required");
+    sendEmail({
+      subject: "แจ้งผลการอัปโหลดเครื่องมือวิจัย",
+      sentTo: studentProfile.email,
+      message: `เรียนนักศึกษา\nDear Student,\n\nเอกสารเครื่องมือวิจัย "${doc.title}" ได้รับการอนุมัติเรียบร้อยแล้ว\nThe research instrument document "${doc.title}" has been approved\n\nขอแสดงความนับถือ\nBest regards,\n\nดูรายละเอียดได้ที่: ${appUrl}/thesis\nView details at: ${appUrl}/thesis`,
+    }).catch((err) => {
+      console.error("[Email] Failed to send approval notification:", err);
+    });
   }
 
   revalidatePath("/admin/documents");
@@ -267,9 +250,9 @@ export async function rejectDocument(
     const appUrl = process.env.APP_URL;
     if (!appUrl) throw new Error("APP_URL env var is required");
     sendEmail({
-      subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
+      subject: "แจ้งผลการอัปโหลดเครื่องมือวิจัย",
       sentTo: studentProfile.email,
-      message: `เรียนนักศึกษา\n\nเอกสาร "${doc.title}" ไม่ได้รับการอนุมัติ\nเหตุผล: ${notes}\n\nกรุณาแก้ไขและอัปโหลดใหม่\n\nขอแสดงความนับถือ\nดูรายละเอียดได้ที่: ${appUrl}/thesis`,
+      message: `เรียนนักศึกษา\nDear Student,\n\nเอกสาร "${doc.title}" ไม่ได้รับการอนุมัติ\nThe document "${doc.title}" was not approved\n\nเหตุผล: ${notes}\nReason: ${notes}\n\nกรุณาแก้ไขและอัปโหลดใหม่\nPlease revise and re-upload\n\nขอแสดงความนับถือ\nBest regards,\n\nดูรายละเอียดได้ที่: ${appUrl}/thesis\nView details at: ${appUrl}/thesis`,
     }).catch(() => {});
   }
 
@@ -318,10 +301,11 @@ export async function approveAllStudentPending(
   if (studentProfile?.email) {
     const appUrl = process.env.APP_URL;
     if (!appUrl) throw new Error("APP_URL env var is required");
+    const bulletList = pending.map((p) => `• ${p.title}`).join("\n");
     sendEmail({
-      subject: "แจ้งผลการพิจารณาวิทยานิพนธ์",
+      subject: "แจ้งผลการอัปโหลดเครื่องมือวิจัย",
       sentTo: studentProfile.email,
-      message: `เรียนนักศึกษา\n\nแจ้งผลการพิจารณาเรียบร้อยแล้ว\n\nขอแสดงความนับถือ\nดูรายละเอียดได้ที่: ${appUrl}/thesis`,
+      message: `เรียนนักศึกษา\nDear Student,\n\nเอกสารเครื่องมือวิจัยได้รับการอนุมัติเรียบร้อยแล้ว:\nYour research instrument documents have been approved:\n${bulletList}\n\nขอแสดงความนับถือ\nBest regards,\n\nดูรายละเอียดได้ที่: ${appUrl}/thesis\nView details at: ${appUrl}/thesis`,
     }).catch(() => {});
   }
 

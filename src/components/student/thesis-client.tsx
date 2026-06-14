@@ -279,10 +279,10 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                       วันที่ยื่น
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      วันที่อนุมัติ
+                      วันที่ดำเนินการ
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      ผู้อนุมัติ
+                      ผู้ดำเนินการ
                     </th>
                     <th className="px-4 py-3 text-left font-heading font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                       การดำเนินการ
@@ -378,12 +378,12 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                       <p>{formatDateTime(doc.createdAt)}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">วันที่อนุมัติ</span>
+                      <span className="text-muted-foreground">วันที่ดำเนินการ</span>
                       <p>{doc.reviewedAt ? formatDateTime(doc.reviewedAt) : "—"}</p>
                     </div>
                     {doc.reviewedBy && (
                       <div>
-                        <span className="text-muted-foreground">ผู้อนุมัติ</span>
+                        <span className="text-muted-foreground">ผู้ดำเนินการ</span>
                         <p>{doc.reviewedBy}</p>
                       </div>
                     )}
