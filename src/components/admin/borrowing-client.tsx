@@ -447,6 +447,8 @@ export function BorrowingClient({
                               {record.hasLicense && (
                                 <a
                                   href={`${BASE_PATH}/api/borrowing/${record.id}/license?type=license`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -457,6 +459,8 @@ export function BorrowingClient({
                               {record.hasCertificate && (
                                 <a
                                   href={`${BASE_PATH}/api/borrowing/${record.id}/license?type=certificate`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -543,6 +547,8 @@ export function BorrowingClient({
                   {showDetail.hasLicense ? (
                     <a
                       href={`${BASE_PATH}/api/borrowing/${showDetail.id}/license?type=license`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                     >
                       <FileText className="h-4 w-4" />
@@ -554,6 +560,8 @@ export function BorrowingClient({
                   {showDetail.hasCertificate ? (
                     <a
                       href={`${BASE_PATH}/api/borrowing/${showDetail.id}/license?type=certificate`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                     >
                       <FileText className="h-4 w-4" />

@@ -265,7 +265,7 @@ export function DocumentsClient({
                         </td>
                         <td className="px-4 py-3">{first.title}</td>
                         <td className="px-3 py-3 text-center">
-                          <a href={`${BASE_PATH}/api/documents/${first.id}/file`} download title={first.originalName} className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-muted transition-colors">
+                          <a href={`${BASE_PATH}/api/documents/${first.id}/file`} target="_blank" rel="noopener noreferrer" title={first.originalName} className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-muted transition-colors">
                             <Download className="h-4 w-4 text-muted-foreground hover:text-primary" />
                           </a>
                         </td>
@@ -311,7 +311,7 @@ export function DocumentsClient({
                           <td className="px-4 py-3" />
                           <td className="px-4 py-3">{doc.title}</td>
                           <td className="px-3 py-3 text-center">
-                            <a href={`${BASE_PATH}/api/documents/${doc.id}/file`} download title={doc.originalName} className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-muted transition-colors">
+                            <a href={`${BASE_PATH}/api/documents/${doc.id}/file`} target="_blank" rel="noopener noreferrer" title={doc.originalName} className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-muted transition-colors">
                               <Download className="h-4 w-4 text-muted-foreground hover:text-primary" />
                             </a>
                           </td>
@@ -770,7 +770,8 @@ function DocumentCard({
         {doc.reviewedAt && <span>อนุมัติ: {formatDateTime(doc.reviewedAt)}{doc.reviewedBy ? ` (${doc.reviewedBy})` : ""}</span>}
         <a
           href={`${BASE_PATH}/api/documents/${doc.id}/file`}
-          download
+          target="_blank"
+          rel="noopener noreferrer"
           title={doc.originalName}
           className="inline-flex items-center gap-1.5 text-primary hover:underline ml-auto rounded-md border border-primary/20 hover:bg-primary/5 px-2.5 py-1 text-sm font-medium transition-colors"
         >

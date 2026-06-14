@@ -327,7 +327,8 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                         {doc.status === "APPROVED" && (
                           <a
                             href={`${basePath}/api/documents/${doc.id}/certificate`}
-                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
                           >
                             <Download className="h-3.5 w-3.5" />
@@ -400,7 +401,8 @@ export function ThesisClient({ documents }: { documents: DocumentRow[] }) {
                     {doc.status === "APPROVED" && (
                       <a
                         href={`${basePath}/api/documents/${doc.id}/certificate`}
-                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
                       >
                         <Download className="h-3.5 w-3.5" />

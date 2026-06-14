@@ -437,7 +437,8 @@ function DocumentCard({ doc, selected, onToggle, onDeselect }: { doc: DocumentRo
               <div className="flex flex-wrap items-center gap-3 mt-2 text-muted-foreground">
                 <a
                   href={`${BASE_PATH}/api/documents/${doc.id}/file`}
-                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center gap-1.5 text-primary hover:underline rounded-md border border-primary/20 hover:bg-primary/5 px-3 py-1.5 text-sm font-medium transition-colors"
                 >
@@ -485,7 +486,8 @@ function DocumentCard({ doc, selected, onToggle, onDeselect }: { doc: DocumentRo
             <>
               <a
                 href={`${BASE_PATH}/api/documents/${doc.id}/certificate`}
-                download
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline h-8 px-3 rounded-md border border-primary/20 hover:bg-primary/5 transition-colors"
               >
                 <Download className="h-3.5 w-3.5" />
