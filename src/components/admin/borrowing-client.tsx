@@ -24,6 +24,8 @@ import {
   ArrowLeft,
   ScanText,
   ChevronDown,
+  ChevronRight,
+  ExternalLink,
   AlertCircle,
 } from "lucide-react";
 import {
@@ -170,8 +172,6 @@ export function BorrowingClient({
   const [recordToDelete, setRecordToDelete] = useState<RecordRow | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [ownerPrefilled, setOwnerPrefilled] = useState(false);
-  const [ownerPrefillId, setOwnerPrefillId] = useState<string | null>(null);
   // Persist File objects across re-renders so a failed submit (which the
   // browser clears from <input type="file">) doesn't force the user to
   // re-pick the file.
@@ -230,22 +230,9 @@ export function BorrowingClient({
     router.push(`/admin/borrowing?${params.toString()}`);
   }
 
-  function openCreate(ownerPrefill?: OwnerRow) {
-    if (ownerPrefill) {
-      setForm({
-        ...emptyForm,
-        ownerUserId: ownerPrefill.id,
-        ownerName: ownerPrefill.name,
-      });
-      setOwnerSearch(ownerPrefill.name);
-      setOwnerPrefilled(true);
-      setOwnerPrefillId(ownerPrefill.id);
-    } else {
-      setForm(emptyForm);
-      setOwnerSearch("");
-      setOwnerPrefilled(false);
-      setOwnerPrefillId(null);
-    }
+  function openCreate() {
+    setForm(emptyForm);
+    setOwnerSearch("");
     setIsEdit(false);
     setActionResult(null);
     setOwnerResults([]);
@@ -274,8 +261,6 @@ export function BorrowingClient({
       certificateOriginalName: record.certificateOriginalName,
     });
     setIsEdit(true);
-    setOwnerPrefilled(false);
-    setOwnerPrefillId(null);
     setActionResult(null);
     setOwnerSearch(record.ownerName);
     setOwnerResults([]);
@@ -520,6 +505,10 @@ export function BorrowingClient({
         </div>
       ) : (
         <>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <ChevronRight className="h-3.5 w-3.5 text-primary" />
+            คลิกที่ชื่อเจ้าของเครื่องมือเพื่อดูรายการยืมทั้งหมด 
+          </p>
           {/* Desktop */}
           <div className="hidden md:block overflow-x-auto rounded border bg-card">
             <table className="w-full text-sm">
@@ -540,21 +529,27 @@ export function BorrowingClient({
                 {owners.map((owner, i) => (
                   <tr
                     key={owner.id}
-                    className="border-t hover:bg-muted/30 cursor-pointer transition-colors"
+                    className="group border-t hover:bg-primary/5 cursor-pointer transition-colors"
                     onClick={() => setSelectedOwner(owner)}
+                    title={`ดูรายการยืมของ ${owner.name}`}
                   >
                     <td className="px-4 py-3 text-muted-foreground">
                       {(page - 1) * PAGE_SIZE + i + 1}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium">{owner.name}</div>
+                      <div className="font-medium text-primary group-hover:underline">
+                        {owner.name}
+                      </div>
                       <div className="text-xs text-muted-foreground font-mono">
                         {owner.studentId}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center justify-center h-6 min-w-6 rounded-full bg-muted text-xs font-medium">
-                        {owner.borrowCount}
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex items-center justify-center h-6 min-w-6 rounded-full bg-muted text-xs font-medium group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                          {owner.borrowCount}
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
                       </span>
                     </td>
                   </tr>
@@ -570,16 +565,21 @@ export function BorrowingClient({
                 key={owner.id}
                 type="button"
                 onClick={() => setSelectedOwner(owner)}
-                className="w-full rounded border bg-card p-4 text-left flex items-center gap-3 hover:bg-muted/30 transition-colors"
+                className="group w-full rounded border bg-card p-4 text-left flex items-center gap-3 hover:border-primary hover:bg-primary/5 active:bg-primary/10 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{owner.name}</p>
+                  <p className="font-medium text-sm text-primary group-hover:underline">
+                    {owner.name}
+                  </p>
                   <p className="text-xs text-muted-foreground font-mono">
                     {owner.studentId}
                   </p>
                 </div>
-                <span className="inline-flex items-center justify-center h-6 min-w-6 rounded-full bg-muted text-xs font-medium shrink-0">
-                  {owner.borrowCount}
+                <span className="inline-flex items-center gap-1.5 shrink-0">
+                  <span className="inline-flex items-center justify-center h-6 min-w-6 rounded-full bg-muted text-xs font-medium group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    {owner.borrowCount}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
                 </span>
               </button>
             ))}
@@ -628,17 +628,6 @@ export function BorrowingClient({
 
           {selectedOwner && (
             <div className="space-y-4">
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => openCreate(selectedOwner)}
-                  size="sm"
-                  className="rounded gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  เพิ่มรายการยืม
-                </Button>
-              </div>
-
               {ownerRecords.length === 0 ? (
                 <div className="rounded border border-dashed p-6 text-center text-sm text-muted-foreground">
                   ยังไม่มีรายการยืม
@@ -680,17 +669,19 @@ export function BorrowingClient({
                             {formatDate(record.requestDate)}
                           </td>
                           <td className="px-3 py-2.5">
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-1.5">
                               {record.hasLicense && (
                                 <a
                                   href={`${BASE_PATH}/api/borrowing/${record.id}/license?type=license`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/5 px-2 py-1 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                                  title="เปิดใบอนุญาตในแท็บใหม่"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <FileText className="h-3 w-3" />
                                   ใบอนุญาต
+                                  <ExternalLink className="h-2.5 w-2.5 opacity-70" />
                                 </a>
                               )}
                               {record.hasCertificate && (
@@ -698,11 +689,13 @@ export function BorrowingClient({
                                   href={`${BASE_PATH}/api/borrowing/${record.id}/license?type=certificate`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/5 px-2 py-1 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                                  title="เปิดใบรับรองในแท็บใหม่"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <FileText className="h-3 w-3" />
                                   ใบรับรอง
+                                  <ExternalLink className="h-2.5 w-2.5 opacity-70" />
                                 </a>
                               )}
                               {!record.hasLicense && !record.hasCertificate && (
@@ -834,11 +827,6 @@ export function BorrowingClient({
 
           <form
             action={handleSubmit}
-            onSubmit={(e) => {
-              if (ownerPrefilled && form.ownerUserId !== ownerPrefillId) {
-                e.preventDefault();
-              }
-            }}
             className="space-y-5"
           >
             {isEdit && <input type="hidden" name="recordId" value={form.recordId} />}
@@ -880,15 +868,6 @@ export function BorrowingClient({
               )}
               {form.ownerName && (
                 <p className="text-xs text-primary">เลือกแล้ว: {form.ownerName}</p>
-              )}
-              {ownerPrefilled && form.ownerUserId !== ownerPrefillId && (
-                <p className="text-xs text-destructive flex items-start gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                  <span>
-                    กรุณาเลือกเจ้าของเครื่องมือให้ตรงกับที่เปิดรายการ —
-                    หากต้องการยืมให้คนอื่น ให้ออกไปกด &ldquo;เพิ่มรายการยืม&rdquo; จากหน้ารายชื่อแทน
-                  </span>
-                </p>
               )}
             </div>
 
@@ -1096,7 +1075,7 @@ export function BorrowingClient({
               </Button>
               <Button
                 type="submit"
-                disabled={pending || (ownerPrefilled && form.ownerUserId !== ownerPrefillId)}
+                disabled={pending}
                 className="rounded gap-2"
               >
                 {pending && <RefreshCw className="h-4 w-4 animate-spin" />}
