@@ -14,7 +14,7 @@ export type OCRActionState = {
 export async function processOCR(
   formData: FormData,
 ): Promise<OCRActionState> {
-  await requireRole("STUDENT");
+  await requireRole("ADMIN");
 
   const file = formData.get("licenseFile");
 

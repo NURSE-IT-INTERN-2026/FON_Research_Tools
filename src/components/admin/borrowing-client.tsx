@@ -22,6 +22,9 @@ import {
   FileText,
   RefreshCw,
   ArrowLeft,
+  ScanText,
+  ChevronDown,
+  AlertCircle,
 } from "lucide-react";
 import {
   createBorrowingRecord,
@@ -29,6 +32,11 @@ import {
   removeBorrowing,
   type BorrowingActionState,
 } from "@/actions/borrowing-actions";
+import {
+  processOCR,
+  type OCRActionState,
+} from "@/actions/ocr-actions";
+import type { OCRResult } from "@/lib/ocr";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -79,6 +87,56 @@ const emptyForm = {
   source: "",
 };
 
+const OWNER_TITLE_PREFIX = /^(นาย|นางสาว|นาง|น\.ส\.)\s*/;
+
+function normalizeOwnerLookup(value: string) {
+  return value
+    .replace(/^(?:ใช้)?เครื่องมือวิจัยของ\s*/i, "")
+    .replace(/^เจ้าของเครื่องมือ(?:วิจัย)?\s*/i, "")
+    .replace(OWNER_TITLE_PREFIX, "")
+    .replace(/[()]/g, " ")
+    .replace(/[.,]/g, " ")
+    .replace(/\s+(ต[ำา]แหน่ง|สังกัด|ภาควิชา|คณะ|วิทยาลัย|มหาวิทยาลัย|จังหวัด).*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildOwnerSearchQueries(ownerName: string) {
+  const normalized = normalizeOwnerLookup(ownerName);
+  const parts = normalized.split(" ").filter(Boolean);
+  const queries = new Set<string>();
+
+  if (normalized.length >= 2) {
+    queries.add(normalized);
+  }
+  if (parts.length >= 2) {
+    queries.add(parts.slice(0, 2).join(" "));
+    queries.add(parts.slice(-2).join(" "));
+  }
+  if (parts.length >= 3) {
+    queries.add(parts[0]);
+    queries.add(parts[parts.length - 1]);
+  }
+
+  return Array.from(queries);
+}
+
+function scoreOwnerCandidate(student: SearchResult, target: string) {
+  const normalizedStudentName = normalizeOwnerLookup(student.name);
+
+  if (normalizedStudentName === target) {
+    return 100;
+  }
+  if (normalizedStudentName.startsWith(target) || target.startsWith(normalizedStudentName)) {
+    return 80;
+  }
+
+  const targetParts = target.split(" ").filter(Boolean);
+  const matchedParts = targetParts.filter((part) => normalizedStudentName.includes(part));
+
+  return matchedParts.length * 10;
+}
+
 export function BorrowingClient({
   owners,
   records,
@@ -101,6 +159,10 @@ export function BorrowingClient({
   const [ownerSearch, setOwnerSearch] = useState("");
   const [ownerResults, setOwnerResults] = useState<SearchResult[]>([]);
   const [ownerSearching, setOwnerSearching] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [showOcrText, setShowOcrText] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const licenseRef = useRef<HTMLInputElement>(null);
@@ -161,6 +223,10 @@ export function BorrowingClient({
     setIsEdit(false);
     setActionResult(null);
     setOwnerResults([]);
+    setOcrLoading(false);
+    setOcrResult(null);
+    setOcrError(null);
+    setShowOcrText(false);
     if (licenseRef.current) licenseRef.current.value = "";
     if (certificateRef.current) certificateRef.current.value = "";
     setShowForm(true);
@@ -181,9 +247,116 @@ export function BorrowingClient({
     setActionResult(null);
     setOwnerSearch(record.ownerName);
     setOwnerResults([]);
+    setOcrLoading(false);
+    setOcrResult(null);
+    setOcrError(null);
+    setShowOcrText(false);
     if (licenseRef.current) licenseRef.current.value = "";
     if (certificateRef.current) certificateRef.current.value = "";
     setShowForm(true);
+  }
+
+  async function searchOwners(query: string) {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < 2) {
+      return [] as SearchResult[];
+    }
+
+    const res = await fetch(
+      `${BASE_PATH}/api/students/search?q=${encodeURIComponent(trimmedQuery)}`,
+    );
+
+    if (!res.ok) {
+      return [] as SearchResult[];
+    }
+
+    const data = await res.json();
+    return (data.students ?? []) as SearchResult[];
+  }
+
+  async function autoSelectOwnerFromOCR(ownerName: string) {
+    const normalizedTarget = normalizeOwnerLookup(ownerName);
+    if (normalizedTarget.length < 2) {
+      return;
+    }
+
+    const queries = buildOwnerSearchQueries(ownerName);
+    const candidateMap = new Map<string, SearchResult>();
+
+    for (const query of queries) {
+      const students = await searchOwners(query);
+      for (const student of students) {
+        candidateMap.set(student.id, student);
+      }
+    }
+
+    const candidates = Array.from(candidateMap.values());
+    const exactMatches = candidates.filter(
+      (student) => normalizeOwnerLookup(student.name) === normalizedTarget,
+    );
+
+    if (exactMatches.length === 1) {
+      selectOwner(exactMatches[0]);
+      return;
+    }
+
+    if (candidates.length === 1) {
+      selectOwner(candidates[0]);
+      return;
+    }
+
+    const sortedCandidates = candidates.sort(
+      (left, right) =>
+        scoreOwnerCandidate(right, normalizedTarget) -
+        scoreOwnerCandidate(left, normalizedTarget),
+    );
+
+    setOwnerSearch(normalizedTarget);
+    setOwnerResults(sortedCandidates);
+  }
+
+  async function handleOCR() {
+    const file = licenseRef.current?.files?.[0];
+    if (!file) {
+      setOcrError("กรุณาเลือกไฟล์ PDF ใบอนุญาตก่อนกดอ่านเอกสาร");
+      return;
+    }
+    setOcrLoading(true);
+    setOcrError(null);
+    setOcrResult(null);
+    try {
+      const fd = new FormData();
+      fd.append("licenseFile", file);
+      const result: OCRActionState = await processOCR(fd);
+      if (result.error) {
+        setOcrError(result.error);
+        return;
+      }
+      if (result.data) {
+        const data = result.data;
+        setOcrResult(data);
+        setForm((f) => ({
+          ...f,
+          requesterName: data.requesterName ?? f.requesterName,
+          requestDate: data.requestDate ?? f.requestDate,
+          source: data.source ?? f.source,
+        }));
+        setShowOcrText(true);
+
+        // Auto-search student by extracted owner name
+        if (data.ownerName) {
+          try {
+            await autoSelectOwnerFromOCR(data.ownerName);
+          } catch {
+            setOwnerSearch(normalizeOwnerLookup(data.ownerName));
+          }
+        }
+      }
+    } catch {
+      setOcrError("เกิดข้อผิดพลาดที่ไม่คาดคิดในการอ่านเอกสาร");
+    } finally {
+      setOcrLoading(false);
+    }
   }
 
   async function handleOwnerSearch(query: string) {
@@ -194,13 +367,7 @@ export function BorrowingClient({
     }
     setOwnerSearching(true);
     try {
-      const res = await fetch(
-        `${BASE_PATH}/api/students/search?q=${encodeURIComponent(query)}`,
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setOwnerResults(data.students ?? []);
-      }
+      setOwnerResults(await searchOwners(query));
     } catch {
       // ignore
     }
@@ -704,6 +871,70 @@ export function BorrowingClient({
                   PDF ไม่เกิน 10 MB (ไม่จำเป็น)
                 </p>
               </div>
+            </div>
+
+            {/* OCR button */}
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleOCR}
+                disabled={ocrLoading}
+                className="rounded gap-2"
+              >
+                {ocrLoading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ScanText className="h-4 w-4" />
+                )}
+                {ocrLoading ? "กำลังอ่าน..." : "อ่านเอกสารอัตโนมัติ (OCR)"}
+              </Button>
+
+              {ocrError && (
+                <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{ocrError}</span>
+                </div>
+              )}
+
+              {ocrResult && (
+                <div className="rounded border bg-muted/30">
+                  <button
+                    type="button"
+                    onClick={() => setShowOcrText((s) => !s)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors"
+                  >
+                    <span>ข้อความที่ OCR อ่านได้ · OCR Extracted Data</span>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${showOcrText ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {showOcrText && (
+                    <div className="border-t px-3 py-2.5 space-y-1.5 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">ผู้ขอใช้ · Requester:</span>
+                        <p className="font-medium">{ocrResult.requesterName ?? "—"}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">วันที่ · Date:</span>
+                        <p className="font-medium">{ocrResult.requestDate ?? "—"}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">จากองกรค์ · Source:</span>
+                        <p className="font-medium whitespace-pre-wrap">{ocrResult.source ?? "—"}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">เจ้าของเครื่องมือ · Tool Owner:</span>
+                        <p className="font-medium">{ocrResult.ownerName ?? "—"}</p>
+                      </div>
+                      <p className="text-muted-foreground/70 pt-1 italic">
+                        ตรวจสอบและแก้ไขค่าในฟอร์มด้านบนได้ · Verify and edit values above
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <DialogFooter>

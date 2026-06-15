@@ -7,7 +7,8 @@ import { join } from "node:path";
 export type OCRResult = {
   requesterName: string | null;
   requestDate: string | null;
-  additionalDetails: string | null;
+  source: string | null;
+  ownerName: string | null;
 };
 
 type ChatCompletionResponse = {
@@ -18,19 +19,28 @@ type ChatCompletionResponse = {
   }>;
 };
 
-const OCR_PROMPT = `อ่านเอกสารนี้แล้วแยกข้อมูลใส่ JSON ตามฟิลด์ด้านล่าง
-ตอบเป็น JSON เท่านั้น ไม่ต้องมีคำอธิบาย ไม่ต้องมี markdown code block
+const OCR_PROMPT = `คุณคือตัวสกัดข้อมูลจากเอกสาร PDF ภาษาไทย
+อ่านเอกสารและสกัดข้อมูลเป็น JSON ตามกฎด้านล่าง
 
-{
-  "requesterName": "เฉพาะชื่อ-นามสกุล พร้อมคำนำหน้า (นาย/นางสาว/นาง) เท่านั้น ไม่รวมตำแหน่ง สังกัด หรือรายละเอียดอื่นๆ",
-  "requestDate": "วันที่ในเอกสาร แปลงเป็น YYYY-MM-DD (พ.ศ. ให้ลบ 543)",
-  "additionalDetails": "ข้อความตั้งแต่หลังชื่อผู้ขอ หยุดที่เครื่องหมายคำพูดปิดของชื่อเรื่องวิจัย ไม่เอาข้อความหลังเครื่องหมายคำพูดปิด (รวมตำแหน่ง สังกัด จังหวัด ชื่อเรื่องวิจัย)"
-}
+กฎการสกัด:
+- requesterName: ชื่อ-นามสกุล พร้อมคำนำหน้า (นาย/นางสาว/นาง/น.ส.) ของ "บุคคลที่ขอใช้" เครื่องมือวิจัย
+  ต้องเป็นชื่อบุคคลจริงที่เริ่มต้นด้วยคำนำหน้าไทยเสมอ ห้ามเป็นชื่อหน่วยงาน/องค์กร/ที่อยู่
+  มักอยู่หลังคำว่า "ตามที่..." ในจดหมายราชการ หรือหลังคำว่า "ชื่อผู้ขอ" ในแบบฟอร์ม
+  ไม่รวมตำแหน่ง สังกัด จังหวัด หรือรายละเอียดอื่นใด
+- requestDate: วันที่บนเอกสาร ในรูปแบบ YYYY-MM-DD (ถ้าเป็นพ.ศ. ให้ลบ 543)
+- source: ชื่อองค์กร/หน่วยงาน ที่เป็นผู้รับจดหมาย อยู่บรรทัดเดียวกับคำว่า "เรียน"
+  ตัดตำแหน่งของผู้รับออก (เช่น ผู้อำนวยการ/คณบดี/หัวหน้า/รอง/ผู้ช่วย/อธิการบดี) เก็บเฉพาะชื่อสถานที่
+- ownerName: ชื่อ-นามสกุล พร้อมคำนำหน้า ของ "เจ้าของเครื่องมือวิจัย"
+  ดึงจากข้อความที่อยู่หลังประโยค "ใช้เครื่องมือวิจัยของ..." หรือ "เครื่องมือวิจัยของ..."
+  ต้องเป็นชื่อบุคคลที่เริ่มต้นด้วยคำนำหน้าไทย ไม่ต้องมีตำแหน่ง/สังกัด/จังหวัด
 
-ตัวอย่างคำตอบ:
-{"requesterName":"นางสาวธนิฏฐา เอียดพวง","requestDate":"2026-05-07","additionalDetails":"ตำแหน่งพยาบาลวิชาชีพปฏิบัติการ สังกัดโรงพยาบาลศรีธัญญา กรมสุขภาพจิต จังหวัดนนทบุรี ซึ่งเป็นผู้วิจัยเรื่อง \"ผลกระทบของความรุนแรงในสถานที่ทำงานต่อความตั้งใจลาออกของพยาบาลจิตเวชในประเทศไทย : บทบาทตัวแปรสื่อกลางของภาวะหมดไฟในการทำงาน และบทบาทตัวแปรกำกับของความสามารถในการควบคุมอารมณ์\""}
+กฎเพิ่มเติม:
+- หากไม่พบข้อมูลในฟิลด์ใด ให้ใส่ null
+- ตอบกลับเฉพาะ JSON เท่านั้น ห้ามมีคำอธิบาย ห้ามมี markdown code block
+- ห้ามนำคำอธิบายฟิลด์จาก prompt มาเป็นคำตอบ ต้องอ่านค่าจริงจากเอกสารเท่านั้น
 
-ถ้าไม่พบข้อมูลในฟิลด์ใด ให้ใส่ null`;
+รูปแบบคำตอบ (ทุกฟิลด์เริ่มต้นเป็น null):
+{"requesterName": null, "requestDate": null, "source": null, "ownerName": null}`;
 
 export async function extractLicenseData(
   pdfBuffer: Buffer,
@@ -103,7 +113,8 @@ ${extractedText || "(ไม่พบข้อความจาก PDF)"}`,
     return {
       requesterName: apiResult.requesterName ?? textResult.requesterName,
       requestDate: apiResult.requestDate ?? textResult.requestDate,
-      additionalDetails: apiResult.additionalDetails ?? textResult.additionalDetails,
+      source: apiResult.source ?? textResult.source,
+      ownerName: apiResult.ownerName ?? textResult.ownerName,
     };
   } catch (error) {
     if (error instanceof Error && error.message.includes("ไม่สามารถ")) {
@@ -118,7 +129,8 @@ function parseOCRResponse(content: string): OCRResult {
   const empty: OCRResult = {
     requesterName: null,
     requestDate: null,
-    additionalDetails: null,
+    source: null,
+    ownerName: null,
   };
 
   // Strip markdown code block if present
@@ -131,24 +143,78 @@ function parseOCRResponse(content: string): OCRResult {
     const parsed = JSON.parse(extractJSONObject(stripped));
     return {
       requesterName: normalizeName(
-        pickString(parsed.requesterName, parsed.name, parsed.requester, parsed.borrowerName),
+        rejectInvalidName(
+          rejectPromptEcho(
+            pickString(parsed.requesterName, parsed.name, parsed.requester, parsed.borrowerName),
+          ),
+        ),
       ),
       requestDate: normalizeDate(
-        pickString(parsed.requestDate, parsed.date, parsed.borrowDate, parsed.request_date),
+        rejectPromptEcho(
+          pickString(parsed.requestDate, parsed.date, parsed.borrowDate, parsed.request_date),
+        ),
       ),
-      additionalDetails: normalizeDetails(
-        pickString(
-          parsed.additionalDetails,
-          parsed.details,
-          parsed.purpose,
-          parsed.objective,
-          parsed.reason,
+      source: normalizeDetails(
+        rejectPromptEcho(
+          pickString(
+            parsed.source,
+            parsed.additionalDetails,
+            parsed.details,
+            parsed.organization,
+            parsed.recipient,
+          ),
+        ),
+      ),
+      ownerName: normalizeName(
+        rejectInvalidName(
+          rejectPromptEcho(
+            pickString(parsed.ownerName, parsed.owner, parsed.instrumentOwner),
+          ),
         ),
       ),
     };
   } catch {
     return empty;
   }
+}
+
+// Phrases from the prompt that signal the model echoed the description back
+// instead of extracting real data. Treat such values as null so we fall back
+// to the regex-based textResult.
+const PROMPT_ECHO_MARKERS = [
+  "เฉพาะชื่อ",
+  "พร้อมคำนำหน้า",
+  "ชื่อสถานที่",
+  "ชื่อ-นามสกุลของเจ้าของ",
+  "วันที่บนเอกสาร",
+  "วันที่ในเอกสาร",
+  "YYYY-MM-DD",
+  "ผู้รับจดหมาย",
+  "เจ้าของเครื่องมือวิจัย",
+  "ใช้เครื่องมือวิจัยของ",
+];
+
+function rejectPromptEcho(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (trimmed.length >= 25 && PROMPT_ECHO_MARKERS.some((m) => trimmed.includes(m))) {
+    return null;
+  }
+  return value;
+}
+
+// Names must belong to a person, not an organization/address. Reject anything
+// that doesn't start with a Thai personal title prefix so we fall back to the
+// regex-based textResult instead of trusting a wrong API answer.
+const THAI_PERSON_TITLE_START = /^(นาย|นางสาว|นาง|น\.ส\.)/;
+
+function rejectInvalidName(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!THAI_PERSON_TITLE_START.test(trimmed)) {
+    return null;
+  }
+  return value;
 }
 
 function extractPdfText(pdfBuffer: Buffer): string {
@@ -207,11 +273,27 @@ function extractLetterDate(text: string): string | null {
   return null;
 }
 
-function extractLetterDetails(text: string): string | null {
-  // Extract from after requester name until "มีความประสงค์" (excluded)
+function extractLetterRecipient(text: string): string | null {
+  // Extract recipient from after "เรียน" on the same line (e.g., "เรียน คณบดี..." → "คณบดี...")
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    const match = trimmed.match(/^เรียน\s+(.+)$/);
+    if (match?.[1]) {
+      return match[1].replace(/\s+/g, " ").trim();
+    }
+  }
+  return null;
+}
+
+function extractOwnerName(text: string): string | null {
+  // pdftotext frequently inserts spaces between Thai characters (e.g., "เครื่ องมื อวิ จั ยของ")
+  // and may push the owner's name onto the following line. Build a flexible pattern
+  // that tolerates optional whitespace between every char of the keyword.
+  const keyword = buildFlexiblePattern("เครื่องมือวิจัยของ");
   const title = "(?:นาย|นางสาว|นาง|น\\.ส\\.)";
   const re = new RegExp(
-    `ตามที่\\s+${title}\\s*\\S+\\s+\\S+\\s+([\\s\\S]+?)(?=มีความประสงค์|ไปใช้)`,
+    `${keyword}\\s*(${title}\\s*\\S+(?:\\s+\\S+)?)`,
+    "i",
   );
   const match = text.match(re);
   if (match?.[1]) {
@@ -220,12 +302,23 @@ function extractLetterDetails(text: string): string | null {
   return null;
 }
 
+function buildFlexiblePattern(literal: string): string {
+  return literal
+    .split("")
+    .map((char) => {
+      if (/[.*+?^${}()|[\]\\]/.test(char)) return `\\${char}`;
+      return char;
+    })
+    .join("\\s*");
+}
+
 function parseTextFields(text: string): OCRResult {
   if (!text.trim()) {
     return {
       requesterName: null,
       requestDate: null,
-      additionalDetails: null,
+      source: null,
+      ownerName: null,
     };
   }
 
@@ -236,13 +329,11 @@ function parseTextFields(text: string): OCRResult {
   let requestDate = normalizeDate(
     findInlineField(text, ["วันที่ขอ", "วันเดือนปี", "วันที่ยืม"]),
   );
-  let additionalDetails = normalizeDetails(
-    findBlockField(text, ["จุดประสงค์การยืม", "วัตถุประสงค์", "รายละเอียดเพิ่มเติม"], [
-      "หมายเหตุ",
-      "ลงชื่อ",
-      "ผู้อนุมัติ",
-      "เครื่องมือวิจัยที่ขอยืม",
-    ]),
+  let source = normalizeDetails(
+    findInlineField(text, ["จากองกรค์", "จากองค์กร", "จากหน่วยงาน", "หน่วยงานต้นทาง"]),
+  );
+  let ownerName = normalizeName(
+    findInlineField(text, ["เจ้าของเครื่องมือ", "เจ้าของเครื่องมือวิจัย", "ชื่อเจ้าของ"]),
   );
 
   // Fallback: letter-format patterns (จดหมายจากสำนักทะเบียน มช.)
@@ -252,11 +343,14 @@ function parseTextFields(text: string): OCRResult {
   if (!requestDate) {
     requestDate = normalizeDate(extractLetterDate(text));
   }
-  if (!additionalDetails) {
-    additionalDetails = normalizeDetails(extractLetterDetails(text));
+  if (!source) {
+    source = normalizeDetails(extractLetterRecipient(text));
+  }
+  if (!ownerName) {
+    ownerName = normalizeName(extractOwnerName(text));
   }
 
-  return { requesterName, requestDate, additionalDetails };
+  return { requesterName, requestDate, source, ownerName };
 }
 
 function extractJSONObject(value: string) {
@@ -302,29 +396,6 @@ function findInlineField(text: string, labels: string[]) {
   return null;
 }
 
-function findBlockField(text: string, labels: string[], stopLabels: string[]) {
-  for (const label of labels) {
-    const compactLabel = label.replace(/\s+/g, "\\s*");
-    const startPattern = new RegExp(`(?:^|\\n)\\s*${compactLabel}\\s*(?::)?\\s*`, "i");
-    const startMatch = startPattern.exec(text);
-    if (!startMatch) continue;
-
-    const afterStart = text.slice(startMatch.index + startMatch[0].length);
-    const stopPattern = new RegExp(
-      `\\n\\s*(?:${stopLabels.map((item) => item.replace(/\s+/g, "\\s*")).join("|")})\\s*(?::)?`,
-      "i",
-    );
-    const stopMatch = stopPattern.exec(afterStart);
-    const value = (stopMatch
-      ? afterStart.slice(0, stopMatch.index)
-      : afterStart
-    ).trim();
-
-    if (value) return value;
-  }
-  return null;
-}
-
 function normalizeName(value: string | null) {
   if (!value) return null;
 
@@ -348,6 +419,13 @@ function normalizeDetails(value: string | null) {
     .replace(/\s*\n\s*/g, " ")
     .replace(/\s+/g, " ")
     .replace(/^[-: ]+/, "")
+    // Strip Thai recipient titles from the start (keep only place/organization name)
+    // e.g., "ผู้อำนวยการโรงพยาบาล..." → "โรงพยาบาล..."
+    // Use [ำา] because normalizeWhitespace converts ำ → า upstream.
+    .replace(
+      /^(?:รอง|ผู้ช่วย)?\s*(?:ผู้อ[ำา]นวยการ|คณบดี|อธิการบดี|หัวหน้า|ผู้บัญชาการ|ผู้จัดการ|เลขานุการ|ประธาน|นายแพทย์|แพทย์|ศาสตราจารย์|ผู้ตรวจราชการ|ผู้ตรวจการ|ผู้แทนพาณิชย์)/i,
+      "",
+    )
     .replace(/\s*(หมายเหตุ|ลงชื่อผู้ขอ|ผู้อนุมัติ)\s*:.*$/i, "")
     .replace(/\s*มีความประสงค์.*$/i, "")
     .trim() || null;
