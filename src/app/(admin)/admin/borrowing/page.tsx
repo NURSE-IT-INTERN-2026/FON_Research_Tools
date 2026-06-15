@@ -79,6 +79,8 @@ export default async function BorrowingPage({
     source: r.source,
     hasLicense: !!r.licenseFileName,
     hasCertificate: !!r.certificateFileName,
+    licenseOriginalName: r.licenseOriginalName,
+    certificateOriginalName: r.certificateOriginalName,
     createdAt: r.createdAt.toISOString(),
   }));
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,8 @@ type RecordRow = {
   source: string | null;
   hasLicense: boolean;
   hasCertificate: boolean;
+  licenseOriginalName: string | null;
+  certificateOriginalName: string | null;
   createdAt: string;
 };
 
@@ -85,6 +87,8 @@ const emptyForm = {
   requesterName: "",
   requestDate: "",
   source: "",
+  licenseOriginalName: null as string | null,
+  certificateOriginalName: null as string | null,
 };
 
 const OWNER_TITLE_PREFIX = /^(นาย|นางสาว|นาง|น\.ส\.)\s*/;
@@ -163,6 +167,16 @@ export function BorrowingClient({
   const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [showOcrText, setShowOcrText] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<RecordRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [ownerPrefilled, setOwnerPrefilled] = useState(false);
+  const [ownerPrefillId, setOwnerPrefillId] = useState<string | null>(null);
+  // Persist File objects across re-renders so a failed submit (which the
+  // browser clears from <input type="file">) doesn't force the user to
+  // re-pick the file.
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const licenseRef = useRef<HTMLInputElement>(null);
@@ -192,6 +206,14 @@ export function BorrowingClient({
     }
   }, [currentQuery]);
 
+  // Derive the up-to-date owner from the refreshed `owners` prop so the
+  // borrowCount shown inside the open dialog stays in sync after a record is
+  // created/edited/deleted (router.refresh re-fetches `owners`).
+  const effectiveOwner = useMemo(() => {
+    if (!selectedOwner) return null;
+    return owners.find((o) => o.id === selectedOwner.id) ?? selectedOwner;
+  }, [owners, selectedOwner]);
+
   function clearSearch() {
     setSearchInput("");
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -216,9 +238,13 @@ export function BorrowingClient({
         ownerName: ownerPrefill.name,
       });
       setOwnerSearch(ownerPrefill.name);
+      setOwnerPrefilled(true);
+      setOwnerPrefillId(ownerPrefill.id);
     } else {
       setForm(emptyForm);
       setOwnerSearch("");
+      setOwnerPrefilled(false);
+      setOwnerPrefillId(null);
     }
     setIsEdit(false);
     setActionResult(null);
@@ -227,6 +253,8 @@ export function BorrowingClient({
     setOcrResult(null);
     setOcrError(null);
     setShowOcrText(false);
+    setLicenseFile(null);
+    setCertificateFile(null);
     if (licenseRef.current) licenseRef.current.value = "";
     if (certificateRef.current) certificateRef.current.value = "";
     setShowForm(true);
@@ -242,8 +270,12 @@ export function BorrowingClient({
         ? new Date(record.requestDate).toISOString().split("T")[0]
         : "",
       source: record.source ?? "",
+      licenseOriginalName: record.licenseOriginalName,
+      certificateOriginalName: record.certificateOriginalName,
     });
     setIsEdit(true);
+    setOwnerPrefilled(false);
+    setOwnerPrefillId(null);
     setActionResult(null);
     setOwnerSearch(record.ownerName);
     setOwnerResults([]);
@@ -251,6 +283,8 @@ export function BorrowingClient({
     setOcrResult(null);
     setOcrError(null);
     setShowOcrText(false);
+    setLicenseFile(null);
+    setCertificateFile(null);
     if (licenseRef.current) licenseRef.current.value = "";
     if (certificateRef.current) certificateRef.current.value = "";
     setShowForm(true);
@@ -361,6 +395,15 @@ export function BorrowingClient({
 
   async function handleOwnerSearch(query: string) {
     setOwnerSearch(query);
+    // Invalidate the previous selection only when the user has actually
+    // changed the text away from the currently-selected owner's name. This
+    // lets the user re-type the prefill name without losing ownerUserId,
+    // while still forcing a fresh pick if they're searching for someone else.
+    setForm((f) =>
+      f.ownerUserId && f.ownerName !== query
+        ? { ...f, ownerUserId: "", ownerName: "" }
+        : f,
+    );
     if (query.length < 2) {
       setOwnerResults([]);
       return;
@@ -383,8 +426,20 @@ export function BorrowingClient({
   async function handleSubmit(formData: FormData) {
     setPending(true);
     setActionResult(null);
+    // Rebuild FormData from form values + state-tracked files so that the
+    // selected files survive a previous failed submit (browser clears
+    // <input type="file">.value on form submission).
+    const fd = new FormData();
+    fd.set("ownerUserId", (formData.get("ownerUserId") as string) ?? "");
+    fd.set("requesterName", (formData.get("requesterName") as string) ?? "");
+    fd.set("source", (formData.get("source") as string) ?? "");
+    fd.set("requestDate", (formData.get("requestDate") as string) ?? "");
+    if (isEdit) fd.set("recordId", form.recordId);
+    if (licenseFile) fd.set("licenseFile", licenseFile);
+    if (certificateFile) fd.set("certificateFile", certificateFile);
+
     const action = isEdit ? updateBorrowingRecord : createBorrowingRecord;
-    const result = await action({} as BorrowingActionState, formData);
+    const result = await action({} as BorrowingActionState, fd);
     setActionResult(result);
     setPending(false);
     if (result.success) {
@@ -393,14 +448,29 @@ export function BorrowingClient({
     }
   }
 
-  async function handleDelete(recordId: string) {
-    if (!confirm("ต้องการลบรายการนี้?")) return;
+  async function handleDelete() {
+    if (!recordToDelete) return;
     const fd = new FormData();
-    fd.set("recordId", recordId);
-    setPending(true);
-    await removeBorrowing({} as BorrowingActionState, fd);
-    setPending(false);
-    router.refresh();
+    fd.set("recordId", recordToDelete.id);
+    setDeleting(true);
+    setDeleteError(null);
+    const result = await removeBorrowing({} as BorrowingActionState, fd);
+    setDeleting(false);
+    if (result.success) {
+      const deletedOwnerId = recordToDelete.ownerUserId;
+      setRecordToDelete(null);
+      // Optimistic update on the open dialog so the count drops instantly;
+      // router.refresh() reconciles with server state in the background.
+      if (selectedOwner && selectedOwner.id === deletedOwnerId) {
+        setSelectedOwner({
+          ...selectedOwner,
+          borrowCount: Math.max(0, selectedOwner.borrowCount - 1),
+        });
+      }
+      router.refresh();
+    } else if (result.error) {
+      setDeleteError(result.error);
+    }
   }
 
   const formatDate = (iso: string | null) =>
@@ -523,7 +593,7 @@ export function BorrowingClient({
 
       {/* Owner Detail Dialog (full-width) */}
       <Dialog open={!!selectedOwner} onOpenChange={(open) => !open && setSelectedOwner(null)}>
-        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <Button
@@ -537,16 +607,16 @@ export function BorrowingClient({
               </Button>
               <div>
                 <DialogTitle className="text-left">
-                  {selectedOwner?.name}
+                  {effectiveOwner?.name ?? selectedOwner?.name}
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                  {selectedOwner?.studentId}
+                  {effectiveOwner?.studentId ?? selectedOwner?.studentId}
                 </p>
               </div>
               <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                 ถูกยืม
                 <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-muted text-xs font-medium">
-                  {selectedOwner?.borrowCount}
+                  {effectiveOwner?.borrowCount ?? selectedOwner?.borrowCount}
                 </span>
                 ครั้ง
               </span>
@@ -663,7 +733,7 @@ export function BorrowingClient({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDelete(record.id)}
+                                onClick={() => setRecordToDelete(record)}
                                 className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                                 title="ลบ"
                                 disabled={pending}
@@ -685,7 +755,7 @@ export function BorrowingClient({
 
       {/* Record Detail Dialog */}
       <Dialog open={!!showDetail} onOpenChange={(open) => !open && setShowDetail(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>รายละเอียดการยืม</DialogTitle>
             <DialogDescription className="sr-only">
@@ -746,7 +816,7 @@ export function BorrowingClient({
 
       {/* Create/Edit Dialog */}
       <Dialog open={showForm} onOpenChange={(open) => !open && setShowForm(false)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {isEdit ? "แก้ไขรายการยืม" : "เพิ่มรายการยืมเครื่องมือวิจัย"}
@@ -762,12 +832,20 @@ export function BorrowingClient({
             </div>
           )}
 
-          <form action={handleSubmit} className="space-y-4">
+          <form
+            action={handleSubmit}
+            onSubmit={(e) => {
+              if (ownerPrefilled && form.ownerUserId !== ownerPrefillId) {
+                e.preventDefault();
+              }
+            }}
+            className="space-y-5"
+          >
             {isEdit && <input type="hidden" name="recordId" value={form.recordId} />}
             <input type="hidden" name="ownerUserId" value={form.ownerUserId} />
 
-            <div>
-              <label className="text-sm font-medium mb-1 block">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium block">
                 เจ้าของเครื่องมือ <span className="text-destructive">*</span>
               </label>
               <div className="relative">
@@ -777,14 +855,14 @@ export function BorrowingClient({
                   onChange={(e) => handleOwnerSearch(e.target.value)}
                   placeholder="ค้นหาชื่อหรือรหัสนักศึกษา..."
                   className="pl-9"
-                  readOnly={!!form.ownerUserId && !isEdit}
+                  disabled={isEdit}
                 />
               </div>
               {ownerSearching && (
-                <p className="text-xs text-muted-foreground mt-1">กำลังค้นหา...</p>
+                <p className="text-xs text-muted-foreground">กำลังค้นหา...</p>
               )}
               {ownerResults.length > 0 && (
-                <div className="border rounded mt-1 max-h-40 overflow-y-auto bg-card">
+                <div className="border rounded max-h-40 overflow-y-auto bg-card">
                   {ownerResults.map((s) => (
                     <button
                       key={s.id}
@@ -801,40 +879,50 @@ export function BorrowingClient({
                 </div>
               )}
               {form.ownerName && (
-                <p className="text-xs text-primary mt-1">เลือกแล้ว: {form.ownerName}</p>
+                <p className="text-xs text-primary">เลือกแล้ว: {form.ownerName}</p>
+              )}
+              {ownerPrefilled && form.ownerUserId !== ownerPrefillId && (
+                <p className="text-xs text-destructive flex items-start gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                  <span>
+                    กรุณาเลือกเจ้าของเครื่องมือให้ตรงกับที่เปิดรายการ —
+                    หากต้องการยืมให้คนอื่น ให้ออกไปกด &ldquo;เพิ่มรายการยืม&rdquo; จากหน้ารายชื่อแทน
+                  </span>
+                </p>
               )}
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1 block">
-                ผู้ขอใช้ <span className="text-destructive">*</span>
-              </label>
-              <Input
-                name="requesterName"
-                value={form.requesterName}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, requesterName: e.target.value }))
-                }
-                placeholder="ชื่อผู้ขอใช้"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium block">
+                  ผู้ขอใช้ <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  name="requesterName"
+                  value={form.requesterName}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, requesterName: e.target.value }))
+                  }
+                  placeholder="ชื่อผู้ขอใช้"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium block">
+                  จากองกรค์ <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  name="source"
+                  value={form.source}
+                  onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
+                  placeholder="เช่น สำนักทะเบียน, บัณฑิตศึกษา"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1 block">
-                จากองกรค์ <span className="text-destructive">*</span>
-              </label>
-              <Input
-                name="source"
-                value={form.source}
-                onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
-                placeholder="เช่น สำนักทะเบียน, บัณฑิตศึกษา"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 block">วันที่อนุมัติ</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium block">วันที่อนุมัติ</label>
               <AppDatePicker
                 value={form.requestDate}
                 onChange={(v) => setForm((f) => ({ ...f, requestDate: v }))}
@@ -842,39 +930,54 @@ export function BorrowingClient({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium mb-1 block">
+            {/* License upload + OCR — grouped together because OCR reads from license */}
+            <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium block">
                   ใบอนุญาตจากสำนักทะเบียน
                 </label>
+                {isEdit && form.licenseOriginalName && (
+                  <div className="flex items-center gap-2 rounded border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs">
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="text-muted-foreground">ไฟล์ปัจจุบัน:</span>
+                    <span className="font-medium truncate">{form.licenseOriginalName}</span>
+                  </div>
+                )}
                 <input
                   ref={licenseRef}
                   type="file"
                   name="licenseFile"
                   accept="application/pdf"
-                  className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-muted file:text-foreground hover:file:bg-muted/80"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setLicenseFile(f);
+                  }}
+                  className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 w-full"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  PDF ไม่เกิน 10 MB (ไม่จำเป็น)
+                {licenseFile && (
+                  <p className="text-xs text-primary flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 shrink-0" />
+                    เลือกแล้ว: <span className="font-medium truncate">{licenseFile.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLicenseFile(null);
+                        if (licenseRef.current) licenseRef.current.value = "";
+                      }}
+                      className="ml-auto text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  PDF ไม่เกิน 10 MB
+                  {isEdit && form.licenseOriginalName
+                    ? " · ปล่อยว่างเพื่อเก็บไฟล์เดิม หรือเลือกไฟล์ใหม่เพื่อแทนที่"
+                    : " · อัปโหลดแล้วกดปุ่ม OCR ด้านล่างเพื่อกรอกฟอร์มอัตโนมัติ"}
                 </p>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">ใบรับรอง</label>
-                <input
-                  ref={certificateRef}
-                  type="file"
-                  name="certificateFile"
-                  accept="application/pdf"
-                  className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-muted file:text-foreground hover:file:bg-muted/80"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  PDF ไม่เกิน 10 MB (ไม่จำเป็น)
-                </p>
-              </div>
-            </div>
 
-            {/* OCR button */}
-            <div className="space-y-2">
               <Button
                 type="button"
                 variant="outline"
@@ -899,7 +1002,7 @@ export function BorrowingClient({
               )}
 
               {ocrResult && (
-                <div className="rounded border bg-muted/30">
+                <div className="rounded border bg-background">
                   <button
                     type="button"
                     onClick={() => setShowOcrText((s) => !s)}
@@ -912,21 +1015,23 @@ export function BorrowingClient({
                   </button>
                   {showOcrText && (
                     <div className="border-t px-3 py-2.5 space-y-1.5 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">ผู้ขอใช้ · Requester:</span>
-                        <p className="font-medium">{ocrResult.requesterName ?? "—"}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">วันที่ · Date:</span>
-                        <p className="font-medium">{ocrResult.requestDate ?? "—"}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">จากองกรค์ · Source:</span>
-                        <p className="font-medium whitespace-pre-wrap">{ocrResult.source ?? "—"}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">เจ้าของเครื่องมือ · Tool Owner:</span>
-                        <p className="font-medium">{ocrResult.ownerName ?? "—"}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                        <div>
+                          <span className="text-muted-foreground">ผู้ขอใช้ · Requester:</span>
+                          <p className="font-medium">{ocrResult.requesterName ?? "—"}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">วันที่ · Date:</span>
+                          <p className="font-medium">{ocrResult.requestDate ?? "—"}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">จากองกรค์ · Source:</span>
+                          <p className="font-medium whitespace-pre-wrap">{ocrResult.source ?? "—"}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">เจ้าของเครื่องมือ · Tool Owner:</span>
+                          <p className="font-medium">{ocrResult.ownerName ?? "—"}</p>
+                        </div>
                       </div>
                       <p className="text-muted-foreground/70 pt-1 italic">
                         ตรวจสอบและแก้ไขค่าในฟอร์มด้านบนได้ · Verify and edit values above
@@ -934,6 +1039,49 @@ export function BorrowingClient({
                     </div>
                   )}
                 </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium block">ใบรับรอง</label>
+              {isEdit && form.certificateOriginalName && (
+                <div className="flex items-center gap-2 rounded border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs">
+                  <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span className="text-muted-foreground">ไฟล์ปัจจุบัน:</span>
+                  <span className="font-medium truncate">{form.certificateOriginalName}</span>
+                </div>
+              )}
+              <input
+                ref={certificateRef}
+                type="file"
+                name="certificateFile"
+                accept="application/pdf"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setCertificateFile(f);
+                }}
+                className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 w-full"
+              />
+              {certificateFile ? (
+                <p className="text-xs text-primary flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  เลือกแล้ว: <span className="font-medium truncate">{certificateFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCertificateFile(null);
+                      if (certificateRef.current) certificateRef.current.value = "";
+                    }}
+                    className="ml-auto text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  PDF ไม่เกิน 10 MB (ไม่จำเป็น)
+                  {isEdit && form.certificateOriginalName && " · ปล่อยว่างเพื่อเก็บไฟล์เดิม"}
+                </p>
               )}
             </div>
 
@@ -946,12 +1094,100 @@ export function BorrowingClient({
               >
                 ยกเลิก
               </Button>
-              <Button type="submit" disabled={pending} className="rounded gap-2">
+              <Button
+                type="submit"
+                disabled={pending || (ownerPrefilled && form.ownerUserId !== ownerPrefillId)}
+                className="rounded gap-2"
+              >
                 {pending && <RefreshCw className="h-4 w-4 animate-spin" />}
                 บันทึก
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog
+        open={!!recordToDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleting) {
+            setRecordToDelete(null);
+            setDeleteError(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </span>
+              ยืนยันการลบรายการ
+            </DialogTitle>
+            <DialogDescription>
+              การกระทำนี้ไม่สามารถย้อนกลับได้ · This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {recordToDelete && (
+            <div className="rounded border bg-muted/30 p-3 text-sm space-y-1.5">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">เจ้าของเครื่องมือ:</span>
+                <span className="font-medium text-right">{recordToDelete.ownerName}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">ผู้ขอใช้:</span>
+                <span className="font-medium text-right">{recordToDelete.requesterName}</span>
+              </div>
+              {recordToDelete.source && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">จากองกรค์:</span>
+                  <span className="font-medium text-right">{recordToDelete.source}</span>
+                </div>
+              )}
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">วันที่อนุมัติ:</span>
+                <span className="font-medium text-right">{formatDate(recordToDelete.requestDate)}</span>
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            ไฟล์แนบ (ใบอนุญาต/ใบรับรอง) จะถูกลบออกจากระบบด้วย
+          </p>
+
+          {deleteError && (
+            <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{deleteError}</span>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setRecordToDelete(null);
+                setDeleteError(null);
+              }}
+              disabled={deleting}
+              className="rounded"
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded gap-2"
+            >
+              {deleting && <RefreshCw className="h-4 w-4 animate-spin" />}
+              {deleting ? "กำลังลบ..." : "ลบรายการ"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
