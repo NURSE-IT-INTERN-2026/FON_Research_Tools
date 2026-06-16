@@ -170,9 +170,9 @@ export function ThesisClient({
                   <button
                     type="button"
                     onClick={() => clearFile(rowId)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
@@ -184,7 +184,7 @@ export function ThesisClient({
                   onClick={() => removeRow(rowId)}
                   className="shrink-0 text-muted-foreground hover:text-destructive h-9 w-9 self-end sm:self-auto"
                 >
-                  <X className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>

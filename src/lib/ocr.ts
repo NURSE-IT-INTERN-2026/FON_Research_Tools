@@ -9,6 +9,7 @@ export type OCRResult = {
   requestDate: string | null;
   source: string | null;
   ownerName: string | null;
+  additionalDetails: string | null;
 };
 
 type ChatCompletionResponse = {
@@ -33,6 +34,12 @@ const OCR_PROMPT = `คุณคือตัวสกัดข้อมูลจ
 - ownerName: ชื่อ-นามสกุล พร้อมคำนำหน้า ของ "เจ้าของเครื่องมือวิจัย"
   ดึงจากข้อความที่อยู่หลังประโยค "ใช้เครื่องมือวิจัยของ..." หรือ "เครื่องมือวิจัยของ..."
   ต้องเป็นชื่อบุคคลที่เริ่มต้นด้วยคำนำหน้าไทย ไม่ต้องมีตำแหน่ง/สังกัด/จังหวัด
+- additionalDetails: ย่อหน้าที่บรรยายผู้ขอแบบเต็ม — เริ่มจาก "คำนำหน้าไทย + ชื่อผู้ขอ"
+  ตามด้วยตำแหน่ง สังกัด จังหวัด และ/หรือหัวข้อวิจัย เช่น
+  "นางสาวธนิฏฐา เอียดพวง ตำแหน่งพยาบาลวิชาชีพปฏิบัติการ สังกัดโรงพยาบาลศรีธัญญา กรมสุขภาพจิต
+   จังหวัดนนทบุรี ซึ่งเป็นผู้วิจัย เรื่อง ... มีความประสงค์ขออนุญาตนำเครื่องมือวิจัยในวิทยานิพนธ์ของ ..."
+  หยุดที่คำว่า "ลงชื่อ" / "หมายเหตุ" / "จึงเรียน" / "ขอแสดงความนับถือ"
+  ถ้าเอกสารเป็นแบบฟอร์มสั้น ๆ ไม่มีบริบทเช่นนี้ ให้ใส่ null
 
 กฎเพิ่มเติม:
 - หากไม่พบข้อมูลในฟิลด์ใด ให้ใส่ null
@@ -40,7 +47,7 @@ const OCR_PROMPT = `คุณคือตัวสกัดข้อมูลจ
 - ห้ามนำคำอธิบายฟิลด์จาก prompt มาเป็นคำตอบ ต้องอ่านค่าจริงจากเอกสารเท่านั้น
 
 รูปแบบคำตอบ (ทุกฟิลด์เริ่มต้นเป็น null):
-{"requesterName": null, "requestDate": null, "source": null, "ownerName": null}`;
+{"requesterName": null, "requestDate": null, "source": null, "ownerName": null, "additionalDetails": null}`;
 
 export async function extractLicenseData(
   pdfBuffer: Buffer,
@@ -115,6 +122,7 @@ ${extractedText || "(ไม่พบข้อความจาก PDF)"}`,
       requestDate: apiResult.requestDate ?? textResult.requestDate,
       source: apiResult.source ?? textResult.source,
       ownerName: apiResult.ownerName ?? textResult.ownerName,
+      additionalDetails: apiResult.additionalDetails ?? textResult.additionalDetails,
     };
   } catch (error) {
     if (error instanceof Error && error.message.includes("ไม่สามารถ")) {
@@ -131,6 +139,7 @@ function parseOCRResponse(content: string): OCRResult {
     requestDate: null,
     source: null,
     ownerName: null,
+    additionalDetails: null,
   };
 
   // Strip markdown code block if present
@@ -158,8 +167,6 @@ function parseOCRResponse(content: string): OCRResult {
         rejectPromptEcho(
           pickString(
             parsed.source,
-            parsed.additionalDetails,
-            parsed.details,
             parsed.organization,
             parsed.recipient,
           ),
@@ -170,6 +177,11 @@ function parseOCRResponse(content: string): OCRResult {
           rejectPromptEcho(
             pickString(parsed.ownerName, parsed.owner, parsed.instrumentOwner),
           ),
+        ),
+      ),
+      additionalDetails: normalizeDetails(
+        rejectPromptEcho(
+          pickString(parsed.additionalDetails, parsed.details, parsed.description),
         ),
       ),
     };
@@ -312,6 +324,65 @@ function buildFlexiblePattern(literal: string): string {
     .join("\\s*");
 }
 
+// Stop markers that signal the descriptive paragraph has ended — anything from
+// these keywords onward belongs to signature/closing/form-tail, not the
+// description of the requester.
+const DETAILS_STOP_MARKERS = [
+  "ลงชื่อ",
+  "หมายเหตุ",
+  "จึงเรียน",
+  "ขอแสดงความนับถือ",
+  "เรื่องที่ขอยืม",
+  "เครื่องมือวิจัยที่ขอยืม",
+  "จุดประสงค์การยืม",
+];
+
+// Extract the descriptive paragraph that introduces the requester with their
+// position, affiliation, and/or research title. This is the body sentence that
+// follows patterns like "ตามที่ <name> <position> <affiliation> ...".
+function extractAdditionalDetails(text: string, requesterName: string | null): string | null {
+  if (!text.trim()) return null;
+
+  // Strategy 1: "ตามที่ <paragraph>" — formal Thai letter opener. Capture
+  // everything from after "ตามที่" up to the first stop marker or sentence end.
+  const tamDet = buildFlexiblePattern("ตามที่");
+  const tamRe = new RegExp(`${tamDet}\\s+(.+?)(?=(?:${DETAILS_STOP_MARKERS.join("|")})|$)`, "is");
+  const tamMatch = text.match(tamRe);
+  if (tamMatch?.[1]) {
+    const cleaned = cleanDetailsParagraph(tamMatch[1]);
+    if (cleaned && cleaned.length >= 20) return cleaned;
+  }
+
+  // Strategy 2: paragraph that starts with the requester's name (already
+  // extracted) and continues with position/affiliation. Find the line that
+  // contains the name + trailing context.
+  if (requesterName) {
+    const nameEscaped = requesterName
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\s+/g, "\\s+");
+    // Look for the name followed by descriptive text on the same line or
+    // spilling into subsequent lines (joined by normalizeWhitespace).
+    const nameRe = new RegExp(`${nameEscaped}\\s+(.+?)(?=(?:${DETAILS_STOP_MARKERS.join("|")})|$)`, "is");
+    const nameMatch = text.match(nameRe);
+    if (nameMatch?.[1]) {
+      const combined = `${requesterName} ${cleanDetailsParagraph(nameMatch[1])}`;
+      // Require minimum length so we don't capture trivial trailing words.
+      if (combined.length >= 30) return combined;
+    }
+  }
+
+  return null;
+}
+
+function cleanDetailsParagraph(raw: string): string | null {
+  const cleaned = raw
+    .replace(/\s*\n\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[.]+$/, "")
+    .trim();
+  return cleaned || null;
+}
+
 function parseTextFields(text: string): OCRResult {
   if (!text.trim()) {
     return {
@@ -319,6 +390,7 @@ function parseTextFields(text: string): OCRResult {
       requestDate: null,
       source: null,
       ownerName: null,
+      additionalDetails: null,
     };
   }
 
@@ -350,7 +422,12 @@ function parseTextFields(text: string): OCRResult {
     ownerName = normalizeName(extractOwnerName(text));
   }
 
-  return { requesterName, requestDate, source, ownerName };
+  // additionalDetails: capture the descriptive paragraph that contains the
+  // requester's name + position/affiliation/research title. Falls back to null
+  // when no such paragraph exists (e.g., short form-style documents).
+  const additionalDetails = extractAdditionalDetails(text, requesterName);
+
+  return { requesterName, requestDate, source, ownerName, additionalDetails };
 }
 
 function extractJSONObject(value: string) {

@@ -40,6 +40,7 @@ model Profile {
   thesisTitleTh String?
   thesisTitleEn String?
   level        String?
+  borrowCount  Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -94,6 +95,7 @@ model BorrowingRecord {
   requesterName           String
   requestDate             DateTime?
   source                  String?
+  additionalDetails       String?
   licenseFileName         String?
   licenseOriginalName     String?
   licenseFileSize         Int?

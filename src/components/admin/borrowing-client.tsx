@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,7 @@ type RecordRow = {
   requesterName: string;
   requestDate: string | null;
   source: string | null;
+  additionalDetails: string | null;
   hasLicense: boolean;
   hasCertificate: boolean;
   licenseOriginalName: string | null;
@@ -89,6 +91,7 @@ const emptyForm = {
   requesterName: "",
   requestDate: "",
   source: "",
+  additionalDetails: "",
   licenseOriginalName: null as string | null,
   certificateOriginalName: null as string | null,
 };
@@ -177,6 +180,8 @@ export function BorrowingClient({
   // re-pick the file.
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [licenseRemoved, setLicenseRemoved] = useState(false);
+  const [certificateRemoved, setCertificateRemoved] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const licenseRef = useRef<HTMLInputElement>(null);
@@ -242,6 +247,8 @@ export function BorrowingClient({
     setShowOcrText(false);
     setLicenseFile(null);
     setCertificateFile(null);
+    setLicenseRemoved(false);
+    setCertificateRemoved(false);
     if (licenseRef.current) licenseRef.current.value = "";
     if (certificateRef.current) certificateRef.current.value = "";
     setShowForm(true);
@@ -257,6 +264,7 @@ export function BorrowingClient({
         ? new Date(record.requestDate).toISOString().split("T")[0]
         : "",
       source: record.source ?? "",
+      additionalDetails: record.additionalDetails ?? "",
       licenseOriginalName: record.licenseOriginalName,
       certificateOriginalName: record.certificateOriginalName,
     });
@@ -270,6 +278,8 @@ export function BorrowingClient({
     setShowOcrText(false);
     setLicenseFile(null);
     setCertificateFile(null);
+    setLicenseRemoved(false);
+    setCertificateRemoved(false);
     if (licenseRef.current) licenseRef.current.value = "";
     if (certificateRef.current) certificateRef.current.value = "";
     setShowForm(true);
@@ -359,6 +369,7 @@ export function BorrowingClient({
           requesterName: data.requesterName ?? f.requesterName,
           requestDate: data.requestDate ?? f.requestDate,
           source: data.source ?? f.source,
+          additionalDetails: data.additionalDetails ?? f.additionalDetails,
         }));
         setShowOcrText(true);
 
@@ -419,7 +430,12 @@ export function BorrowingClient({
     fd.set("requesterName", (formData.get("requesterName") as string) ?? "");
     fd.set("source", (formData.get("source") as string) ?? "");
     fd.set("requestDate", (formData.get("requestDate") as string) ?? "");
-    if (isEdit) fd.set("recordId", form.recordId);
+    fd.set("additionalDetails", (formData.get("additionalDetails") as string) ?? "");
+    if (isEdit) {
+      fd.set("recordId", form.recordId);
+      if (licenseRemoved) fd.set("removeLicense", "true");
+      if (certificateRemoved) fd.set("removeCertificate", "true");
+    }
     if (licenseFile) fd.set("licenseFile", licenseFile);
     if (certificateFile) fd.set("certificateFile", certificateFile);
 
@@ -771,6 +787,14 @@ export function BorrowingClient({
                 <span className="text-muted-foreground">วันที่บันทึก:</span>
                 <span>{formatDate(showDetail.createdAt)}</span>
               </div>
+              {showDetail.additionalDetails && (
+                <div className="rounded border bg-muted/30 p-3">
+                  <p className="text-muted-foreground text-xs mb-1">รายละเอียดเพิ่มเติม:</p>
+                  <p className="text-sm whitespace-pre-wrap break-words">
+                    {showDetail.additionalDetails}
+                  </p>
+                </div>
+              )}
               <div className="pt-2 space-y-1">
                 <span className="text-muted-foreground text-xs">ไฟล์แนบ:</span>
                 <div className="flex gap-3">
@@ -909,52 +933,96 @@ export function BorrowingClient({
               />
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium block">
+                รายละเอียดเพิ่มเติม
+                <span className="block text-xs font-normal text-muted-foreground">
+                  ตำแหน่ง · สังกัด · หัวข้อวิจัย (กรอกอัตโนมัติจาก OCR หรือพิมพ์เอง)
+                </span>
+              </label>
+              <Textarea
+                name="additionalDetails"
+                value={form.additionalDetails}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, additionalDetails: e.target.value }))
+                }
+                placeholder="เช่น นางสาว... ตำแหน่ง... สังกัด... ซึ่งเป็นผู้วิจัย เรื่อง..."
+                rows={3}
+                className="resize-y"
+              />
+            </div>
+
             {/* License upload + OCR — grouped together because OCR reads from license */}
             <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium block">
                   ใบอนุญาตจากสำนักทะเบียน
                 </label>
-                {isEdit && form.licenseOriginalName && (
+                {isEdit && form.licenseOriginalName && !licenseRemoved && (
                   <div className="flex items-center gap-2 rounded border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs">
                     <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
                     <span className="text-muted-foreground">ไฟล์ปัจจุบัน:</span>
-                    <span className="font-medium truncate">{form.licenseOriginalName}</span>
-                  </div>
-                )}
-                <input
-                  ref={licenseRef}
-                  type="file"
-                  name="licenseFile"
-                  accept="application/pdf"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setLicenseFile(f);
-                  }}
-                  className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 w-full"
-                />
-                {licenseFile && (
-                  <p className="text-xs text-primary flex items-center gap-1.5">
-                    <FileText className="h-3.5 w-3.5 shrink-0" />
-                    เลือกแล้ว: <span className="font-medium truncate">{licenseFile.name}</span>
+                    <a
+                      href={`${BASE_PATH}/api/borrowing/${form.recordId}/license?type=license`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary hover:underline truncate inline-flex items-center gap-1"
+                      title="เปิดในแท็บใหม่"
+                    >
+                      {form.licenseOriginalName}
+                      <ExternalLink className="h-3 w-3 opacity-70" />
+                    </a>
                     <button
                       type="button"
                       onClick={() => {
+                        setLicenseRemoved(true);
                         setLicenseFile(null);
                         if (licenseRef.current) licenseRef.current.value = "";
                       }}
                       className="ml-auto text-muted-foreground hover:text-destructive"
+                      title="ลบไฟล์นี้ (กดบันทึกเพื่อยืนยัน)"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                  </p>
+                  </div>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  PDF ไม่เกิน 10 MB
-                  {isEdit && form.licenseOriginalName
-                    ? " · ปล่อยว่างเพื่อเก็บไฟล์เดิม หรือเลือกไฟล์ใหม่เพื่อแทนที่"
-                    : " · อัปโหลดแล้วกดปุ่ม OCR ด้านล่างเพื่อกรอกฟอร์มอัตโนมัติ"}
-                </p>
+                {(!isEdit || !form.licenseOriginalName || licenseRemoved) && (
+                  <>
+                    <input
+                      ref={licenseRef}
+                      type="file"
+                      name="licenseFile"
+                      accept="application/pdf"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null;
+                        setLicenseFile(f);
+                      }}
+                      className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 w-full"
+                    />
+                    {licenseFile ? (
+                      <p className="text-xs text-primary flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5 shrink-0" />
+                        เลือกแล้ว: <span className="font-medium truncate">{licenseFile.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLicenseFile(null);
+                            if (licenseRef.current) licenseRef.current.value = "";
+                          }}
+                          className="ml-auto text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        PDF ไม่เกิน 10 MB
+                        {isEdit && licenseRemoved && " · จะถูกลบเมื่อบันทึก"}
+                        {!isEdit && " · อัปโหลดแล้วกดปุ่ม OCR ด้านล่างเพื่อกรอกฟอร์มอัตโนมัติ"}
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
 
               <Button
@@ -1012,6 +1080,12 @@ export function BorrowingClient({
                           <p className="font-medium">{ocrResult.ownerName ?? "—"}</p>
                         </div>
                       </div>
+                      <div>
+                        <span className="text-muted-foreground">รายละเอียดเพิ่มเติม · Additional Details:</span>
+                        <p className="font-medium whitespace-pre-wrap break-words">
+                          {ocrResult.additionalDetails ?? "—"}
+                        </p>
+                      </div>
                       <p className="text-muted-foreground/70 pt-1 italic">
                         ตรวจสอบและแก้ไขค่าในฟอร์มด้านบนได้ · Verify and edit values above
                       </p>
@@ -1023,44 +1097,69 @@ export function BorrowingClient({
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium block">ใบรับรอง</label>
-              {isEdit && form.certificateOriginalName && (
+              {isEdit && form.certificateOriginalName && !certificateRemoved && (
                 <div className="flex items-center gap-2 rounded border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs">
                   <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
                   <span className="text-muted-foreground">ไฟล์ปัจจุบัน:</span>
-                  <span className="font-medium truncate">{form.certificateOriginalName}</span>
-                </div>
-              )}
-              <input
-                ref={certificateRef}
-                type="file"
-                name="certificateFile"
-                accept="application/pdf"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
-                  setCertificateFile(f);
-                }}
-                className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 w-full"
-              />
-              {certificateFile ? (
-                <p className="text-xs text-primary flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 shrink-0" />
-                  เลือกแล้ว: <span className="font-medium truncate">{certificateFile.name}</span>
+                  <a
+                    href={`${BASE_PATH}/api/borrowing/${form.recordId}/license?type=certificate`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary hover:underline truncate inline-flex items-center gap-1"
+                    title="เปิดในแท็บใหม่"
+                  >
+                    {form.certificateOriginalName}
+                    <ExternalLink className="h-3 w-3 opacity-70" />
+                  </a>
                   <button
                     type="button"
                     onClick={() => {
+                      setCertificateRemoved(true);
                       setCertificateFile(null);
                       if (certificateRef.current) certificateRef.current.value = "";
                     }}
                     className="ml-auto text-muted-foreground hover:text-destructive"
+                    title="ลบไฟล์นี้ (กดบันทึกเพื่อยืนยัน)"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  PDF ไม่เกิน 10 MB (ไม่จำเป็น)
-                  {isEdit && form.certificateOriginalName && " · ปล่อยว่างเพื่อเก็บไฟล์เดิม"}
-                </p>
+                </div>
+              )}
+              {(!isEdit || !form.certificateOriginalName || certificateRemoved) && (
+                <>
+                  <input
+                    ref={certificateRef}
+                    type="file"
+                    name="certificateFile"
+                    accept="application/pdf"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setCertificateFile(f);
+                    }}
+                    className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 w-full"
+                  />
+                  {certificateFile ? (
+                    <p className="text-xs text-primary flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 shrink-0" />
+                      เลือกแล้ว: <span className="font-medium truncate">{certificateFile.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCertificateFile(null);
+                          if (certificateRef.current) certificateRef.current.value = "";
+                        }}
+                        className="ml-auto text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      PDF ไม่เกิน 10 MB (ไม่จำเป็น)
+                      {isEdit && certificateRemoved && " · จะถูกลบเมื่อบันทึก"}
+                    </p>
+                  )}
+                </>
               )}
             </div>
 

@@ -36,6 +36,7 @@ export async function createBorrowingRecord(
   const requesterName = (formData.get("requesterName") as string)?.trim();
   const requestDateStr = (formData.get("requestDate") as string)?.trim();
   const source = (formData.get("source") as string)?.trim();
+  const additionalDetails = (formData.get("additionalDetails") as string)?.trim() || null;
   const licenseFile = formData.get("licenseFile");
   const certificateFile = formData.get("certificateFile");
 
@@ -46,14 +47,24 @@ export async function createBorrowingRecord(
   const owner = await db.profile.findUnique({ where: { id: ownerUserId } });
   if (!owner) return { error: "ไม่พบเจ้าของเครื่องมือในระบบ" };
 
-  const record = await db.borrowingRecord.create({
-    data: {
-      ownerUserId,
-      requesterName,
-      requestDate: requestDateStr ? new Date(requestDateStr) : null,
-      source,
-      createdBy: ctx.userId,
-    },
+  // Create record + increment owner's borrowCount atomically so the count
+  // never drifts even if the request fails between writes.
+  const record = await db.$transaction(async (tx) => {
+    const created = await tx.borrowingRecord.create({
+      data: {
+        ownerUserId,
+        requesterName,
+        requestDate: requestDateStr ? new Date(requestDateStr) : null,
+        source,
+        additionalDetails,
+        createdBy: ctx.userId,
+      },
+    });
+    await tx.profile.update({
+      where: { id: ownerUserId },
+      data: { borrowCount: { increment: 1 } },
+    });
+    return created;
   });
 
   // Save license file (ใบอนุญาตจากสำนักทะเบียน)
@@ -107,8 +118,11 @@ export async function updateBorrowingRecord(
   const requesterName = (formData.get("requesterName") as string)?.trim();
   const requestDateStr = (formData.get("requestDate") as string)?.trim();
   const source = (formData.get("source") as string)?.trim();
+  const additionalDetails = (formData.get("additionalDetails") as string)?.trim() || null;
   const licenseFile = formData.get("licenseFile");
   const certificateFile = formData.get("certificateFile");
+  const removeLicense = formData.get("removeLicense") === "true";
+  const removeCertificate = formData.get("removeCertificate") === "true";
 
   if (!recordId) return { error: "ไม่พบรายการ" };
   if (!ownerUserId) return { error: "กรุณาเลือกเจ้าของเครื่องมือ" };
@@ -118,14 +132,30 @@ export async function updateBorrowingRecord(
   const record = await db.borrowingRecord.findUnique({ where: { id: recordId } });
   if (!record) return { error: "ไม่พบรายการ" };
 
-  await db.borrowingRecord.update({
-    where: { id: recordId },
-    data: {
-      ownerUserId,
-      requesterName,
-      requestDate: requestDateStr ? new Date(requestDateStr) : null,
-      source,
-    },
+  // If the owner is being changed, move the borrowCount between owners
+  // atomically so the totals stay correct.
+  const ownerChanged = record.ownerUserId !== ownerUserId;
+  await db.$transaction(async (tx) => {
+    await tx.borrowingRecord.update({
+      where: { id: recordId },
+      data: {
+        ownerUserId,
+        requesterName,
+        requestDate: requestDateStr ? new Date(requestDateStr) : null,
+        source,
+        additionalDetails,
+      },
+    });
+    if (ownerChanged) {
+      await tx.profile.update({
+        where: { id: record.ownerUserId },
+        data: { borrowCount: { decrement: 1 } },
+      });
+      await tx.profile.update({
+        where: { id: ownerUserId },
+        data: { borrowCount: { increment: 1 } },
+      });
+    }
   });
 
   // Update license file
@@ -148,6 +178,19 @@ export async function updateBorrowingRecord(
         licenseFileSize: saved.fileSize,
       },
     });
+  } else if (removeLicense && record.licenseFileName) {
+    // User clicked "X" on the current file in edit mode and did not pick a
+    // replacement — delete the old file from disk + clear DB fields.
+    const oldPath = join(UPLOAD_DIR, record.licenseFileName);
+    if (existsSync(oldPath)) await unlink(oldPath);
+    await db.borrowingRecord.update({
+      where: { id: recordId },
+      data: {
+        licenseFileName: null,
+        licenseOriginalName: null,
+        licenseFileSize: null,
+      },
+    });
   }
 
   // Update certificate file
@@ -168,6 +211,17 @@ export async function updateBorrowingRecord(
         certificateFileName: saved.fileName,
         certificateOriginalName: saved.originalName,
         certificateFileSize: saved.fileSize,
+      },
+    });
+  } else if (removeCertificate && record.certificateFileName) {
+    const oldPath = join(UPLOAD_DIR, record.certificateFileName);
+    if (existsSync(oldPath)) await unlink(oldPath);
+    await db.borrowingRecord.update({
+      where: { id: recordId },
+      data: {
+        certificateFileName: null,
+        certificateOriginalName: null,
+        certificateFileSize: null,
       },
     });
   }
@@ -201,7 +255,14 @@ export async function removeBorrowing(
     if (existsSync(filePath)) await unlink(filePath);
   }
 
-  await db.borrowingRecord.delete({ where: { id: recordId } });
+  // Delete record + decrement owner's borrowCount atomically.
+  await db.$transaction(async (tx) => {
+    await tx.borrowingRecord.delete({ where: { id: recordId } });
+    await tx.profile.update({
+      where: { id: record.ownerUserId },
+      data: { borrowCount: { decrement: 1 } },
+    });
+  });
 
   revalidatePath("/admin/borrowing");
   return { success: true };

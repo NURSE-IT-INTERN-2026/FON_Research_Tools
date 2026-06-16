@@ -39,16 +39,11 @@ export default async function BorrowingPage({
     .slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
     .map((o) => o.ownerUserId);
 
-  // Fetch profiles + counts + all records for page owners
-  const [profiles, counts, records] = await Promise.all([
+  // Fetch profiles (with cached borrowCount) + all records for page owners
+  const [profiles, records] = await Promise.all([
     db.profile.findMany({
       where: { id: { in: pageOwnerIds } },
-      select: { id: true, name: true, studentId: true },
-    }),
-    db.borrowingRecord.groupBy({
-      by: ["ownerUserId"],
-      where: { ownerUserId: { in: pageOwnerIds } },
-      _count: { id: true },
+      select: { id: true, name: true, studentId: true, borrowCount: true },
     }),
     db.borrowingRecord.findMany({
       where: { ownerUserId: { in: pageOwnerIds } },
@@ -59,14 +54,13 @@ export default async function BorrowingPage({
     }),
   ]);
 
-  const countMap = Object.fromEntries(counts.map((c) => [c.ownerUserId, c._count.id]));
   const profileMap = Object.fromEntries(profiles.map((p) => [p.id, p]));
 
   const owners = pageOwnerIds.map((id) => ({
     id,
     name: profileMap[id]?.name ?? "—",
     studentId: profileMap[id]?.studentId ?? "—",
-    borrowCount: countMap[id] ?? 0,
+    borrowCount: profileMap[id]?.borrowCount ?? 0,
   }));
 
   const serialized = records.map((r) => ({
@@ -77,6 +71,7 @@ export default async function BorrowingPage({
     requesterName: r.requesterName,
     requestDate: r.requestDate?.toISOString() ?? null,
     source: r.source,
+    additionalDetails: r.additionalDetails,
     hasLicense: !!r.licenseFileName,
     hasCertificate: !!r.certificateFileName,
     licenseOriginalName: r.licenseOriginalName,

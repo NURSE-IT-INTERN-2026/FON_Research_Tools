@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
+import { Readable } from "node:stream";
 import { join } from "node:path";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/session-token";
 import db from "@/lib/db";
@@ -36,15 +38,25 @@ export async function GET(
 
   const filePath = join(UPLOAD_DIR, fileName);
 
+  let fileSize: number;
   try {
-    const fileBuffer = await readFile(filePath);
-    return new NextResponse(fileBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${encodeURIComponent(originalName ?? `${type}.pdf`)}"`,
-      },
-    });
+    const stats = await stat(filePath);
+    fileSize = stats.size;
   } catch {
     return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
+
+  // Stream the file instead of buffering it whole into memory. The browser
+  // can start rendering the PDF before the entire file is transferred.
+  const nodeStream = createReadStream(filePath);
+  const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
+
+  return new NextResponse(webStream, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Length": String(fileSize),
+      "Content-Disposition": `inline; filename="${encodeURIComponent(originalName ?? `${type}.pdf`)}"`,
+      "Cache-Control": "private, no-cache",
+    },
+  });
 }
