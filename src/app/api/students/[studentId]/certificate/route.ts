@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import path from "path";
+import { Readable } from "node:stream";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/session-token";
 import db from "@/lib/db";
 
@@ -56,9 +57,6 @@ export async function GET(
     pdfDoc.registerFont("Sarabun", FONT_REGULAR);
     pdfDoc.registerFont("SarabunBold", FONT_BOLD);
 
-    const chunks: Buffer[] = [];
-    pdfDoc.on("data", (chunk: Buffer) => chunks.push(chunk));
-
     pdfDoc.image(LOGO_PATH, (595.28 - 80) / 2, 40, { width: 80 });
     pdfDoc.y = 130;
 
@@ -92,16 +90,18 @@ export async function GET(
 
     pdfDoc.end();
 
-    const pdfBuffer = await new Promise<Buffer>((resolve) => {
-      pdfDoc.on("end", () => resolve(Buffer.concat(chunks)));
-    });
+    // PDFKit documents are Node Readable streams. Convert directly to a Web
+    // Stream so chunks flush to the client as they're emitted, instead of
+    // buffering the entire PDF in memory before responding.
+    const webStream = Readable.toWeb(pdfDoc) as ReadableStream<Uint8Array>;
 
     const filename = `certificate_${profile.studentId ?? studentId}.pdf`;
 
-    return new NextResponse(new Uint8Array(pdfBuffer), {
+    return new NextResponse(webStream, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${encodeURIComponent(filename)}"`,
+        "Cache-Control": "private, no-cache",
       },
     });
   } catch (err) {

@@ -79,6 +79,7 @@ export function StudentDetailClient({
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const pendingDocs = useMemo(() => documents.filter((d) => d.status === "PENDING"), [documents]);
+  const approvedCount = useMemo(() => documents.filter((d) => d.status === "APPROVED").length, [documents]);
 
   function toggleDoc(id: string) {
     setSelected((prev) => {
@@ -208,9 +209,22 @@ export function StudentDetailClient({
 
       {/* Documents section */}
       <div className="space-y-4">
-        <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
-          เอกสารเครื่องมือวิจัย
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-heading font-bold tracking-tight text-sm uppercase text-muted-foreground">
+            เอกสารเครื่องมือวิจัย
+          </h2>
+          {approvedCount > 0 && student.studentId && (
+            <a
+              href={`${BASE_PATH}/api/students/${student.studentId}/certificate`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-primary hover:underline text-xs rounded-md border border-primary/20 hover:bg-primary/5 px-3 py-1.5 font-medium transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              ใบรับรอง / Certificate ({approvedCount})
+            </a>
+          )}
+        </div>
 
         {/* Status filter cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -484,15 +498,6 @@ function DocumentCard({ doc, selected, onToggle, onDeselect }: { doc: DocumentRo
           )}
           {doc.status === "APPROVED" && (
             <>
-              <a
-                href={`${BASE_PATH}/api/documents/${doc.id}/certificate`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline h-8 px-3 rounded-md border border-primary/20 hover:bg-primary/5 transition-colors"
-              >
-                <Download className="h-3.5 w-3.5" />
-                ใบรับรอง
-              </a>
               <div className="flex-1" />
               <RemoveButton documentId={doc.id} />
             </>
