@@ -419,12 +419,16 @@ export function BorrowingClient({
     setOwnerResults([]);
   }
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setPending(true);
     setActionResult(null);
     // Rebuild FormData from form values + state-tracked files so that the
-    // selected files survive a previous failed submit (browser clears
-    // <input type="file">.value on form submission).
+    // selected files survive a previous failed submit. We use onSubmit +
+    // preventDefault rather than <form action={...}> because React 19 resets
+    // the form (and clears <input type="file">.value) after an action resolves
+    // — even on error. Preventing default keeps the file input intact.
+    const formData = new FormData(e.currentTarget);
     const fd = new FormData();
     fd.set("ownerUserId", (formData.get("ownerUserId") as string) ?? "");
     fd.set("requesterName", (formData.get("requesterName") as string) ?? "");
@@ -850,7 +854,7 @@ export function BorrowingClient({
           )}
 
           <form
-            action={handleSubmit}
+            onSubmit={handleSubmit}
             className="space-y-5"
           >
             {isEdit && <input type="hidden" name="recordId" value={form.recordId} />}
@@ -1025,73 +1029,77 @@ export function BorrowingClient({
                 )}
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleOCR}
-                disabled={ocrLoading}
-                className="rounded gap-2"
-              >
-                {ocrLoading ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ScanText className="h-4 w-4" />
-                )}
-                {ocrLoading ? "กำลังอ่าน..." : "อ่านเอกสารอัตโนมัติ (OCR)"}
-              </Button>
-
-              {ocrError && (
-                <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>{ocrError}</span>
-                </div>
-              )}
-
-              {ocrResult && (
-                <div className="rounded border bg-background">
-                  <button
+              {!isEdit && (
+                <>
+                  <Button
                     type="button"
-                    onClick={() => setShowOcrText((s) => !s)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOCR}
+                    disabled={ocrLoading}
+                    className="rounded gap-2"
                   >
-                    <span>ข้อความที่ OCR อ่านได้ · OCR Extracted Data</span>
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform ${showOcrText ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {showOcrText && (
-                    <div className="border-t px-3 py-2.5 space-y-1.5 text-xs">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
-                        <div>
-                          <span className="text-muted-foreground">ผู้ขอใช้ · Requester:</span>
-                          <p className="font-medium">{ocrResult.requesterName ?? "—"}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">วันที่ · Date:</span>
-                          <p className="font-medium">{ocrResult.requestDate ?? "—"}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">จากองกรค์ · Source:</span>
-                          <p className="font-medium whitespace-pre-wrap">{ocrResult.source ?? "—"}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">เจ้าของเครื่องมือ · Tool Owner:</span>
-                          <p className="font-medium">{ocrResult.ownerName ?? "—"}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">รายละเอียดเพิ่มเติม · Additional Details:</span>
-                        <p className="font-medium whitespace-pre-wrap break-words">
-                          {ocrResult.additionalDetails ?? "—"}
-                        </p>
-                      </div>
-                      <p className="text-muted-foreground/70 pt-1 italic">
-                        ตรวจสอบและแก้ไขค่าในฟอร์มด้านบนได้ · Verify and edit values above
-                      </p>
+                    {ocrLoading ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ScanText className="h-4 w-4" />
+                    )}
+                    {ocrLoading ? "กำลังอ่าน..." : "อ่านเอกสารอัตโนมัติ (OCR)"}
+                  </Button>
+
+                  {ocrError && (
+                    <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>{ocrError}</span>
                     </div>
                   )}
-                </div>
+
+                  {ocrResult && (
+                    <div className="rounded border bg-background">
+                      <button
+                        type="button"
+                        onClick={() => setShowOcrText((s) => !s)}
+                        className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors"
+                      >
+                        <span>ข้อความที่ OCR อ่านได้ · OCR Extracted Data</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${showOcrText ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                      {showOcrText && (
+                        <div className="border-t px-3 py-2.5 space-y-1.5 text-xs">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                            <div>
+                              <span className="text-muted-foreground">ผู้ขอใช้ · Requester:</span>
+                              <p className="font-medium">{ocrResult.requesterName ?? "—"}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">วันที่ · Date:</span>
+                              <p className="font-medium">{ocrResult.requestDate ?? "—"}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">จากองกรค์ · Source:</span>
+                              <p className="font-medium whitespace-pre-wrap">{ocrResult.source ?? "—"}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">เจ้าของเครื่องมือ · Tool Owner:</span>
+                              <p className="font-medium">{ocrResult.ownerName ?? "—"}</p>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">รายละเอียดเพิ่มเติม · Additional Details:</span>
+                            <p className="font-medium whitespace-pre-wrap break-words">
+                              {ocrResult.additionalDetails ?? "—"}
+                            </p>
+                          </div>
+                          <p className="text-muted-foreground/70 pt-1 italic">
+                            ตรวจสอบและแก้ไขค่าในฟอร์มด้านบนได้ · Verify and edit values above
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 

@@ -34,11 +34,11 @@ const OCR_PROMPT = `คุณคือตัวสกัดข้อมูลจ
 - ownerName: ชื่อ-นามสกุล พร้อมคำนำหน้า ของ "เจ้าของเครื่องมือวิจัย"
   ดึงจากข้อความที่อยู่หลังประโยค "ใช้เครื่องมือวิจัยของ..." หรือ "เครื่องมือวิจัยของ..."
   ต้องเป็นชื่อบุคคลที่เริ่มต้นด้วยคำนำหน้าไทย ไม่ต้องมีตำแหน่ง/สังกัด/จังหวัด
-- additionalDetails: ย่อหน้าที่บรรยายผู้ขอแบบเต็ม — เริ่มจาก "คำนำหน้าไทย + ชื่อผู้ขอ"
-  ตามด้วยตำแหน่ง สังกัด จังหวัด และ/หรือหัวข้อวิจัย เช่น
-  "นางสาวธนิฏฐา เอียดพวง ตำแหน่งพยาบาลวิชาชีพปฏิบัติการ สังกัดโรงพยาบาลศรีธัญญา กรมสุขภาพจิต
-   จังหวัดนนทบุรี ซึ่งเป็นผู้วิจัย เรื่อง ... มีความประสงค์ขออนุญาตนำเครื่องมือวิจัยในวิทยานิพนธ์ของ ..."
-  หยุดที่คำว่า "ลงชื่อ" / "หมายเหตุ" / "จึงเรียน" / "ขอแสดงความนับถือ"
+- additionalDetails: เฉพาะส่วนที่บรรยายผู้ขอ — ตำแหน่ง สังกัด จังหวัด และ/หรือหัวข้อวิจัย
+  ไม่รวมชื่อ-นามสกุล (เพราะ requesterName เก็บแล้ว ห้ามซ้ำ) เช่น
+  "ตำแหน่งพยาบาลวิชาชีพปฏิบัติการ สังกัดโรงพยาบาลศรีธัญญา กรมสุขภาพจิต
+   จังหวัดนนทบุรี ซึ่งเป็นผู้วิจัย เรื่อง ..."
+  หยุดที่ประโยค "มีความประสงค์" / "ขออนุญาต" / "ลงชื่อ" / "หมายเหตุ" / "จึงเรียน" / "ขอแสดงความนับถือ"
   ถ้าเอกสารเป็นแบบฟอร์มสั้น ๆ ไม่มีบริบทเช่นนี้ ให้ใส่ null
 
 กฎเพิ่มเติม:
@@ -326,8 +326,11 @@ function buildFlexiblePattern(literal: string): string {
 
 // Stop markers that signal the descriptive paragraph has ended — anything from
 // these keywords onward belongs to signature/closing/form-tail, not the
-// description of the requester.
+// description of the requester. "มีความประสงค์" / "ขออนุญาต" cut off the
+// permission-request sentence so we don't capture the second name mention.
 const DETAILS_STOP_MARKERS = [
+  "มีความประสงค์",
+  "ขออนุญาต",
   "ลงชื่อ",
   "หมายเหตุ",
   "จึงเรียน",
@@ -337,41 +340,201 @@ const DETAILS_STOP_MARKERS = [
   "จุดประสงค์การยืม",
 ];
 
+// Build a flexible regex for a name that allows arbitrary whitespace between
+// characters. pdftotext often inserts spurious spaces inside Thai names
+// (e.g., "นางสาวธนิ ฏ ฐา เอี ย ดพวง"), so a literal match against the clean name
+// returned by the API would fail.
+function buildFlexibleNamePattern(name: string): string {
+  const stripped = name.replace(/\s+/g, "");
+  return Array.from(stripped)
+    .map((c) => (/[[\]\\.()*+?^${}|]/.test(c) ? `\\${c}` : c))
+    .join("\\s*");
+}
+
 // Extract the descriptive paragraph that introduces the requester with their
-// position, affiliation, and/or research title. This is the body sentence that
-// follows patterns like "ตามที่ <name> <position> <affiliation> ...".
+// position, affiliation, and/or research title — WITHOUT the name (which
+// already lives in `requesterName`). The paragraph typically follows patterns
+// like "ตามที่ <name> <position> <affiliation> ...".
 function extractAdditionalDetails(text: string, requesterName: string | null): string | null {
   if (!text.trim()) return null;
 
-  // Strategy 1: "ตามที่ <paragraph>" — formal Thai letter opener. Capture
-  // everything from after "ตามที่" up to the first stop marker or sentence end.
+  const stopPattern = `(?:${DETAILS_STOP_MARKERS.join("|")})`;
   const tamDet = buildFlexiblePattern("ตามที่");
-  const tamRe = new RegExp(`${tamDet}\\s+(.+?)(?=(?:${DETAILS_STOP_MARKERS.join("|")})|$)`, "is");
-  const tamMatch = text.match(tamRe);
-  if (tamMatch?.[1]) {
-    const cleaned = cleanDetailsParagraph(tamMatch[1]);
-    if (cleaned && cleaned.length >= 20) return cleaned;
+  const titlePattern = THAI_TITLE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Strategy 1: "ตามที่ <name> <description>" — formal Thai letter opener.
+  // Use flexible matching on the requester name so PDF artifacts inside the
+  // name don't break the regex.
+  if (requesterName) {
+    const nameFlexible = buildFlexibleNamePattern(requesterName);
+    const tamRe = new RegExp(
+      `${tamDet}\\s+(?:${titlePattern}\\s*)?${nameFlexible}\\s+(.+?)(?=${stopPattern}|$)`,
+      "is",
+    );
+    const tamMatch = text.match(tamRe);
+    if (tamMatch?.[1]) {
+      const cleaned = cleanDetailsParagraph(tamMatch[1]);
+      if (cleaned && cleaned.length >= 20) return cleaned;
+    }
   }
 
   // Strategy 2: paragraph that starts with the requester's name (already
-  // extracted) and continues with position/affiliation. Find the line that
-  // contains the name + trailing context.
+  // extracted) and continues with position/affiliation. Spills across lines
+  // (joined by normalizeWhitespace) up to the first stop marker.
   if (requesterName) {
-    const nameEscaped = requesterName
-      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-      .replace(/\s+/g, "\\s+");
-    // Look for the name followed by descriptive text on the same line or
-    // spilling into subsequent lines (joined by normalizeWhitespace).
-    const nameRe = new RegExp(`${nameEscaped}\\s+(.+?)(?=(?:${DETAILS_STOP_MARKERS.join("|")})|$)`, "is");
+    const nameFlexible = buildFlexibleNamePattern(requesterName);
+    const nameRe = new RegExp(
+      `(?:^|\\s)${nameFlexible}\\s+(.+?)(?=${stopPattern}|$)`,
+      "is",
+    );
     const nameMatch = text.match(nameRe);
     if (nameMatch?.[1]) {
-      const combined = `${requesterName} ${cleanDetailsParagraph(nameMatch[1])}`;
-      // Require minimum length so we don't capture trivial trailing words.
-      if (combined.length >= 30) return combined;
+      const cleaned = cleanDetailsParagraph(nameMatch[1]);
+      if (cleaned && cleaned.length >= 20) return cleaned;
+    }
+  }
+
+  // Strategy 3: capture from "ตามที่ <title> <name> <surname> <description>"
+  // without relying on requesterName — useful when API extraction of the name
+  // failed but the text still has the formal opener. Strip the leading name
+  // from the captured group afterwards.
+  const tamGenericRe = new RegExp(
+    `${tamDet}\\s+${titlePattern}\\s*\\S+\\s+\\S+\\s+(.+?)(?=${stopPattern}|$)`,
+    "is",
+  );
+  const tamGenericMatch = text.match(tamGenericRe);
+  if (tamGenericMatch?.[1]) {
+    const cleaned = cleanDetailsParagraph(tamGenericMatch[1]);
+    if (cleaned && cleaned.length >= 20) return cleaned;
+  }
+
+  // Strategy 4: description starts directly with a known keyword (no "ตามที่"
+  // opener, no name prefix). pdftotext output sometimes drops the letter
+  // opener entirely. Anchor on "ตำแหน่ง" / "สังกัด" / "ผู้วิจัย". Capture the
+  // keyword too so we handle compound words like "ตำแหน่งพยาบาล..." where no
+  // space follows the keyword.
+  const descKeywords = ["ตำแหน่ง", "ตาแหน่ง", "สังกัด", "เป็นผู้วิจัย", "ซึ่งเป็นผู้วิจัย"];
+  for (const kw of descKeywords) {
+    const kwPattern = buildFlexiblePattern(kw);
+    const kwRe = new RegExp(
+      `(?:^|\\.\\s|\\s)(${kwPattern}.+?)(?=${stopPattern}|$)`,
+      "is",
+    );
+    const kwMatch = text.match(kwRe);
+    if (kwMatch?.[1]) {
+      const cleaned = cleanDetailsParagraph(kwMatch[1]);
+      if (cleaned && cleaned.length >= 20) return cleaned;
     }
   }
 
   return null;
+}
+
+// Thai PDF extraction artifacts: pdftotext often inserts spurious spaces
+// between glyphs based on positioning rather than word boundaries, and
+// frequently drops nikhahit from ำ (sara am), leaving า (sara aa). These
+// helpers clean the most common cases so the captured paragraph is readable.
+
+// Build a regex that matches `word` with any whitespace between its characters.
+// Used to rejoin PDF-extracted words that got split (e.g., "สุ ข ภาพ" → "สุขภาพ")
+// without touching legitimate phrase boundaries outside the known list.
+function buildWordJoinRegex(word: string): RegExp {
+  const chars = Array.from(word).map((c) =>
+    /[.*+?^${}()|[\]\\]/.test(c) ? `\\${c}` : c,
+  );
+  return new RegExp(chars.join("\\s*"), "g");
+}
+
+// Common multi-syllable Thai words where pdftotext tends to insert spaces
+// between syllables. Listed by domain — focus on terms that appear often in
+// research/administrative documents. The longest entries must come first so
+// greedy matching prefers "สุขภาพจิต" over "สุขภาพ" + leftover "จิต".
+const THAI_WORD_JOIN_TARGETS = [
+  "สุขภาพจิต",
+  "วิทยาศาสตร์",
+  "วิทยานิพนธ์",
+  "เครื่องมือวิจัย",
+  "ความรุนแรง",
+  "ความสามารถ",
+  "ความตั้งใจ",
+  "ภาวะหมดไฟ",
+  "ปฏิบัติการ",
+  "ปฏิบัติงาน",
+  "สุขภาพ",
+  "ภาพจิต",
+  "พยาบาล",
+  "วิชาชีพ",
+  "จังหวัด",
+  "ผู้วิจัย",
+  "เครื่องมือ",
+  "ประเทศไทย",
+  "สถานที่",
+  "ควบคุม",
+  "ทำงาน",
+  "ทำวิจัย",
+  "ลาออก",
+  "ตั้งใจ",
+  "อารมณ์",
+  "วิจัย",
+  "เป็นผู้",
+  "ซึ่งเป็น",
+  "เพื่อ",
+  "ดังกล่าว",
+  // Common function words / connectors — pdftotext splits these often.
+  "เรื่อง",
+  "เรียน",
+  "ของ",
+  "การ",
+  "โดย",
+  "จาก",
+  "และ",
+  "หรือ",
+  "ในการ",
+  "เพราะ",
+  "ความ",
+  "ทั้งนี้",
+  "ทั้งหมด",
+];
+
+const THAI_WORD_JOINS: Array<[RegExp, string]> = THAI_WORD_JOIN_TARGETS.map(
+  (word) => [buildWordJoinRegex(word), word] as [RegExp, string],
+);
+
+// Common words where ำ (sara am) is frequently misextracted as า (sara aa).
+// Each entry accepts an optional internal space to catch the "ท างาน" variant
+// produced when the nikhahit glyph is rendered separately.
+const AM_WORD_FIXES: Array<[RegExp, string]> = [
+  [/ตาแหน่ง/g, "ตำแหน่ง"],
+  [/ท\s?างาน/g, "ทำงาน"],
+  [/ท\s?าวิจัย/g, "ทำวิจัย"],
+  [/ท\s?าการ/g, "ทำการ"],
+  [/ก\s?ากับ/g, "กำกับ"],
+  [/นาเครื่อง/g, "นำเครื่อง"],
+  [/นาไป/g, "นำไป"],
+  [/นาส่ง/g, "นำส่ง"],
+  [/จ\s?านวน/g, "จำนวน"],
+  [/ค\s?าขอ/g, "คำขอ"],
+  [/ค\s?านำ/g, "คำนำ"],
+  [/ค\s?าสั่ง/g, "คำสั่ง"],
+  [/ส\s?าคัญ/g, "สำคัญ"],
+  [/ส\s?าเร็จ/g, "สำเร็จ"],
+  [/ส\s?าหรับ/g, "สำหรับ"],
+  [/ส\s?านัก/g, "สำนัก"],
+  [/ก\s?าหนด/g, "กำหนด"],
+  [/ก\s?าลัง/g, "กำลัง"],
+  [/อ\s?านาจ/g, "อำนาจ"],
+  [/อ\s?าเภอ/g, "อำเภอ"],
+];
+
+function fixThaiPdfArtifacts(text: string): string {
+  let out = text;
+  for (const [pattern, replacement] of THAI_WORD_JOINS) {
+    out = out.replace(pattern, replacement);
+  }
+  for (const [pattern, replacement] of AM_WORD_FIXES) {
+    out = out.replace(pattern, replacement);
+  }
+  return out;
 }
 
 function cleanDetailsParagraph(raw: string): string | null {
@@ -380,7 +543,8 @@ function cleanDetailsParagraph(raw: string): string | null {
     .replace(/\s+/g, " ")
     .replace(/[.]+$/, "")
     .trim();
-  return cleaned || null;
+  if (!cleaned) return null;
+  return fixThaiPdfArtifacts(cleaned);
 }
 
 function parseTextFields(text: string): OCRResult {
