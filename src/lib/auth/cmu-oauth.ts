@@ -45,7 +45,11 @@ export type CmuUserInfo = {
   email: string;
   student_id: string;
   organization_code: string;
-  itaccount_type_id: string;
+  organization_name_TH?: string;
+  organization_name_EN?: string;
+  itaccounttype_id: string;
+  itaccounttype_TH?: string;
+  itaccounttype_EN?: string;
 };
 
 export type ThesisData = {
@@ -106,7 +110,7 @@ export async function getUserBasicInfo(accessToken: string) {
 }
 
 export async function getThesisData(studentId: string): Promise<ThesisData> {
-  if (process.env.MOCK_THESIS === "true") {
+  if (process.env.NODE_ENV !== "production" && process.env.MOCK_THESIS === "true") {
     const mockId = process.env.DEV_TEST_STUDENT_ID || studentId; // dev only
     return { ...MOCK_THESIS, student_id: mockId };
   }
@@ -158,23 +162,30 @@ export async function getThesisDataAndCache(userId: string): Promise<ThesisData>
 }
 
 export async function determineRole(
-  cmuitaccount?: string,
+  userInfo: CmuUserInfo,
 ): Promise<"ADMIN" | "STUDENT" | null> {
-  if (process.env.DEV_FORCE_ROLE === "ADMIN") return "ADMIN";
-  if (process.env.DEV_FORCE_ROLE === "STUDENT") return "STUDENT";
+  if (process.env.NODE_ENV !== "production") {
+    if (process.env.DEV_FORCE_ROLE === "ADMIN") return "ADMIN";
+    if (process.env.DEV_FORCE_ROLE === "STUDENT") return "STUDENT";
+  }
 
-  if (cmuitaccount) {
-    const email = cmuitaccount.includes("@")
-      ? cmuitaccount.toLowerCase()
-      : `${cmuitaccount.toLowerCase()}@${EMAIL_DOMAIN}`;
+  // Block alumni accounts explicitly — they should not access the system.
+  // Verified against CMU MIS API v3 response (2026-06-16): itaccounttype_id == "AlumAcc".
+  if (userInfo.itaccounttype_id === "AlumAcc") return null;
 
+  // Admin: must be pre-registered in DB with role ADMIN.
+  // This keeps admin onboarding explicit (an existing admin adds the email first).
+  if (userInfo.cmuitaccount) {
+    const email = userInfo.cmuitaccount.includes("@")
+      ? userInfo.cmuitaccount.toLowerCase()
+      : `${userInfo.cmuitaccount.toLowerCase()}@${EMAIL_DOMAIN}`;
     const existing = await prisma.profile.findFirst({
       where: { role: "ADMIN", email },
     });
-
     if (existing) return "ADMIN";
   }
 
+  // Default: all other CMU account types (StdAcc, MISEmpAcc, etc.) → STUDENT.
   return "STUDENT";
 }
 

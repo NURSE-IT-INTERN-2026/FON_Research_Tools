@@ -9,7 +9,7 @@ import {
 export async function createSession(
   session: Omit<AuthSession, "expiresAt">,
 ) {
-  const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 7;
+  const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // 24 hours — matches SESSION_DURATION_MS
   const cookieStore = await cookies();
 
   cookieStore.set(

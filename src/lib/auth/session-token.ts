@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const SESSION_COOKIE_NAME = "app_session";
 
-const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+const SESSION_DURATION_MS = 1000 * 60 * 60 * 24; // 24 hours — bounds stolen-token exposure window
 const SESSION_VERSION = process.env.AUTH_SESSION_VERSION?.trim() || "1";
 
 export type AuthSession = {

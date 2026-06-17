@@ -3,12 +3,15 @@
 import { verifyCredentials } from "@/lib/auth/admin-credentials";
 import { createSession } from "@/lib/auth/session";
 import { logActivity } from "@/lib/activity-log";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { redirect } from "next/navigation";
 
 export type AdminLoginState = {
   success?: boolean;
   error?: string;
 };
+
+const LOGIN_RATE_LIMIT = { limit: 10, windowMs: 60_000 };
 
 export async function adminLogin(
   _prev: AdminLoginState,
@@ -19,6 +22,17 @@ export async function adminLogin(
 
   if (!username || !password) {
     return { error: "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน" };
+  }
+
+  const rl = consumeRateLimit({
+    bucket: "admin-login",
+    key: username.toLowerCase(),
+    ...LOGIN_RATE_LIMIT,
+  });
+  if (!rl.allowed) {
+    return {
+      error: `พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอ ${rl.retryAfterSeconds} วินาที`,
+    };
   }
 
   const user = await verifyCredentials(username, password);

@@ -34,8 +34,13 @@ export async function verifyCredentials(
     }
   }
 
-  // Dev student login (bcrypt)
-  if (DEV_STUDENT_USERNAME && DEV_STUDENT_PASSWORD_HASH && username === DEV_STUDENT_USERNAME) {
+  // Dev student login (bcrypt) — dev-only, must never run in production
+  if (
+    process.env.NODE_ENV !== "production" &&
+    DEV_STUDENT_USERNAME &&
+    DEV_STUDENT_PASSWORD_HASH &&
+    username === DEV_STUDENT_USERNAME
+  ) {
     if (await verifyPassword(password, DEV_STUDENT_PASSWORD_HASH)) {
       const student = await db.profile.findFirst({
         where: { role: "STUDENT" },

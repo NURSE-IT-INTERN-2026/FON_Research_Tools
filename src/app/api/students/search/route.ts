@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/session-token";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import db from "@/lib/db";
 
 export async function GET(request: NextRequest) {
@@ -13,6 +14,19 @@ export async function GET(request: NextRequest) {
   });
   if (userProfile?.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const rl = consumeRateLimit({
+    bucket: "student-search",
+    key: session.userId,
+    limit: 60,
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "ค้นหาบ่อยเกินไป กรุณาลองใหม่ในอีกครู่" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
   }
 
   const q = request.nextUrl.searchParams.get("q")?.trim();

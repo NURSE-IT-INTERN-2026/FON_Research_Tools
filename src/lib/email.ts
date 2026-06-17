@@ -79,7 +79,9 @@ type SendEmailParams = {
 export async function sendEmail(params: SendEmailParams): Promise<boolean> {
   try {
     const token = await getEmailToken();
-    console.log("[email] Sending email, subject:", params.subject);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[email] Sending email, subject:", params.subject);
+    }
 
     const res = await fetch(`${EMAIL_API_BASE}/EmailApi/SendEmail`, {
       method: "POST",

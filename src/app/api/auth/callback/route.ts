@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const role = await determineRole(userInfo.cmuitaccount);
+  const role = await determineRole(userInfo);
   if (!role) {
     return redirectWithClearedState(request, `${BASE}/unauthorized`);
   }
