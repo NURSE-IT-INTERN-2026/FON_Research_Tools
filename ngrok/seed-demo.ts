@@ -100,7 +100,19 @@ async function main() {
       });
     }
     await db.borrowingRecord.createMany({ data: records });
-    console.log(`  ✓ Created ${records.length} borrowing records`);
+
+    // Sync each owner's borrowCount to match the actual record count.
+    // createMany skips per-row triggers, so we backfill the cache column here.
+    for (const student of students) {
+      const count = records.filter((r) => r.ownerUserId === student.id).length;
+      if (count > 0) {
+        await db.profile.update({
+          where: { id: student.id },
+          data: { borrowCount: { increment: count } },
+        });
+      }
+    }
+    console.log(`  ✓ Created ${records.length} borrowing records + synced borrowCount`);
   }
 
   console.log("\nDone.");
