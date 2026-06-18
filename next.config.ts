@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   basePath: "/researchtool",
   serverExternalPackages: ["pdfkit"],
+  allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok.app", "*.ngrok.io"],
   experimental: {
     authInterrupts: true,
     serverActions: {
