@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "AppRole" AS ENUM ('ADMIN', 'STUDENT');
 
@@ -5,7 +8,7 @@ CREATE TYPE "AppRole" AS ENUM ('ADMIN', 'STUDENT');
 CREATE TYPE "DocumentStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 -- CreateEnum
-CREATE TYPE "ActivityAction" AS ENUM ('USER_LOGIN', 'DOCUMENT_UPLOAD', 'DOCUMENT_APPROVE', 'DOCUMENT_REJECT', 'DOCUMENT_REMOVE', 'ADMIN_CREATED');
+CREATE TYPE "ActivityAction" AS ENUM ('USER_LOGIN', 'DOCUMENT_UPLOAD', 'DOCUMENT_APPROVE', 'DOCUMENT_REJECT', 'DOCUMENT_REMOVE', 'ADMIN_CREATED', 'BORROW_SUBMIT', 'BORROW_REMOVE');
 
 -- CreateTable
 CREATE TABLE "Profile" (
@@ -13,21 +16,17 @@ CREATE TABLE "Profile" (
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "studentId" TEXT,
-    "accountType" TEXT,
     "cmuItAccount" TEXT,
+    "role" "AppRole" NOT NULL DEFAULT 'STUDENT',
+    "thesisTitleTh" TEXT,
+    "thesisTitleEn" TEXT,
+    "level" TEXT,
+    "borrowCount" INTEGER NOT NULL DEFAULT 0,
+    "nameFromCmu" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Profile_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "UserRole" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "role" "AppRole" NOT NULL,
-
-    CONSTRAINT "UserRole_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -39,8 +38,8 @@ CREATE TABLE "Document" (
     "originalName" TEXT NOT NULL,
     "fileSize" INTEGER NOT NULL,
     "status" "DocumentStatus" NOT NULL DEFAULT 'PENDING',
-    "approvedBy" TEXT,
-    "approvedAt" TIMESTAMP(3),
+    "reviewedBy" TEXT,
+    "reviewedAt" TIMESTAMP(3),
     "adminNotes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -62,14 +61,32 @@ CREATE TABLE "ActivityLog" (
     CONSTRAINT "ActivityLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "BorrowingRecord" (
+    "id" TEXT NOT NULL,
+    "ownerUserId" TEXT NOT NULL,
+    "requesterName" TEXT NOT NULL,
+    "requestDate" TIMESTAMP(3),
+    "source" TEXT,
+    "additionalDetails" TEXT,
+    "licenseFileName" TEXT,
+    "licenseOriginalName" TEXT,
+    "licenseFileSize" INTEGER,
+    "certificateFileName" TEXT,
+    "certificateOriginalName" TEXT,
+    "certificateFileSize" INTEGER,
+    "createdBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "BorrowingRecord_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Profile_email_key" ON "Profile"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Profile_studentId_key" ON "Profile"("studentId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "UserRole_userId_key" ON "UserRole"("userId");
 
 -- CreateIndex
 CREATE INDEX "Document_userId_idx" ON "Document"("userId");
@@ -92,11 +109,20 @@ CREATE INDEX "ActivityLog_userId_idx" ON "ActivityLog"("userId");
 -- CreateIndex
 CREATE INDEX "ActivityLog_createdAt_idx" ON "ActivityLog"("createdAt");
 
--- AddForeignKey
-ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- CreateIndex
+CREATE INDEX "BorrowingRecord_ownerUserId_idx" ON "BorrowingRecord"("ownerUserId");
+
+-- CreateIndex
+CREATE INDEX "BorrowingRecord_createdAt_idx" ON "BorrowingRecord"("createdAt");
 
 -- AddForeignKey
 ALTER TABLE "Document" ADD CONSTRAINT "Document_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ActivityLog" ADD CONSTRAINT "ActivityLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BorrowingRecord" ADD CONSTRAINT "BorrowingRecord_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "Profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BorrowingRecord" ADD CONSTRAINT "BorrowingRecord_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
