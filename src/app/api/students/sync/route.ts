@@ -6,6 +6,13 @@ const THESIS_API_URL = process.env.THESIS_API_URL;
 const THESIS_API_TOKEN = process.env.THESIS_API_TOKEN;
 const PLACEHOLDER_EMAIL_DOMAIN = process.env.PLACEHOLDER_EMAIL_DOMAIN ?? "placeholder.cmu.ac.th";
 
+const PLACEHOLDER_NAME = "รอเข้าสู่ระบบครั้งแรก";
+
+// nameFromCmu is set to true when a real name has been written by a successful
+// CMU OAuth login (see src/lib/auth/cmu-oauth.ts upsertUser). On re-sync, never
+// overwrite a name that already came from CMU — regardless of language. This
+// handles foreign students whose real names are English-only.
+
 export async function POST() {
   await requireRole("ADMIN");
 
@@ -57,9 +64,6 @@ export async function POST() {
   for (const s of students) {
     const hasTitle = s.title_th && s.title_th !== "N/A";
     const email = s.cmu_account || `${s.student_id}@${PLACEHOLDER_EMAIL_DOMAIN}`;
-    const name = s.cmu_account
-      ? s.cmu_account.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-      : s.student_id;
 
     const existing = await db.profile.findFirst({
       where: {
@@ -79,7 +83,7 @@ export async function POST() {
           ...(hasTitle ? { thesisTitleTh: s.title_th, thesisTitleEn: s.title_en } : {}),
           ...(s.cmu_account ? { cmuItAccount: s.cmu_account.split("@")[0] } : {}),
           ...(s.cmu_account ? { email: s.cmu_account } : {}),
-          ...(s.cmu_account ? { name } : {}),
+          ...(!existing.nameFromCmu ? { name: PLACEHOLDER_NAME } : {}),
         },
       });
       updated++;
@@ -87,7 +91,7 @@ export async function POST() {
       await db.profile.create({
         data: {
           id: `thesis-${s.student_id}`,
-          name,
+          name: PLACEHOLDER_NAME,
           email,
           studentId: s.student_id,
           cmuItAccount: s.cmu_account ? s.cmu_account.split("@")[0] : null,

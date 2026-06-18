@@ -41,6 +41,7 @@ model Profile {
   thesisTitleEn String?
   level        String?
   borrowCount  Int       @default(0)
+  nameFromCmu  Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

@@ -210,6 +210,7 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
 
   const data = {
     name,
+    nameFromCmu: true,
     email,
     studentId,
     cmuItAccount: userInfo.cmuitaccount,
