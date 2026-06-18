@@ -10,17 +10,18 @@ export type CreateAdminState = {
   error?: string;
 };
 
+const PENDING_NAME = "รอเข้าสู่ระบบครั้งแรก";
+
 export async function createAdmin(
   _prev: CreateAdminState,
   formData: FormData,
 ): Promise<CreateAdminState> {
   const ctx = await requireRole("ADMIN");
 
-  const name = (formData.get("name") as string)?.trim();
   const email = (formData.get("email") as string)?.trim().toLowerCase();
 
-  if (!name || !email) {
-    return { error: "กรุณากรอกชื่อและอีเมล" };
+  if (!email) {
+    return { error: "กรุณากรอกอีเมล" };
   }
 
   const existing = await db.profile.findUnique({ where: { email } });
@@ -31,7 +32,7 @@ export async function createAdmin(
   const userId = crypto.randomUUID();
 
   await db.profile.create({
-    data: { id: userId, name, email, role: "ADMIN" },
+    data: { id: userId, name: PENDING_NAME, email, role: "ADMIN" },
   });
 
   await logActivity({
@@ -39,7 +40,7 @@ export async function createAdmin(
     userId: ctx.userId,
     targetType: "Profile",
     targetId: userId,
-    targetLabel: name,
+    targetLabel: email,
   });
 
   revalidatePath("/admin/admins");

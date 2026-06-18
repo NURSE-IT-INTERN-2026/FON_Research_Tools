@@ -34,7 +34,10 @@ export async function verifyCredentials(
     }
   }
 
-  // Dev student login (bcrypt) — dev-only, must never run in production
+  // Dev student login (bcrypt) — dev-only, must never run in production.
+  // Login lands on a TEST student (DEV_TEST_STUDENT_ID first, then any
+  // @placeholder.cmu.ac.th student), never on a real student account that
+  // may have real documents or activity.
   if (
     process.env.NODE_ENV !== "production" &&
     DEV_STUDENT_USERNAME &&
@@ -42,16 +45,35 @@ export async function verifyCredentials(
     username === DEV_STUDENT_USERNAME
   ) {
     if (await verifyPassword(password, DEV_STUDENT_PASSWORD_HASH)) {
-      const student = await db.profile.findFirst({
-        where: { role: "STUDENT" },
-        select: { id: true, email: true, name: true },
-      });
-      if (!student) return null;
+      const testStudentId = process.env.DEV_TEST_STUDENT_ID;
+      const placeholderDomain =
+        process.env.PLACEHOLDER_EMAIL_DOMAIN ?? "placeholder.cmu.ac.th";
+
+      const student = testStudentId
+        ? await db.profile.findFirst({
+            where: { studentId: testStudentId, role: "STUDENT" },
+            select: { id: true, email: true, name: true },
+          })
+        : null;
+
+      const fallback =
+        !student &&
+        (await db.profile.findFirst({
+          where: {
+            role: "STUDENT",
+            email: { endsWith: `@${placeholderDomain}` },
+          },
+          orderBy: { createdAt: "asc" },
+          select: { id: true, email: true, name: true },
+        }));
+
+      const testStudent = student ?? fallback;
+      if (!testStudent) return null;
       return {
-        userId: student.id,
-        email: student.email,
+        userId: testStudent.id,
+        email: testStudent.email,
         role: "STUDENT" as const,
-        name: student.name,
+        name: testStudent.name,
       };
     }
   }

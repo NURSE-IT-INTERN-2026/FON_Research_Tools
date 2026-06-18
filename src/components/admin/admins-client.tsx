@@ -3,7 +3,6 @@
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -58,15 +57,6 @@ function AddAdminModal({
         <form action={formAction} className="grid gap-4 py-2">
           <div className="space-y-2">
             <Label
-              htmlFor="admin-name"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              ชื่อ-นามสกุล *
-            </Label>
-            <Input id="admin-name" name="name" required className="rounded" />
-          </div>
-          <div className="space-y-2">
-            <Label
               htmlFor="admin-email"
               className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
             >
@@ -80,6 +70,9 @@ function AddAdminModal({
               style={{ fontFamily: "system-ui, sans-serif" }}
               className="flex h-10 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
+            <p className="text-xs text-muted-foreground">
+              ชื่อจะแสดงอัตโนมัติเมื่อผู้ดูแลใหม่เข้าสู่ระบบผ่าน CMU Account
+            </p>
           </div>
           <DialogFooter>
             <Button
