@@ -60,8 +60,8 @@ export async function GET(
     pdfDoc.image(LOGO_PATH, (595.28 - 80) / 2, 40, { width: 80 });
     pdfDoc.y = 130;
 
-    pdfDoc.font("SarabunBold").fontSize(18).text("Research Tool", { align: "center" });
-    pdfDoc.font("Sarabun").fontSize(12).text("Faculty of Nursing, Chiang Mai University", { align: "center" });
+    pdfDoc.font("SarabunBold").fontSize(18).text("คณะพยาบาลศาสตร์", { align: "center" });
+    pdfDoc.font("Sarabun").fontSize(12).text("มหาวิทยาลัยเชียงใหม่  |  Faculty of Nursing, CMU", { align: "center" });
     pdfDoc.moveDown(0.5);
 
     pdfDoc.moveTo(60, pdfDoc.y).lineTo(535, pdfDoc.y).stroke();
@@ -73,7 +73,7 @@ export async function GET(
     pdfDoc.font("Sarabun").text(`  ${profile.studentId ?? "—"}`);
     pdfDoc.moveDown(1.5);
 
-    pdfDoc.font("SarabunBold").fontSize(13).text("รายการเครื่องมือวิจัย");
+    pdfDoc.font("SarabunBold").fontSize(13).text("รายการเอกสารเครื่องมือวิจัย");
     pdfDoc.moveDown(0.3);
 
     approvedDocs.forEach((d, i) => {
@@ -87,6 +87,12 @@ export async function GET(
       pdfDoc.fillColor("#000");
     });
     pdfDoc.moveDown(1.5);
+
+    // Footer divider + system name
+    pdfDoc.moveTo(60, pdfDoc.y).lineTo(535, pdfDoc.y).stroke();
+    pdfDoc.moveDown(0.5);
+    pdfDoc.font("Sarabun").fontSize(11).fillColor("#666").text("Research Tools System", { align: "center" });
+    pdfDoc.fillColor("#000");
 
     pdfDoc.end();
 
