@@ -25,6 +25,8 @@ export async function verifyCredentials(
   if (!username || !password) return null;
 
   // Admin login (bcrypt) — gated by ADMIN_LOCAL_LOGIN_ENABLED.
+  // Maps to the bootstrap "super-admin" account (created by ngrok/fresh-reset.ts,
+  // email ends with "@local"), NOT real CMU admins who login via CMU OAuth.
   if (
     isLocalAdminLoginEnabled() &&
     ADMIN_PASSWORD_HASH &&
@@ -32,7 +34,11 @@ export async function verifyCredentials(
   ) {
     if (await verifyPassword(password, ADMIN_PASSWORD_HASH)) {
       const admin = await db.profile.findFirst({
-        where: { role: "ADMIN" },
+        where: {
+          role: "ADMIN",
+          email: { endsWith: "@local" },
+        },
+        orderBy: { createdAt: "asc" },
         select: { id: true, email: true, name: true },
       });
       if (!admin) return null;
