@@ -61,3 +61,6 @@ next-env.d.ts
 /CLAUDE.md
 
 /ngrok/
+
+# dev-only DB seed (mock data — never for production)
+/prisma/seed.ts
