@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AdminLoginClient } from "./login-client";
+import { isLocalAdminLoginEnabled } from "@/lib/auth/admin-credentials";
 
 export default function AdminLoginPage() {
+  const localLoginEnabled = isLocalAdminLoginEnabled();
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4 relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -36,14 +39,34 @@ export default function AdminLoginPage() {
           </p>
         </div>
         <div className="p-6 pt-0 space-y-4">
-          <AdminLoginClient />
-          <Link
-            href="/"
-            className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            กลับหน้าหลัก
-          </Link>
+          {localLoginEnabled ? (
+            <AdminLoginClient />
+          ) : (
+            <div className="rounded border border-muted bg-muted/30 px-4 py-6 text-center space-y-2">
+              <p className="text-sm font-semibold">
+                ระบบเข้าสู่ระบบสำหรับเจ้าหน้าที่ถูกปิดใช้งาน
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                กรุณาเข้าสู่ระบบผ่าน CMU Account ที่หน้าหลัก
+              </p>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-primary hover:underline pt-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                กลับหน้าหลัก
+              </Link>
+            </div>
+          )}
+          {localLoginEnabled && (
+            <Link
+              href="/"
+              className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              กลับหน้าหลัก
+            </Link>
+          )}
         </div>
       </div>
     </div>

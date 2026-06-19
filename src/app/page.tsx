@@ -4,10 +4,12 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import cmuLogo from "@/../public/cmu_logo.png";
 import { OAuthError } from "./oauth-error";
+import { isLocalAdminLoginEnabled } from "@/lib/auth/admin-credentials";
 
 const LOGIN_HREF = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/auth/cmu`;
 
 export default function HomePage() {
+  const showAdminLogin = isLocalAdminLoginEnabled();
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 relative">
       {/* Geometric background accents */}
@@ -48,9 +50,11 @@ export default function HomePage() {
             <Image src={cmuLogo} alt="CMU" height={24} className="h-6 w-auto" />
             เข้าสู่ระบบด้วย CMU Account
           </a>
-          <Button asChild variant="outline" size="lg" className="font-heading font-semibold tracking-wide px-8">
-            <Link href="/admin/login">เข้าสู่ระบบเจ้าหน้าที่</Link>
-          </Button>
+          {showAdminLogin && (
+            <Button asChild variant="outline" size="lg" className="font-heading font-semibold tracking-wide px-8">
+              <Link href="/admin/login">เข้าสู่ระบบเจ้าหน้าที่</Link>
+            </Button>
+          )}
         </div>
       </div>
     </div>

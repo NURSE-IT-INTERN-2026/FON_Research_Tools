@@ -1,6 +1,6 @@
 "use server";
 
-import { verifyCredentials } from "@/lib/auth/admin-credentials";
+import { verifyCredentials, isLocalAdminLoginEnabled } from "@/lib/auth/admin-credentials";
 import { createSession } from "@/lib/auth/session";
 import { logActivity } from "@/lib/activity-log";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
@@ -19,6 +19,12 @@ export async function adminLogin(
 ): Promise<AdminLoginState> {
   const username = (formData.get("username") as string)?.trim() ?? "";
   const password = (formData.get("password") as string) ?? "";
+
+  if (!isLocalAdminLoginEnabled()) {
+    return {
+      error: "ระบบเข้าสู่ระบบสำหรับเจ้าหน้าที่ถูกปิดใช้งาน กรุณาเข้าสู่ระบบผ่าน CMU Account",
+    };
+  }
 
   if (!username || !password) {
     return { error: "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน" };

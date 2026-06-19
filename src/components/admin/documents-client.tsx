@@ -699,7 +699,7 @@ function ThesisDialog({
         <BookOpen className="h-4 w-4" />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md rounded-lg">
+        <DialogContent className="sm:max-w-md rounded-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="font-heading font-bold tracking-tight">
               วิทยานิพนธ์ — {studentName}

@@ -11,14 +11,25 @@ const DEV_STUDENT_PASSWORD_HASH = process.env.DEV_STUDENT_PASSWORD_HASH
   ? Buffer.from(process.env.DEV_STUDENT_PASSWORD_HASH, "base64").toString("utf-8")
   : undefined;
 
+// Toggle for the local username/password admin login. Set ADMIN_LOCAL_LOGIN_ENABLED="false"
+// in production to remove the fallback login entirely (CMU OAuth becomes the only entry).
+// Defaults to true for backward compatibility.
+export function isLocalAdminLoginEnabled(): boolean {
+  return process.env.ADMIN_LOCAL_LOGIN_ENABLED !== "false";
+}
+
 export async function verifyCredentials(
   username: string,
   password: string,
 ) {
   if (!username || !password) return null;
 
-  // Admin login (bcrypt)
-  if (ADMIN_PASSWORD_HASH && username === ADMIN_USERNAME) {
+  // Admin login (bcrypt) — gated by ADMIN_LOCAL_LOGIN_ENABLED.
+  if (
+    isLocalAdminLoginEnabled() &&
+    ADMIN_PASSWORD_HASH &&
+    username === ADMIN_USERNAME
+  ) {
     if (await verifyPassword(password, ADMIN_PASSWORD_HASH)) {
       const admin = await db.profile.findFirst({
         where: { role: "ADMIN" },
