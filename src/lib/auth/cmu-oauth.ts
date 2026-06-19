@@ -161,20 +161,38 @@ export async function getThesisDataAndCache(userId: string): Promise<ThesisData>
   return thesis;
 }
 
+export type RoleDecision = {
+  role: "ADMIN" | "STUDENT";
+  thesis: ThesisData;
+};
+
+// Restrict student login to Faculty of Nursing. Match against Thesis API
+// major_th (returns "พยาบาลศาสตร์" for nursing students). Verified against
+// Thesis API response: major_th field is the student's major/program name.
+const FACULTY_KEYWORD = "พยาบาล";
+
 export async function determineRole(
   userInfo: CmuUserInfo,
-): Promise<"ADMIN" | "STUDENT" | null> {
+): Promise<RoleDecision | null> {
   if (process.env.NODE_ENV !== "production") {
-    if (process.env.DEV_FORCE_ROLE === "ADMIN") return "ADMIN";
-    if (process.env.DEV_FORCE_ROLE === "STUDENT") return "STUDENT";
+    if (process.env.DEV_FORCE_ROLE === "ADMIN") {
+      return { role: "ADMIN", thesis: null };
+    }
+    if (process.env.DEV_FORCE_ROLE === "STUDENT") {
+      const thesis = userInfo.student_id
+        ? await getThesisData(userInfo.student_id)
+        : null;
+      return { role: "STUDENT", thesis };
+    }
   }
 
   // Block alumni accounts explicitly — they should not access the system.
   // Verified against CMU MIS API v3 response (2026-06-16): itaccounttype_id == "AlumAcc".
   if (userInfo.itaccounttype_id === "AlumAcc") return null;
 
-  // Admin: must be pre-registered in DB with role ADMIN.
-  // This keeps admin onboarding explicit (an existing admin adds the email first).
+  // Admin: pre-registered in DB with role ADMIN. Admins bypass the faculty
+  // check — they're explicitly authorized (e.g. staff at the faculty office
+  // who don't have a thesis record).
   if (userInfo.cmuitaccount) {
     const email = userInfo.cmuitaccount.includes("@")
       ? userInfo.cmuitaccount.toLowerCase()
@@ -182,14 +200,26 @@ export async function determineRole(
     const existing = await prisma.profile.findFirst({
       where: { role: "ADMIN", email },
     });
-    if (existing) return "ADMIN";
+    if (existing) return { role: "ADMIN", thesis: null };
   }
 
-  // Default: all other CMU account types (StdAcc, MISEmpAcc, etc.) → STUDENT.
-  return "STUDENT";
+  // Student: must have a thesis record with nursing major.
+  // Blocks: non-nursing students, students without thesis, accounts without student_id.
+  if (userInfo.student_id) {
+    const thesis = await getThesisData(userInfo.student_id);
+    if (thesis?.major_th?.includes(FACULTY_KEYWORD)) {
+      return { role: "STUDENT", thesis };
+    }
+  }
+
+  return null;
 }
 
-export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT") {
+export async function upsertUser(
+  userInfo: CmuUserInfo,
+  decision: RoleDecision,
+) {
+  const { role, thesis } = decision;
   const name = `${userInfo.firstname_TH} ${userInfo.lastname_TH}`.trim();
   const email =
     userInfo.email ||
@@ -198,15 +228,8 @@ export async function upsertUser(userInfo: CmuUserInfo, role: "ADMIN" | "STUDENT
       : `${userInfo.cmuitaccount}@${EMAIL_DOMAIN}`);
   const studentId = userInfo.student_id || null;
 
-  let thesisTitleTh: string | null = null;
-  let thesisTitleEn: string | null = null;
-  if (role === "STUDENT" && studentId) {
-    const thesis = await getThesisData(studentId);
-    if (thesis) {
-      thesisTitleTh = thesis.title_th;
-      thesisTitleEn = thesis.title_en;
-    }
-  }
+  const thesisTitleTh = role === "STUDENT" ? thesis?.title_th ?? null : null;
+  const thesisTitleEn = role === "STUDENT" ? thesis?.title_en ?? null : null;
 
   const data = {
     name,

@@ -64,17 +64,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const role = await determineRole(userInfo);
-  if (!role) {
+  const decision = await determineRole(userInfo);
+  if (!decision) {
     return redirectWithClearedState(request, `${BASE}/unauthorized`);
   }
 
-  const profile = await upsertUser(userInfo, role);
+  const profile = await upsertUser(userInfo, decision);
 
   await createSession({
     userId: profile.id,
     email: profile.email,
-    role,
+    role: decision.role,
     name: profile.name,
   });
 
@@ -82,11 +82,11 @@ export async function GET(request: NextRequest) {
     action: "USER_LOGIN",
     userId: profile.id,
     targetType: "Session",
-    targetLabel: `เข้าสู่ระบบ (${role})`,
+    targetLabel: `เข้าสู่ระบบ (${decision.role})`,
   });
 
   return redirectWithClearedState(
     request,
-    `${BASE}${getRoleRedirectPath(role)}`,
+    `${BASE}${getRoleRedirectPath(decision.role)}`,
   );
 }
