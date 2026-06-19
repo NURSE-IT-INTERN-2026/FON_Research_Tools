@@ -2,21 +2,7 @@
 
 ระบบสำหรับคณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่ ให้นักศึกษาอัปโหลดเอกสารเครื่องมือวิจัย (PDF) และเจ้าหน้าที่อนุมัติ/ปฏิเสธ
 
-## Getting Started
 
-```bash
-# Start PostgreSQL
-docker compose up -d
-
-# Apply schema
-npx prisma migrate dev
-
-# Seed test data
-npx prisma db seed
-
-# Run dev server
-npm run dev
-```
 
 Open [http://localhost:3000](http://localhost:3000)
 
