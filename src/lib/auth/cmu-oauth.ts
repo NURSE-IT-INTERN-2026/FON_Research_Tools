@@ -171,6 +171,10 @@ export type RoleDecision = {
 // Thesis API response: major_th field is the student's major/program name.
 const FACULTY_KEYWORD = "พยาบาล";
 
+// Allowlisted emails bypass the nursing-faculty gate so non-nursing staff
+// can log in with the STUDENT role (no thesis record required).
+const STUDENT_LOGIN_EXCEPTIONS = ["parin_p@cmu.ac.th"];
+
 export async function determineRole(
   userInfo: CmuUserInfo,
 ): Promise<RoleDecision | null> {
@@ -201,6 +205,17 @@ export async function determineRole(
       where: { role: "ADMIN", email },
     });
     if (existing) return { role: "ADMIN", thesis: null };
+  }
+
+  // Student exception: allowlisted emails skip the faculty/thesis check.
+  const email = (
+    userInfo.email ||
+    (userInfo.cmuitaccount.includes("@")
+      ? userInfo.cmuitaccount
+      : `${userInfo.cmuitaccount}@${EMAIL_DOMAIN}`)
+  ).toLowerCase();
+  if (STUDENT_LOGIN_EXCEPTIONS.includes(email)) {
+    return { role: "STUDENT", thesis: null };
   }
 
   // Student: must have a thesis record with nursing major.

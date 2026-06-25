@@ -11,6 +11,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: "รายชื่อนักศึกษา", href: "/admin/students", icon: "Users" },
   { label: "จัดการผู้ดูแล", href: "/admin/admins", icon: "Shield" },
   { label: "บันทึกกิจกรรม", href: "/admin/activity-log", icon: "Activity" },
+  { label: "คู่มือ API", href: "/admin/api-docs", icon: "Code" },
 ];
 
 export default async function AdminLayout({

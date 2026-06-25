@@ -28,6 +28,7 @@ import {
   ChevronRight,
   ExternalLink,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import {
   createBorrowingRecord,
@@ -1097,6 +1098,17 @@ export function BorrowingClient({
                           </p>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {ocrResult && (
+                    <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>
+                        ระบบได้กรอกข้อมูลอัตโนมัติจาก OCR — กรุณาตรวจสอบความถูกต้องของทุกฟิลด์
+                        (เจ้าของเครื่องมือ · ผู้ขอใช้ · จากองกรค์ · วันที่ · รายละเอียดเพิ่มเติม)
+                        ก่อนกดบันทึก
+                      </span>
                     </div>
                   )}
                 </>
