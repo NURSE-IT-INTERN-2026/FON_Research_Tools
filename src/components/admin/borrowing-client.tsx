@@ -29,6 +29,7 @@ import {
   ExternalLink,
   AlertCircle,
   AlertTriangle,
+  Save,
 } from "lucide-react";
 import {
   createBorrowingRecord,
@@ -166,6 +167,8 @@ export function BorrowingClient({
   const [isEdit, setIsEdit] = useState(false);
   const [pending, setPending] = useState(false);
   const [actionResult, setActionResult] = useState<BorrowingActionState | null>(null);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const [ownerSearch, setOwnerSearch] = useState("");
   const [ownerResults, setOwnerResults] = useState<SearchResult[]>([]);
   const [ownerSearching, setOwnerSearching] = useState(false);
@@ -420,8 +423,14 @@ export function BorrowingClient({
     setOwnerResults([]);
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setActionResult(null);
+    setShowSaveConfirm(true);
+  }
+
+  async function performSave() {
+    if (!formRef.current) return;
     setPending(true);
     setActionResult(null);
     // Rebuild FormData from form values + state-tracked files so that the
@@ -429,7 +438,7 @@ export function BorrowingClient({
     // preventDefault rather than <form action={...}> because React 19 resets
     // the form (and clears <input type="file">.value) after an action resolves
     // — even on error. Preventing default keeps the file input intact.
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(formRef.current);
     const fd = new FormData();
     fd.set("ownerUserId", (formData.get("ownerUserId") as string) ?? "");
     fd.set("requesterName", (formData.get("requesterName") as string) ?? "");
@@ -448,6 +457,9 @@ export function BorrowingClient({
     const result = await action({} as BorrowingActionState, fd);
     setActionResult(result);
     setPending(false);
+    // Close the confirm dialog either way — on error the message shows on the
+    // form so the user can fix and press บันทึก again to re-confirm.
+    setShowSaveConfirm(false);
     if (result.success) {
       setShowForm(false);
       router.refresh();
@@ -855,9 +867,28 @@ export function BorrowingClient({
           )}
 
           <form
+            ref={formRef}
             onSubmit={handleSubmit}
             className="space-y-5"
           >
+            {!isEdit && (
+              <div className="flex items-start gap-2.5 rounded-lg border-2 border-red-500 bg-red-50 px-3.5 py-3 text-sm text-red-800">
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-red-600" />
+                <div className="space-y-0.5">
+                  <p className="font-semibold leading-tight">
+                    แจ้งเตือนสำคัญ — กรุณาตรวจสอบ OCR ก่อนบันทึก
+                  </p>
+                  <p className="leading-snug text-red-700">
+                    อัปโหลด &quot;ใบอนุญาตจากสำนักทะเบียน&quot; PDF แล้วกดปุ่ม
+                    <span className="font-semibold"> &quot;อ่านเอกสารอัตโนมัติ (OCR)&quot; </span>
+                    เพื่อกรอกฟอร์มอัตโนมัติ จากนั้น
+                    <span className="font-semibold"> กรุณาตรวจสอบความถูกต้องของทุกฟิลด์ </span>
+                    (เจ้าของเครื่องมือ · ผู้ขอใช้ · จากองค์กร · วันที่ · รายละเอียดเพิ่มเติม) ก่อนกดบันทึก
+                  </p>
+                </div>
+              </div>
+            )}
+
             {isEdit && <input type="hidden" name="recordId" value={form.recordId} />}
             <input type="hidden" name="ownerUserId" value={form.ownerUserId} />
 
@@ -1101,16 +1132,6 @@ export function BorrowingClient({
                     </div>
                   )}
 
-                  {ocrResult && (
-                    <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
-                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                      <span>
-                        ระบบได้กรอกข้อมูลอัตโนมัติจาก OCR — กรุณาตรวจสอบความถูกต้องของทุกฟิลด์
-                        (เจ้าของเครื่องมือ · ผู้ขอใช้ · จากองกรค์ · วันที่ · รายละเอียดเพิ่มเติม)
-                        ก่อนกดบันทึก
-                      </span>
-                    </div>
-                  )}
                 </>
               )}
             </div>
@@ -1202,6 +1223,110 @@ export function BorrowingClient({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Confirm Dialog */}
+      <Dialog
+        open={showSaveConfirm}
+        onOpenChange={(open) => {
+          if (!open && !pending) setShowSaveConfirm(false);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Save className="h-4 w-4" />
+              </span>
+              {isEdit ? "ยืนยันการแก้ไขรายการ" : "ยืนยันการบันทึกรายการ"}
+            </DialogTitle>
+            <DialogDescription>
+              กรุณาตรวจสอบความถูกต้องของข้อมูลอีกครั้งก่อนกดยืนยัน
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded border bg-muted/30 p-3 text-sm space-y-1.5">
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">เจ้าของเครื่องมือ:</span>
+              <span className="font-medium text-right">
+                {form.ownerName || "—"}
+              </span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">ผู้ขอใช้:</span>
+              <span className="font-medium text-right">
+                {form.requesterName || "—"}
+              </span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">จากองค์กร:</span>
+              <span className="font-medium text-right">
+                {form.source || "—"}
+              </span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">วันที่อนุมัติ:</span>
+              <span className="font-medium text-right">
+                {form.requestDate ? formatDate(form.requestDate) : "—"}
+              </span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">ใบอนุญาต:</span>
+              <span className="font-medium text-right">
+                {!isEdit
+                  ? licenseFile
+                    ? licenseFile.name
+                    : "—"
+                  : licenseRemoved
+                    ? "จะถูกลบ"
+                    : form.licenseOriginalName || "—"}
+              </span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">ใบรับรอง:</span>
+              <span className="font-medium text-right">
+                {!isEdit
+                  ? certificateFile
+                    ? certificateFile.name
+                    : "—"
+                  : certificateRemoved
+                    ? "จะถูกลบ"
+                    : form.certificateOriginalName || "—"}
+              </span>
+            </div>
+          </div>
+
+          {!isEdit && (
+            <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>
+                หากใช้ข้อมูลจาก OCR กรุณาตรวจสอบความถูกต้องของทุกฟิลด์
+                โดยเฉพาะเจ้าของเครื่องมือ · ผู้ขอใช้ · จากองค์กร · วันที่
+              </span>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowSaveConfirm(false)}
+              disabled={pending}
+              className="rounded"
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              onClick={performSave}
+              disabled={pending}
+              className="rounded gap-2"
+            >
+              {pending && <RefreshCw className="h-4 w-4 animate-spin" />}
+              {pending ? "กำลังบันทึก..." : "ยืนยันการบันทึก"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
