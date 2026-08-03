@@ -677,7 +677,7 @@ export function BorrowingClient({
                           ผู้ขอใช้
                         </th>
                         <th className="px-3 py-2.5 text-left text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground">
-                          จากองกรค์
+                          จากองค์กร
                         </th>
                         <th className="px-3 py-2.5 text-left text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground">
                           วันที่อนุมัติ
@@ -797,7 +797,7 @@ export function BorrowingClient({
                 <span className="font-mono">{showDetail.ownerStudentId}</span>
                 <span className="text-muted-foreground">ผู้ขอใช้:</span>
                 <span>{showDetail.requesterName}</span>
-                <span className="text-muted-foreground">จากองกรค์:</span>
+                <span className="text-muted-foreground">จากองค์กร:</span>
                 <span>{showDetail.source || "—"}</span>
                 <span className="text-muted-foreground">วันที่อนุมัติ:</span>
                 <span>{formatDate(showDetail.requestDate)}</span>
@@ -948,7 +948,7 @@ export function BorrowingClient({
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium block">
-                  จากองกรค์ <span className="text-destructive">*</span>
+                  จากองค์กร <span className="text-destructive">*</span>
                 </label>
                 <Input
                   name="source"
@@ -1110,7 +1110,7 @@ export function BorrowingClient({
                               <p className="font-medium">{ocrResult.requestDate ?? "—"}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">จากองกรค์ · Source:</span>
+                              <span className="text-muted-foreground">จากองค์กร · Source:</span>
                               <p className="font-medium whitespace-pre-wrap">{ocrResult.source ?? "—"}</p>
                             </div>
                             <div>
@@ -1365,7 +1365,7 @@ export function BorrowingClient({
               </div>
               {recordToDelete.source && (
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">จากองกรค์:</span>
+                  <span className="text-muted-foreground">จากองค์กร:</span>
                   <span className="font-medium text-right">{recordToDelete.source}</span>
                 </div>
               )}
