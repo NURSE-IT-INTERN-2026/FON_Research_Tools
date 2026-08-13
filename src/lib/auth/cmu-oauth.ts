@@ -24,12 +24,13 @@ for (const [name, value] of REQUIRED_OAUTH_VARS) {
 }
 
 // --- Mock thesis data for dev testing ---
+// Fictional placeholder only — must never contain a real student's id or thesis title,
+// because dev captures of this data end up in documentation and screenshots.
 const MOCK_THESIS = {
-  student_id: "621251008",
-  title_th:
-    "ประสิทธิผลของโปรแกรมส่งเสริมสุขภาพการได้ยินในคนงานโรงงานอุตสาหกรรมขนาดใหญ่",
+  student_id: "990000001",
+  title_th: "การพัฒนารูปแบบการดูแลผู้สูงอายุในชุมชนโดยการมีส่วนร่วมของครอบครัว",
   title_en:
-    "Effectiveness of the Healthy Hearing Promoting Program Among Workers in Large-Scale Industries",
+    "Development of a Community Elderly Care Model Through Family Participation",
   major_th: "พยาบาลศาสตร์",
   level_name_th: "ปริญญาโท",
   curriculum: "หลักสูตรปกติ",

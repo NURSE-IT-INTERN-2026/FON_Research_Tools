@@ -34,7 +34,7 @@ export default function ApiDocsPage() {
           คู่มือ API
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          สรุประบบ API ภายนอกที่ระบบจัดการเอกสารเครื่องมือวิจัยเชื่อมต่อ
+          สรุประบบ API ภายนอกที่ระบบจัดการยืมเครื่องมือและอุปกรณ์เพื่องานวิจัยเชื่อมต่อ
         </p>
       </div>
 

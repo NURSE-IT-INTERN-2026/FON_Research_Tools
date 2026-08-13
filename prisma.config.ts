@@ -1,4 +1,9 @@
-import "dotenv/config";
+import { config } from "dotenv";
+// Load in Next.js order: .env first, .env.local overrides. Without this, Prisma
+// commands (migrate, db push) hit whatever DATABASE_URL is in .env (e.g. Neon)
+// instead of the local DB the dev server actually uses.
+config({ path: ".env" });
+config({ path: ".env.local", override: true });
 import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({

@@ -1,9 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { AdminLoginClient } from "./login-client";
 import { isLocalAdminLoginEnabled } from "@/lib/auth/admin-credentials";
+import { getSession } from "@/lib/auth";
+import { getRoleRedirectPath } from "@/lib/auth/roles";
 
-export default function AdminLoginPage() {
+export default async function AdminLoginPage() {
+  const session = await getSession();
+  if (session) {
+    redirect(getRoleRedirectPath(session.role));
+  }
+
   const localLoginEnabled = isLocalAdminLoginEnabled();
 
   return (

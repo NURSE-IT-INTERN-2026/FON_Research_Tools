@@ -16,8 +16,9 @@ const chakraPetch = Chakra_Petch({
 });
 
 export const metadata: Metadata = {
-  title: "Research Tools — ระบบจัดการเอกสารเครื่องมือวิจัย",
-  description: "ระบบจัดการเอกสารเครื่องมือวิจัย คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่",
+  title: "Research Tools — ระบบจัดการยืมเครื่องมือและอุปกรณ์เพื่องานวิจัย",
+  description:
+    "ระบบจัดการยืมเครื่องมือและอุปกรณ์เพื่องานวิจัย คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่",
 };
 
 export default function RootLayout({
