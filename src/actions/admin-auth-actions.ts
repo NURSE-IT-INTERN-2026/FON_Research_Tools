@@ -1,7 +1,7 @@
 "use server";
 
 import { verifyCredentials, isLocalAdminLoginEnabled } from "@/lib/auth/admin-credentials";
-import { getRoleRedirectUrl } from "@/lib/auth/roles";
+import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { createSession } from "@/lib/auth/session";
 import { logActivity } from "@/lib/activity-log";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
@@ -54,5 +54,5 @@ export async function adminLogin(
     targetType: "Session",
     targetLabel: `เข้าสู่ระบบ (${user.role})`,
   });
-  redirect(getRoleRedirectUrl(user.role));
+  redirect(getRoleRedirectPath(user.role));
 }
