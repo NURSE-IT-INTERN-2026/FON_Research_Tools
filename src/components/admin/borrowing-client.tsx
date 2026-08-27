@@ -500,7 +500,7 @@ export function BorrowingClient({
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <Button onClick={() => openCreate()} className="rounded gap-2">
           <Plus className="h-4 w-4" />
-          เพิ่มรายการยืม
+          เพิ่มรายการขออนุญาตใช้
         </Button>
 
         <div className="relative w-full max-w-md">
@@ -534,13 +534,13 @@ export function BorrowingClient({
       {/* Owner table */}
       {owners.length === 0 ? (
         <div className="rounded border border-dashed p-10 text-center text-muted-foreground">
-          ยังไม่มีรายการยืม
+          ยังไม่มีรายการขออนุญาตใช้
         </div>
       ) : (
         <>
           <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             <ChevronRight className="h-3.5 w-3.5 text-primary" />
-            คลิกที่ชื่อเจ้าของเครื่องมือเพื่อดูรายการยืมทั้งหมด 
+            คลิกที่ชื่อเจ้าของเครื่องมือเพื่อดูรายการขออนุญาตใช้ทั้งหมด
           </p>
           {/* Desktop */}
           <div className="hidden md:block overflow-x-auto rounded border bg-card">
@@ -564,7 +564,7 @@ export function BorrowingClient({
                     key={owner.id}
                     className="group border-t hover:bg-primary/5 cursor-pointer transition-colors"
                     onClick={() => setSelectedOwner(owner)}
-                    title={`ดูรายการยืมของ ${owner.name}`}
+                    title={`ดูรายการขออนุญาตใช้ของ ${owner.name}`}
                   >
                     <td className="px-4 py-3 text-muted-foreground">
                       {(page - 1) * PAGE_SIZE + i + 1}
@@ -647,7 +647,7 @@ export function BorrowingClient({
                 </p>
               </div>
               <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                ถูกยืม
+                ถูกขอใช้
                 <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-muted text-xs font-medium">
                   {effectiveOwner?.borrowCount ?? selectedOwner?.borrowCount}
                 </span>
@@ -655,7 +655,7 @@ export function BorrowingClient({
               </span>
             </div>
             <DialogDescription className="sr-only">
-              ประวัติการถูกยืมเครื่องมือวิจัยของเจ้าของรายนี้
+              ประวัติการถูกขอใช้เครื่องมือวิจัยของเจ้าของรายนี้
             </DialogDescription>
           </DialogHeader>
 
@@ -663,7 +663,7 @@ export function BorrowingClient({
             <div className="space-y-4">
               {ownerRecords.length === 0 ? (
                 <div className="rounded border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  ยังไม่มีรายการยืม
+                  ยังไม่มีรายการขออนุญาตใช้
                 </div>
               ) : (
                 <div className="rounded border bg-card overflow-x-auto">
@@ -783,9 +783,9 @@ export function BorrowingClient({
       <Dialog open={!!showDetail} onOpenChange={(open) => !open && setShowDetail(null)}>
         <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>รายละเอียดการยืม</DialogTitle>
+            <DialogTitle>รายละเอียดการขออนุญาตใช้</DialogTitle>
             <DialogDescription className="sr-only">
-              ข้อมูลรายละเอียดของรายการยืม
+              ข้อมูลรายละเอียดของรายการขออนุญาตใช้
             </DialogDescription>
           </DialogHeader>
           {showDetail && (
@@ -853,10 +853,10 @@ export function BorrowingClient({
         <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {isEdit ? "แก้ไขรายการยืม" : "เพิ่มรายการยืมเครื่องมือวิจัย"}
+              {isEdit ? "แก้ไขรายการขออนุญาตใช้" : "เพิ่มรายการขออนุญาตใช้เครื่องมือวิจัย"}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              ฟอร์มสำหรับเพิ่มหรือแก้ไขข้อมูลการยืมเครื่องมือวิจัย
+              ฟอร์มสำหรับเพิ่มหรือแก้ไขข้อมูลการขออนุญาตใช้เครื่องมือวิจัย
             </DialogDescription>
           </DialogHeader>
 

@@ -68,7 +68,7 @@ export function ToolCard({ tool, onRequest }: ToolCardProps) {
           disabled={!isAvailable}
           onClick={isAvailable && onRequest ? () => onRequest(tool) : undefined}
         >
-          {isAvailable ? "ยืมอุปกรณ์" : "ไม่พร้อมให้ยืม"}
+          {isAvailable ? "ขอใช้อุปกรณ์" : "ไม่พร้อมให้ใช้"}
         </Button>
       </div>
     </div>

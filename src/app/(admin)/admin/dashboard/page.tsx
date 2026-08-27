@@ -144,12 +144,12 @@ export default async function AdminDashboardPage() {
           )}
         </WidgetCard>
 
-        <WidgetCard href="/admin/borrowing" icon={Package} title="บันทึกการยืม">
+        <WidgetCard href="/admin/borrowing" icon={Package} title="บันทึกการขออนุญาตใช้">
           <p className="mb-3 text-sm text-muted-foreground">
             สัปดาห์นี้ +<span className="font-semibold text-foreground">{weekBorrowCount}</span> รายการ
           </p>
           {recentBorrowing.length === 0 ? (
-            <EmptyHint>ยังไม่มีรายการยืม</EmptyHint>
+            <EmptyHint>ยังไม่มีรายการขออนุญาตใช้</EmptyHint>
           ) : (
             <ul className="divide-y">
               {recentBorrowing.map((rec) => (

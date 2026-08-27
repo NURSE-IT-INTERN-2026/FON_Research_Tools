@@ -34,7 +34,7 @@ export default function HomePage() {
         </div>
 
         <p className="text-muted-foreground max-w-sm animate-slide-up text-base leading-relaxed" style={{ animationDelay: "100ms" }}>
-          ระบบจัดการยืมเครื่องมือและอุปกรณ์เพื่องานวิจัย<br />
+          ระบบจัดการเอกสารและบันทึกการขออนุญาตใช้เครื่องมือวิจัย<br />
           คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
         </p>
 

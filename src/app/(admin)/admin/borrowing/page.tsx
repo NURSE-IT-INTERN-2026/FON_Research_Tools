@@ -83,7 +83,7 @@ export default async function BorrowingPage({
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-bold tracking-tight heading-accent">
-          บันทึกรายการยืมเครื่องมือวิจัย
+          บันทึกรายการขออนุญาตใช้เครื่องมือวิจัย
         </h1>
       </div>
 
